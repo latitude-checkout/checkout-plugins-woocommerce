@@ -41,7 +41,7 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway {
         $this->method_title =  _ ( $plugin_title, 'latitude-gateway');
         $this->method_description = _( $plugin_method_desc, 'latitude-gateway');
         $this->title =  _ ($plugin_title, 'latitude-gateway');   
-        //$this->description =  _ ( $plugin_desc, 'latitude-gateway');   
+         
 
         $this->init_form_fields();
         $this->init_settings(); 
@@ -52,23 +52,18 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway {
         
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
         add_filter('woocommerce_gateway_icon', array($this,'latitude_gateway_icon'), 10, 2);
+        add_filter('woocommerce_order_button_text', array($this, 'update_button_text') );
 
         // // TO Do if custom JavaScript is needed 
-        //add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+        add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
        
         // You can also register a webhook here
-        // add_action( 'woocommerce_api_{webhook name}', array( $this, 'webhook' ) );         
-        // $receipt_page = "woocommerce_receipt_{$this->id}";
-        // echo $receipt_page;
-        add_action( "woocommerce_receipt_{$this->id}" , array($this, 'receipt_page'), 10, 1); 
-        add_action( 'template_redirect', 'redirect_on_latitude_gateway' );
+        // add_action( 'woocommerce_api_{webhook name}', array( $this, 'webhook' ) );      
+        add_action( "woocommerce_receipt_{$this->id}" , array($this, 'receipt_page'), 10, 1);  
 
         $this->_helper = new LatitudeHelper($this->test_mode, $this->plugin_version, $this->merchant_id);
         $this->_payment_request = new LatitudePaymentRequest($this->_helper); 
-        // $this->_checkout_banner = new LatitudeGatewayBanner($this->_helper);
-
-        $this->myactionhooks = "woocommerce_receipt_{$this->id}"; 
-
+        $this->_checkout_banner = new LatitudeGatewayBanner($this->_helper); 
     }
 
     public function init_form_fields(){
@@ -107,7 +102,21 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway {
     }    
 
  
+    public function update_button_text($order_button_text) {   
     
+        $current_payment_method     = WC()->session->get('chosen_payment_method'); // The chosen payment  
+        // For matched payment(s) method(s), we remove place order button (on checkout page) 
+        if(  $current_payment_method == Constants::PAYMENT_PLUGIN_ID ) { 
+            $order_button_text = 'Choose a Plan';
+        }  
+        return $order_button_text;
+    }
+
+    public function enqueue_scripts() {    
+
+        wp_enqueue_script( 'latitude_payment_fields_js', plugins_url( '../js/latitude-payment-fields.js', __FILE__ ), array('jquery') );     
+    }   
+
     function latitude_gateway_icon( $icon, $gateway_id ) {
    
         if ( LatitudeConstants::PAYMENT_PLUGIN_ID == $gateway_id) {
@@ -118,14 +127,9 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway {
         } 
         return $icon;  
     }  
-
-    // public function enqueue_scripts() {    
-
-    //    // wp_enqueue_script( 'latitude_payment_fields_js', plugins_url( '../js/latitude-payment-fields.js', __FILE__ ), array('jquery') );    
-    // }   
-
+ 
     public function receipt_page($order) { 
-        echo '<p>' . __('Thank you for your order, please click the button below to pay with Latitude.', 'latitude-gateway') . '</p>';
+        //echo '<p>' . __('Thank you for your order, please click the button below to pay with Latitude.', 'latitude-gateway') . '</p>';
         $this->_helper->log("receipt_page called!");
         echo $this->generate_checkout_form($order);
         
@@ -146,7 +150,7 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway {
  
     public function payment_fields() {    
         // TODO: add field validations here  
-        //$this->_checkout_banner->load_payment_fields();    
+        $this->_checkout_banner->load_payment_fields();    
        
    } 
 

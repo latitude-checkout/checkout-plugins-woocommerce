@@ -120,53 +120,9 @@ class Latitude_Payment_Banner
             You will be redirected to Latitude checkout to complete your order
         </p>
         </div>  
-        <div class="primary">
-        <button  
-            class="action primary checkout"
-            id="latitude-payment-button"
-            style="
-                width: 100% !important;
-                max-width: 400px !important;
-                font-size: 18px !important;
-                line-height: 1 !important;
-                padding: 14px 17px !important;
-            " 
-            type="submit"     
-            onClick="onChoosePlan(target_url)"
-            >
-            <span> Choose a plan</span>
-            </button>     
-        </div>   
         <div id="latitude-payment--footer"></div> 
         <?php 
         
     }    
 }
-
-    
-// jQuery( function($){ 
-//     $('button#latitude-payment-button').on('click',function(event){
-//         $.ajax(
-//             {
-//                 type: "post",
-//                 url: latitude_ajax_object.ajax_url,
-//                 data: {'action': 'latitude_place_order_action'},
-//                 success: function(response){
-//                     alert(response);
-//             }
-//         });
-//     });
-// });
-  
  
-
-// <script type="text/javascript">
-// jQuery( function($){ 
-//     jQuery.noConflict();
-//     $(document).ready(function() {
-//         $('button#latitude-payment-button').on('click',function(event){
-//             alert( "Handler for .click() called." );
-//         });
-//     });
-// });
-// </script>

@@ -4,7 +4,7 @@
 class Constants
 {
     const PLATFORM_TYPE = "woocommerce";
-    const PAYMENT_PLUGIN_ID = "latitude-checkout"; 
+    const PAYMENT_PLUGIN_ID = "latchkout"; 
 
     const ALLOWED_CURRENCY = array("AUD", "NZD");
     

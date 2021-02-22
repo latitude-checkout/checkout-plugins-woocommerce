@@ -52,7 +52,7 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway {
         
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
         add_filter('woocommerce_gateway_icon', array($this,'latitude_gateway_icon'), 10, 2);
-        add_filter('woocommerce_order_button_text', array($this, 'update_button_text') );
+        add_filter('woocommerce_order_button_html', array($this, 'update_button_text'), 10, 1 );
 
         // // TO Do if custom JavaScript is needed 
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
@@ -102,14 +102,14 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway {
     }    
 
  
-    public function update_button_text($order_button_text) {   
+    public function update_button_text($button) {   
     
         $current_payment_method     = WC()->session->get('chosen_payment_method'); // The chosen payment  
         // For matched payment(s) method(s), we remove place order button (on checkout page) 
         if(  $current_payment_method == Constants::PAYMENT_PLUGIN_ID ) { 
-            $order_button_text = 'Choose a Plan';
+            $button = str_replace( 'Place Order', 'Choose a plan', $button_html );
         }  
-        return $order_button_text;
+        return $button;
     }
 
     public function enqueue_scripts() {    

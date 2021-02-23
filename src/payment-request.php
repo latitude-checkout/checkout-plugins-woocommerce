@@ -39,7 +39,7 @@ class Latitude_Payment_Request {
         $payment_request['x_merchant_reference'] = $order_id; //TODO not sure what to specify here??? 
 
         //TODO check if correct URLs
-        $payment_request['x_url_cancel'] =  $order->get_cancel_order_url(); 
+        $payment_request['x_url_cancel'] =  wc_get_checkout_url(); 
         $payment_request['x_url_callback'] =   ""; //TODO  $this->response_callback_url;
         $payment_request['x_url_complete'] = $order->get_checkout_order_received_url(); //$this->get_return_url($order);   
 

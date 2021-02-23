@@ -52,7 +52,7 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway {
         
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
         add_filter('woocommerce_gateway_icon', array($this,'latitude_gateway_icon'), 10, 2);
-        add_filter('woocommerce_order_button_html', array($this, 'update_button_text'), 10, 1 );
+        add_filter('woocommerce_order_button_text', array($this, 'update_button_text'), 10, 1 );
 
         // // TO Do if custom JavaScript is needed 
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
@@ -104,10 +104,13 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway {
  
     public function update_button_text($button) {   
     
+         
         $current_payment_method     = WC()->session->get('chosen_payment_method'); // The chosen payment  
+        ?><script>console.log( 'update_button_text' + '<?php echo json_encode($current_payment_method); ?>')</script><?php
+
         // For matched payment(s) method(s), we remove place order button (on checkout page) 
-        if(  $current_payment_method == Constants::PAYMENT_PLUGIN_ID ) { 
-            $button = str_replace( 'Place Order', 'Choose a plan', $button_html );
+        if(  $current_payment_method == LatitudeConstants::PAYMENT_PLUGIN_ID ) { 
+            $button = 'Choose a plan';
         }  
         return $button;
     }
@@ -157,17 +160,15 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway {
     // default process payment 
     public function process_payment( $order_id ) { 
         global $woocommerce;
-        $order = new WC_Order( $order_id );
-
-        do_action( 'woocommerce_receipt_latitude', $order_id );
+        $order = new WC_Order( $order_id ); 
         
         $this->_helper->log(__("process_payment called: " . $order->get_payment_method())); 
         
-        // Mark as on-hold (we're awaiting the cheque)
-        // $order->update_status('on-hold', __( 'Awaiting payment', 'woocommerce' ));
+        //Mark as on-hold (we're awaiting the cheque)
+        //$order->update_status('on-hold', __( 'Awaiting payment', 'woocommerce' ));
         
         // Remove cart
-        $woocommerce->cart->empty_cart();
+        // $woocommerce->cart->empty_cart();
     
         // Return thankyou redirect
         return array(

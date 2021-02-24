@@ -3,20 +3,22 @@
 use Constants as LatitudeConstants; 
 use Latitude_Gateway_Helper as LatitudeHelper;
 use Latitude_Payment_Banner as LatitudeGatewayBanner;
-use Latitude_Payment_Request as LatitudePaymentRequest;
+use Latitude_Payment_Request as LatitudePaymentRequest; 
+use Latitude_Gateway_Interface as GatewayInterface;
+use Latitude_API_Controller as LatitudeAPIController;
 
 // references:    
 // https://github.com/bekarice/woocommerce-gateway-offline/blob/master/woocommerce-gateway-offline.php
 
-class WC_Latitude_Gateway extends WC_Payment_Gateway {
+class WC_Latitude_Gateway extends WC_Payment_Gateway  Implements GatewayInterface {
 
     protected $_helper;
     protected $_checkout_banner;
     protected $_payment_request;
+    protected $_api_controller;
 
     protected $plugin_name; 
-    protected $plugin_version;   
-    protected $myactionhooks;
+    protected $plugin_version;    
  
     public function __construct() { 
 
@@ -49,7 +51,15 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway {
         $this->merchant_secret = $this->get_option('merchant_secret');
         $this->test_mode = 'yes' === $this->get_option( 'testmode' );
    
-        
+        $this->_helper = new LatitudeHelper($this->test_mode, $this->plugin_version, $this->merchant_id);
+        $this->_payment_request = new LatitudePaymentRequest($this->_helper); 
+        $this->_checkout_banner = new LatitudeGatewayBanner($this->_helper);   
+
+        $this->_api_controller = new LatitudeAPIController($this); 
+
+        add_action('rest_api_init', array( $this->_api_controller, 'register_routes'));       
+
+
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
         add_filter('woocommerce_gateway_icon', array($this,'latitude_gateway_icon'), 10, 2);
         add_filter('woocommerce_order_button_text', array($this, 'update_button_text'), 10, 1 );
@@ -59,12 +69,9 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway {
        
         // You can also register a webhook here
         // add_action( 'woocommerce_api_{webhook name}', array( $this, 'webhook' ) );      
-        add_action( "woocommerce_receipt_{$this->id}" , array($this, 'receipt_page'), 10, 1);  
-
-        $this->_helper = new LatitudeHelper($this->test_mode, $this->plugin_version, $this->merchant_id);
-        $this->_payment_request = new LatitudePaymentRequest($this->_helper); 
-        $this->_checkout_banner = new LatitudeGatewayBanner($this->_helper); 
+        add_action( "woocommerce_receipt_{$this->id}" , array($this, 'receipt_page'), 10, 1);   
     }
+
 
     public function init_form_fields(){
          
@@ -177,6 +184,7 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway {
         );
     }    
 
+
     protected function dbg($msg="")
     {
         ob_start();
@@ -198,6 +206,13 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway {
 		return $this->plugin_version;
     }    
     
+    /// GatewayInterface implementation 
+    public function payment_request_callback($parameters) : bool{
 
+        $this->_helper->log("payment_request_callback here!");
+        $this->_helper->log(json_encode($parameters));
+        return true;
+    }
  
+
 }

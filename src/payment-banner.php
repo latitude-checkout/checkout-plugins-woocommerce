@@ -10,16 +10,7 @@ class Latitude_Payment_Banner
     public function __construct(
         LatitudeHelper $helper
     ) {
-        $this->_helper = $helper; 
-        add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );  
-
-    } 
-
-    public function enqueue_scripts() {    
-
-       // wp_enqueue_script( 'latitude_checkout_js', plugins_url( '../js/latitude-checkout.js', __FILE__ ), array('jquery'), '', true );
-        //wp_localize_script( 'latitude_checkout_js', 'latitude_ajax_object', array( 'ajax_url' => 'wc-latitude-gateway.php' ));
-
+        $this->_helper = $helper;   
     }  
 
     public function get_override() {

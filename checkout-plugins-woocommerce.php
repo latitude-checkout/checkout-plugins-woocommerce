@@ -27,8 +27,7 @@ define( 'WP_DEBUG_DISPLAY', false );
  // Make sure woocommerce is active 
  if (! in_array ('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option( 'active_plugins')))) {
      return; 
- }
-
+ } 
 
 define( 'WC_LATITUDE_GATEWAY_VERSION', '0.0.1' );
 define( 'WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '4.0' );
@@ -41,7 +40,7 @@ function wc_latitude_gateway_init() {
         foreach($files as $file) {
             require_once($file);            
         }
-        $wc_plugin = new WC_Latitude_Gateway();  
+        $wc_plugin = new WC_Latitude_Gateway();     
     }   
 } 
 
@@ -51,5 +50,4 @@ function latitude_add_gateway_class( $gateways ) {
 	$gateways[] = 'WC_Latitude_Gateway';  
 	return $gateways;
 }
- 
  

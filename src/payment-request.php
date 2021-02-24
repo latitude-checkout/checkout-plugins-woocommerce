@@ -40,7 +40,7 @@ class Latitude_Payment_Request {
 
         //TODO check if correct URLs
         $payment_request['x_url_cancel'] =  wc_get_checkout_url(); 
-        $payment_request['x_url_callback'] =   ""; //TODO  $this->response_callback_url;
+        $payment_request['x_url_callback'] =  __( get_site_url(). LatitudeConstants::CALLBACK_ROUTE ) ; //TODO  $this->response_callback_url;
         $payment_request['x_url_complete'] = $order->get_checkout_order_received_url(); //$this->get_return_url($order);   
 
         $payment_request['x_billing_name'] = $order_data['billing']['first_name'] . ' ' . $order_data['billing']['last_name'];

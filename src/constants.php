@@ -8,7 +8,7 @@ class Constants
 
     const ALLOWED_CURRENCY = array("AUD", "NZD");
     
-    const CALLBACK_ROUTE = '/V1/latitude/callback';
+    const CALLBACK_ROUTE = '/latitude/v1/callback';
     const CANCEL_ROUTE = 'checkout/cart';
     const COMPLETE_ROUTE = 'latitude/payment/complete';
 

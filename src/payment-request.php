@@ -13,9 +13,8 @@ class Latitude_Payment_Request {
         $this->_helper =$helper;
     }
   
-    public function create_request($order, $merchant_secret) { 
-
-        $this->_helper->log(__("DEBUG message: create_request")); 
+    public function build_request_parameters($order, $merchant_secret) { 
+ 
 
         if (is_null($this->_helper)) {
             throw new Exception("This payment gateway cannot proceed to process this request.");
@@ -39,7 +38,7 @@ class Latitude_Payment_Request {
         $payment_request['x_merchant_reference'] = $order_id; //TODO not sure what to specify here??? 
 
         //TODO check if correct URLs
-        $payment_request['x_url_cancel'] =  wc_get_checkout_url(); 
+        $payment_request['x_url_cancel'] =  WC()->cart->get_checkout_url(); //wc_get_checkout_url(); 
         $payment_request['x_url_callback'] =  __( get_site_url(). LatitudeConstants::CALLBACK_ROUTE ) ; //TODO  $this->response_callback_url;
         $payment_request['x_url_complete'] = $order->get_checkout_order_received_url(); //$this->get_return_url($order);   
 

@@ -48,6 +48,10 @@ class Latitude_API_Controller extends WP_REST_Controller {
 		 
 		$parameters = $request->get_json_params() ; 
 		$result = $this->_gateway->payment_request_callback($parameters);
+		 
+		if ($result['valid'] == 'false') {
+			return new WP_Error( 'invalid data', $result['error'], array( 'status' => 404 ) );
+		}
 		return rest_ensure_response( true ); 
 
 		// if (empty($posts)) { 

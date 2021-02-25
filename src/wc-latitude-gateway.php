@@ -69,7 +69,8 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway  Implements GatewayInterfac
        
         // You can also register a webhook here
         // add_action( 'woocommerce_api_{webhook name}', array( $this, 'webhook' ) );      
-        add_action( "woocommerce_receipt_{$this->id}" , array($this, 'receipt_page'), 10, 1);   
+        add_action( "woocommerce_receipt_{$this->id}" , array($this, 'receipt_page'), 10, 1);  
+        add_filter( 'woocommerce_redirect_to_checkout', 'redirect_to_checkout' ); 
     }
 
 
@@ -150,7 +151,7 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway  Implements GatewayInterfac
         global $woocommerce;
         $order = new WC_Order( $order_id );  
         try {
-            $payment_request = $this->_payment_request->create_request($order, $this->merchant_secret);
+            $payment_request = $this->_payment_request->build_request_parameters($order, $this->merchant_secret);
             $form_str = $this->_payment_request->generate_form_request($payment_request);
             return $form_str;
         } catch (Exception $ex) { 
@@ -168,7 +169,8 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway  Implements GatewayInterfac
     public function process_payment( $order_id ) { 
         global $woocommerce;
         $order = new WC_Order( $order_id ); 
-        
+  
+        $this->_helper->log(__("process_payment called: " . $order_id));        
         $this->_helper->log(__("process_payment called: " . $order->get_payment_method())); 
         
         //Mark as on-hold (we're awaiting the cheque)
@@ -181,7 +183,10 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway  Implements GatewayInterfac
         return array(
             'result' => 'success',
             'redirect' => $order->get_checkout_payment_url(true),
-        );
+        );       
+ 
+
+
     }    
 
 
@@ -207,12 +212,59 @@ class WC_Latitude_Gateway extends WC_Payment_Gateway  Implements GatewayInterfac
     }    
     
     /// GatewayInterface implementation 
-    public function payment_request_callback($parameters) : bool{
+    public function payment_request_callback($parameters) : array {
+ 
+        $this->_helper->log(__("payment_request_callbacker: " . json_encode($parameters))); 
+        $this->_helper->log(__("merchant_reference: " . $parameters['merchant_reference'])); 
+ 
+        if (empty($parameters['merchant_reference'])) {
+            return array('valid'=> 'false', 'error' => 'invalid merchant reference');
+        } 
+        global $woocommerce;
+        $order = new WC_Order($parameters['merchant_reference'] );  
+        $this->_helper->log(__("order: " . json_encode($order))); 
+        if (!$order || empty($order) ) { 
+            $this->_helper->log("payment_request_callback here! - invalid merchant reference"); 
+            return array('valid'=> 'false', 'error' => 'invalid merchant reference');
+        }
+        // verify callback data
+        $payment_request = $this->_payment_request->build_request_parameters($order, $this->merchant_secret);
 
-        $this->_helper->log("payment_request_callback here!");
-        $this->_helper->log(json_encode($parameters));
-        return true;
+        // validate client secret by rebuilding the payment   
+        $this->_helper->log(__("signature: " . $payment_request['x_signature'] ));   
+        $this->_helper->log(__("signature: " . $parameters['signature'] ));   
+        if (!(hash_equals($parameters['signature'],$payment_request['x_signature']))) {
+            $this->_helper->log("payment_request_callback here! - invalid signature"); 
+            return array('valid'=> 'false', 'error' => 'invalid payment request parameters');
+        }
+        
+        // validate client merchant_id  
+        if ($parameters['merchant_id']!= $this->merchant_id){
+            $this->_helper->log("payment_request_callback here! - invalid merchant id"); 
+            return array('valid'=> 'false', 'error' => 'invalid merchant id');
+        }
+
+        // validate payment transaction result
+        if ($parameters['result'] == 'failed') {
+            $this->_helper->log("payment_request_callback here! - transaction failed"); 
+            $redirect_page = apply_filter('woocommerce_redirect_to_checkout', $payment_request['x_url_cancel']);
+            return array('valid'=> 'true', 'error' => '');
+        }
+
+        if ($parameters['result'] == 'completed') {
+                // mark order as paid
+                // redirect to success payment
+        }
+       
+        return array('valid'=> 'true', 'error' => '');
     }
  
+    public function redirect_to_checkout( $url ) {
+
+        $url = WC()->cart->get_checkout_url(); 
+        return $url;
+    
+    }
+   
 
 }

@@ -4,7 +4,7 @@ use Constants as LatitudeConstants;
 
 class Latitude_Gateway_Helper
 {
-    const PAY_INSTRUCTIONS = "Pay Via Latitude";
+    const PAY_INSTRUCTIONS = "";
    
     protected $_test_mode; 
     protected $_plugin_version;
@@ -89,6 +89,7 @@ class Latitude_Gateway_Helper
 			$payment_request_form_tags[] = '<input type="hidden" name="' . esc_attr($key) . '" value="' . esc_attr($value) . '" />';
 		}    
 
+        //<input type="submit" class="button-alt" id="submit_latitude_payment_form" value="' . self::PAY_INSTRUCTIONS . '" />
         $form_str = '<form action="' . esc_url($request_api_url) . '" method="post" id="latchkout_payment_form">
 				' . implode('' . PHP_EOL, $payment_request_form_tags) . '
                 <input type="submit" class="button-alt" id="submit_latitude_payment_form" value="' . self::PAY_INSTRUCTIONS . '" />

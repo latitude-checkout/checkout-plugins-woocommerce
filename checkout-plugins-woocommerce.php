@@ -4,7 +4,7 @@
  * Description: Integrates Latitude Payments into your Woocommerce store.
  * Author: Latitude Financial
  * Author URI: https://www.latitudefinancial.com.au/
- * Version: 0.0.1
+ * Version: 0.0.1 	 
  * Text Domain: checkout-plugins-woocommerce
  * WC tested up to: 5.6
  *
@@ -13,41 +13,137 @@
 if (!defined('ABSPATH')) {
 	exit;
 }
- 
-  // Make sure no info is exposed if called directly
-if ( !function_exists( 'add_action' ) ) {
-	echo 'This plugin is not intended to be called directly.';
-	exit;
-}
+  
  
 define( 'WP_DEBUG', true );
 define( 'WP_DEBUG_LOG', true );
 define( 'WP_DEBUG_DISPLAY', false );
-
- // Make sure woocommerce is active 
- if (! in_array ('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option( 'active_plugins')))) {
-     return; 
- } 
-
-define( 'WC_LATITUDE_GATEWAY_VERSION', '0.0.1' );
+  
 define( 'WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '4.0' );
 define( 'WC_LATITUDE_GATEWAY__PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
-add_action( 'plugins_loaded', 'wc_latitude_gateway_init');
-function wc_latitude_gateway_init() {
-    if (class_exists('WC_Payment_Gateway')) { 
-        $files = glob(WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'src/*.php', GLOB_BRACE);
-        foreach($files as $file) {
-            require_once($file);            
-        }
-        $wc_plugin = new WC_Latitude_Gateway();     
-    }   
-} 
 
-// Add the Latitude Checkout Payment Gateway to WC Available Gateways
-add_filter( 'woocommerce_payment_gateways', 'latitude_add_gateway_class' );
-function latitude_add_gateway_class( $gateways ) {
-	$gateways[] = 'WC_Latitude_Gateway';  
-	return $gateways;
-}
+if (!class_exists('LatitudeCheckoutPlugin')) {
+
+    class LatitudeCheckoutPlugin {
+
+		/**
+		 * @var		LatitudeCheckoutPlugin		$instance	A static reference to an instance of this class.
+		 */
+		protected static $instance;
+
  
+		/**
+		 * Import required classes.
+		 * 
+		 */
+		public static function load_classes()
+		{   
+			if (class_exists('WC_Payment_Gateway')) {
+				require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'include/Constants.php';
+				require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'include/Latitude_Payment_Request.php'; 
+				require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'include/WC_LatitudeCheckoutGateway.php'; 
+			}
+        }
+        
+
+		/**
+		 * Class constructor. Called when an object of this class is instantiated.
+		 * 
+		 */
+		public function __construct()
+		{
+			$gateway = WC_LatitudeCheckoutGateway::getInstance(); 
+			add_action( "woocommerce_update_options_payment_gateways_{$gateway->id}", array($gateway, 'process_admin_options'), 10, 0 );    
+			add_filter( 'woocommerce_payment_gateways', array($gateway, 'add_latitudecheckoutgateway'), 10, 1 );
+			
+			add_action( "woocommerce_update_options_payment_gateways_{$gateway->id}", array($gateway, 'refresh_configuration'), 11, 0 );   
+            add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) ); 
+			add_action( "woocommerce_receipt_{$gateway->id}" , array($gateway, 'receipt_page'), 10, 1); 
+			// add_action( 'rest_api_init', array( $gateway, 'register_routes'));        
+
+
+            add_filter('woocommerce_gateway_icon', array($gateway,'filter_latitude_gateway_icon'), 10, 2);
+            add_filter('woocommerce_order_button_text', array($gateway, 'filter_place_order_button_text'), 10, 1 ); 
+            // add_filter( 'woocommerce_redirect_to_checkout', array($gateway, 'redirect_to_checkout') );     			
+        }         
+
+         /**
+		 * Note: Hooked onto the "wp_enqueue_scripts" Action  
+		 * 
+		 */
+        public function enqueue_scripts() {    
+
+			/**
+			 * Enqueue JS for updating  place order button text on payment method change
+			 */            
+            wp_enqueue_script( 'latitude_payment_fields_js', plugins_url( 'js/latitude-payment-fields.js', __FILE__ ), array('jquery') );     
+        }   
+
+ 
+		/**
+		 * Initialise the class and return an instance.
+		 * 
+		 */
+		public static function init()
+		{ 
+			self::load_classes(); 
+			if (!class_exists('WC_LatitudeCheckoutGateway')) {
+				return false;
+			}
+			if (is_null(self::$instance)) {
+				self::$instance = new self;
+			}
+			return self::$instance;			
+		}
+            
+ 
+		/**
+		 * Callback for when this plugin is activated. 
+		 * 
+		 */
+		public static function activate_plugin()
+		{
+			if (!current_user_can( 'activate_plugins' )) {
+				return;
+			} 
+			self::init();  
+		}
+
+		/**
+		 * Callback for when this plugin is deactivated. 
+		 * 
+		 */
+		public static function deactivate_plugin()
+		{
+			if (!current_user_can( 'activate_plugins' )) {
+				return;
+			} 
+			self::load_classes(); 
+        }
+
+        /**
+		 * Callback for when the plugin is uninstalled. Remove all of its data.
+		 * 
+		 */
+		public static function uninstall_plugin()
+		{
+			if (!current_user_can( 'activate_plugins' )) {
+				return;
+			}
+			return;
+		}
+				
+ 
+	}
+	
+	register_activation_hook( __FILE__, array('LatitudeCheckoutPlugin', 'activate_plugin') );
+	register_deactivation_hook( __FILE__, array('LatitudeCheckoutPlugin', 'deactivate_plugin') );
+	register_uninstall_hook( __FILE__, array('LatitudeCheckoutPlugin', 'uninstall_plugin') ); 
+	add_action( 'plugins_loaded',  array('LatitudeCheckoutPlugin', 'init'), 10, 0 );  
+}
+
+
+
+ 
+

@@ -160,7 +160,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 
 			# Give other plugins a chance to manipulate or replace the HTML echoed by this funtion.
 			ob_start();
-			include "{$this->include_path}/payment_fields.html.php"; 
+			include "{$this->include_path}/Payment_Fields.html.php"; 
 			$html = ob_get_clean(); 
 			echo apply_filters( 'latitude_html_at_checkout', $html);        
         }
@@ -170,25 +170,115 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 		 *
 		 */    
         public function process_payment( $order_id ) { 
-            global $woocommerce;
-            $order = new WC_Order( $order_id ); 
+
+            if(!$order_id) {
+                // log error for null order_id
+                return;
+            }
+ 
+
      
+            $payload = $this->payment_request->build_request_parameters($order_id, $this->merchant_id, $this->test_mode);
+            $this->log(__('payload: ' . wp_json_encode($payload)));
+
+            // send the post via wp_remote_post
+            $url = $this->payment_request->get_api_url($this->test_mode);    
+            $this->log(__('sending to: ' . $url));       
+
+            $response = wp_remote_post($url, array(
+                'method'      => 'POST',
+                'headers'     => array(
+                    'Authorization' => 'Basic ' . base64_encode( $this->merchant_id . ':' . $this->merchant_secret ),
+                    'Content-Type'  => 'application/json',
+                ),
+                'body'        => wp_json_encode($payload) 
+            ));
+            $this->log(json_encode($response)); 
+
+            // not working as expected?? 
+            // if ( is_wp_error( $response ) ) {
+            //     // do something here
+            //     $error_string = $response->get_error_message(); 
+            //     $this->log(__("error (is_wp_error): ". $error_string));
+            //     return array(
+            //         'result' => 'failure',
+            //         'redirect' => $order->get_checkout_payment_url(false), //TODO: Go back to cart
+            //     );     
+            // } 
+
+            global $woocommerce;
+            $order = new WC_Order( $order_id );   
+
+            $rsp_code = $response['response']['code'];
+            if ($rsp_code != "200") {
+                $error_string = $response['response']['message'];
+                if (empty($error_string)) {
+                    $error_string = "Bad request.";
+                }
+                $this->log(__("error (response code): ". $error_string));
+                return array(
+                    'result' => 'failure',
+                    'redirect' => $order->get_checkout_payment_url(false), //TODO: Go back to cart
+                );     
+            }
+
+            $rsp_body = json_decode($response['body'], true);
+            //  $this->log(__("rsp_body: ".$rsp_body));
+
+            $result = $rsp_body['status'];
+            if ($result != "completed") {
+                $error_string = $rsp_body['error'];
+                if (empty($error_string)) {
+                    $error_string = "Request failure";
+                }
+                $this->log(__("error (response body): ". $error_string));
+                return array(
+                    'result' => 'failure',
+                    'redirect' => $order->get_checkout_payment_url(false), //TODO: Go back to cart
+                );     
+            }
+
+           
+            $redirectUrl = $rsp_body['redirectUrl'];
+            $txnReference = $rsp_body['transactionReference'];     
+            $this->log(__("redirectUrl: ". $redirectUrl));
+            $this->log(__("transactionReference: ". $txnReference));
+
+           // Reduce stock levels
+            $order->reduce_order_stock();
+                    
+            // Remove cart
+            WC()->cart->empty_cart();
             // Return thankyou redirect
             return array(
                 'result' => 'success',
-                'redirect' => $order->get_checkout_payment_url(true),
+                'redirect' => $this->get_return_url( $order ),
             );        
 
-        }   
-        
-        public function receipt_page($order_id) {
-            $this->log("receipt_page -before");
+        }    
 
-             
-            $payload = $this->payment_request->build_request_parameters($order_id, $this->merchant_id, $this->test_mode);
-            $this->log(json_encode($payload));
-  
-            $this->log("receipt_page -after");
+        protected function is_valid_response($response, $order) {
+            $error = "";
+            if ($response['merchantId'] != $this->merchant_id) {
+                $error = "Failed to confirm Merchant ID.";
+                return $error;
+            }
+            if ($response['merchantReference'] != $order->get_id()) {
+                $error = "Failed to confirm Order reference.";
+                return $error;
+            }
+            if ($response['amount'] != $order->get_total()) {
+                $error = "Failed to confirm transaction amount.";
+                return $error;
+            }     
+            if ($response['currency'] != $order->get_currency()) {
+                $error = "Failed to confirm transaction urrency";
+                return $error;
+            }               
+            return $error;
+        }
+
+        public function receipt_page($order_id) { 
         }
 
         // public function generate_checkout_form($order_id) {
@@ -227,7 +317,26 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 			if (self::$log_enabled) {
 				if (is_null(self::$log)) {
 					self::$log = wc_get_logger();
-				} 
+                } 
+                if (is_array($message)) { 
+                    $message = print_r($message, true);
+                } elseif(is_object($message)) { 
+					$ob_get_length = ob_get_length();
+					if (!$ob_get_length) {
+						if ($ob_get_length === false) {
+							ob_start();
+						}
+						var_dump($message);
+						$message = ob_get_contents();
+						if ($ob_get_length === false) {
+							ob_end_clean();
+						} else {
+							ob_clean();
+						}
+					} else {
+						$message = '(' . get_class($message) . ' Object)';
+                    }
+                }
                 self::$log->debug($message, array('source' => 'latitude_checkout'));
 			}
 		}

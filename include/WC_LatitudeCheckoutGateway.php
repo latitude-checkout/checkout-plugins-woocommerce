@@ -174,10 +174,8 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             if(!$order_id) {
                 // log error for null order_id
                 return;
-            }
- 
+            } 
 
-     
             $payload = $this->payment_request->build_request_parameters($order_id, $this->merchant_id, $this->test_mode);
             $this->log(__('payload: ' . wp_json_encode($payload)));
 
@@ -193,18 +191,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 ),
                 'body'        => wp_json_encode($payload) 
             ));
-            $this->log(json_encode($response)); 
-
-            // not working as expected?? 
-            // if ( is_wp_error( $response ) ) {
-            //     // do something here
-            //     $error_string = $response->get_error_message(); 
-            //     $this->log(__("error (is_wp_error): ". $error_string));
-            //     return array(
-            //         'result' => 'failure',
-            //         'redirect' => $order->get_checkout_payment_url(false), //TODO: Go back to cart
-            //     );     
-            // } 
+            $this->log(json_encode($response));  
 
             global $woocommerce;
             $order = new WC_Order( $order_id );   
@@ -222,8 +209,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 );     
             }
 
-            $rsp_body = json_decode($response['body'], true);
-            //  $this->log(__("rsp_body: ".$rsp_body));
+            $rsp_body = json_decode($response['body'], true); 
 
             $result = $rsp_body['status'];
             if ($result != "completed") {
@@ -232,6 +218,15 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                     $error_string = "Request failure";
                 }
                 $this->log(__("error (response body): ". $error_string));
+                return array(
+                    'result' => 'failure',
+                    'redirect' => $order->get_checkout_payment_url(false), //TODO: Go back to cart
+                );     
+            }
+
+            $error_string = $this->is_valid_order_response($rsp_body, $order);
+            if (!empty($error_string)) {
+                $this->log(__("error (is_valid_order_response): ". $error_string));
                 return array(
                     'result' => 'failure',
                     'redirect' => $order->get_checkout_payment_url(false), //TODO: Go back to cart
@@ -257,7 +252,12 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 
         }    
 
-        protected function is_valid_response($response, $order) {
+         /**
+		 *
+		 * Validates contents of the purchase_request to match current order.
+		 *  
+		 */
+        protected function is_valid_order_response($response, $order) {
             $error = "";
             if ($response['merchantId'] != $this->merchant_id) {
                 $error = "Failed to confirm Merchant ID.";
@@ -280,24 +280,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 
         public function receipt_page($order_id) { 
         }
-
-        // public function generate_checkout_form($order_id) {
-        //     $this->log("ready to generate form");
-        //     global $woocommerce;
-        //     $order = new WC_Order( $order_id );  
-
-        //     include "{$this->include_path}/Latitude_Payment_Request.php";
-        //     $payment_request = new LatitudePaymentRequest;
-
-        //     try {
-        //         $payment_request = $payment_request->create_request($order, $this->merchant_secret);
-        //         $form_str = $payment_request->generate_form_request($payment_request);
-        //         return $form_str;
-        //     } catch (Exception $ex) { 
-        //         $this->log(print_r($ex,true));
-        //     }
-        // }      
-        
+  
         /**
 		 * Logging method. 
 		 */

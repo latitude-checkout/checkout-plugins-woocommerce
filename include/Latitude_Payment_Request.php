@@ -9,9 +9,8 @@ class Latitude_Payment_Request {
 
     public function __construct(  
     ) { 
-    }
-      
-
+    } 
+    
     private function log($message) {
         if ($this->logger === null) {
             $this->logger = wc_get_logger();

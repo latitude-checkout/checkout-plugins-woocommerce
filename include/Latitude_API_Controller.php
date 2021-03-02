@@ -1,12 +1,10 @@
 <?php  
-
-use Latitude_Gateway_Interface as GatewayInterface;
-
+ 
 //reference: https://www.sitepoint.com/creating-custom-endpoints-for-the-wordpress-rest-api/
 class Latitude_API_Controller extends WP_REST_Controller {  
 
-    public function __construct( GatewayInterface $gateway ) {
-		 $this->_gateway = $gateway;
+    public function __construct( ) {
+		 
 	} 
 	/**
 	 * Register the REST API routes.
@@ -34,16 +32,16 @@ class Latitude_API_Controller extends WP_REST_Controller {
 	 
 	public function confirm_payment_request( $request ) { 
  
-		if (!($this->_gateway instanceof GatewayInterface)) {
-			return new WP_Error( 'nullinstance', 'null instance', array( 'status' => 404 ) );
-		}
+		// if (!($this->_gateway instanceof GatewayInterface)) {
+		// 	return new WP_Error( 'nullinstance', 'null instance', array( 'status' => 404 ) );
+		// }
 		 
-		$parameters = $request->get_json_params() ; 
-		$result = $this->_gateway->payment_request_callback($parameters);
+		// $parameters = $request->get_json_params() ; 
+		// $result = $this->_gateway->payment_request_callback($parameters);
 		 
-		if ($result['valid'] == 'false') {
-			return new WP_Error( 'invalid data', $result['error'], array( 'status' => 404 ) );
-		}
+		// if ($result['valid'] == 'false') {
+		// 	return new WP_Error( 'invalid data', $result['error'], array( 'status' => 404 ) );
+		// }
 		return rest_ensure_response( true ); 
 
 	} 
@@ -55,10 +53,10 @@ class Latitude_API_Controller extends WP_REST_Controller {
 
 	public function whatsup( $request ) {
 
-		if (!($this->_gateway instanceof GatewayInterface)) {
-			return new WP_Error( 'nullinstance', 'null instance', array( 'status' => 404 ) );
-		}
-		$this->_gateway->sayhello(); 
+		// if (!($this->_gateway instanceof GatewayInterface)) {
+		// 	return new WP_Error( 'nullinstance', 'null instance', array( 'status' => 404 ) );
+		// }
+		// $this->_gateway->sayhello(); 
 		$parameters = $request->get_json_params();
 		return new WP_REST_Response($parameters, 200);
 	}	

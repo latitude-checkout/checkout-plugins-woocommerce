@@ -162,7 +162,10 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 			ob_start();
 			include "{$this->include_path}/Payment_Fields.html.php"; 
 			$html = ob_get_clean(); 
-			echo apply_filters( 'latitude_html_at_checkout', $html);        
+            echo apply_filters( 'latitude_html_at_checkout', $html);    
+            
+            $payload = $this->payment_request->build_request_parameters($order_id, $this->merchant_id, $this->test_mode);
+            $this->log(__('payload: ' . wp_json_encode($payload)));
         }
 
 		/**

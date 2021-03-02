@@ -10,7 +10,7 @@ class Latitude_Payment_Request {
     public function __construct(  
     ) { 
     } 
-    
+
     private function log($message) {
         if ($this->logger === null) {
             $this->logger = wc_get_logger();
@@ -37,7 +37,7 @@ class Latitude_Payment_Request {
         $order_lines = $this->build_order_lines($order);  
         $payment_request = array (
             "merchantId"            => $merchant_id,
-            "merchantName"          => "wootest",  // TODO: get dynamically
+            "merchantName"          => get_option('blogname'),  
             "isTest"                => $is_test,
             "merchantReference"     => strval($order_id),  
             "amount"                => floatval($order->get_total()),

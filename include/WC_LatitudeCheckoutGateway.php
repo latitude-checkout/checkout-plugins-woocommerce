@@ -179,11 +179,12 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 return;
             } 
 
+            $this->log('process_payment'); 
             $payload = $this->payment_request->build_request_parameters($order_id, $this->merchant_id, $this->test_mode);
             $this->log(__('payload: ' . wp_json_encode($payload)));
 
             // send the post via wp_remote_post
-            $url = $this->payment_request->get_api_url($this->test_mode);    
+            $url = $this->payment_request->get_purchase_api_url($this->test_mode);    
             $this->log(__('sending to: ' . $url));       
 
             $response = wp_remote_post($url, array(
@@ -236,22 +237,31 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 );     
             }
 
-           
-            $redirectUrl = $rsp_body['redirectUrl'];
-            $txnReference = $rsp_body['transactionReference'];     
-            $this->log(__("redirectUrl: ". $redirectUrl));
-            $this->log(__("transactionReference: ". $txnReference));
 
-           // Reduce stock levels
-            $order->reduce_order_stock();
+            $redirect_url = $rsp_body['redirectUrl'];
+            $transaction_id = $rsp_body['transactionReference'];     
+            $this->log(__("redirectUrl: ". $redirect_url));
+            $this->log(__("transactionReference: ". $transaction_id)); 
+            update_post_meta( $order_id , 'transaction_id', $transaction_id);
+ 
+
+        //      //TODO: redirect URL here
+        //      wp_redirect($redirect_url);
+        //    // Reduce stock levels
+        //     // $order->reduce_order_stock();
                     
-            // Remove cart
-            WC()->cart->empty_cart();
-            // Return thankyou redirect
+        //     // Remove cart
+        //     WC()->cart->empty_cart();
+        //     // Return thankyou redirect
+        //     return array(
+        //         'result' => 'success',
+        //         'redirect' => $this->get_return_url( $order ),
+        //     );        
+
             return array(
                 'result' => 'success',
-                'redirect' => $this->get_return_url( $order ),
-            );        
+                'redirect' => $redirect_url,
+            );       
 
         }    
 
@@ -281,8 +291,27 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             return $error;
         }
 
-        public function receipt_page($order_id) { 
+        public function receipt_page($order_id) {  
+            $this->log('receipt_page');  
         }
+
+        public function on_order_received($order_id) {   
+            $this->log('on_order_received'); 
+
+            $order = wc_get_order( $order_id );  
+            $transaction_id = $order->get_meta('transaction_id');
+            $this->log(__('transaction_id: ' . $transaction_id)); 
+
+
+            if ( $order->has_status( 'failed' ) ) {
+                $this->log('order failed');  
+                // redirect to cart??? 
+            } else {
+                $this->log('order verified');  
+            }
+
+        }
+ 
   
         /**
 		 * Logging method. 

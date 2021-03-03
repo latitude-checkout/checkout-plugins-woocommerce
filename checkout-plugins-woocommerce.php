@@ -60,6 +60,8 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
 			add_action( "woocommerce_update_options_payment_gateways_{$gateway->id}", array($gateway, 'refresh_configuration'), 11, 0 );   
             add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) ); 
 			add_action( "woocommerce_receipt_{$gateway->id}" , array($gateway, 'receipt_page'), 10, 1); 
+			add_action( 'woocommerce_thankyou', array($gateway, 'verify_order'), 10, 1); 
+			// add_action( 'woocommerce_checkout_update_order_meta',  array($gateway, 'update_order_data'), 10, 2);
 			// add_action( 'rest_api_init', array( $gateway, 'register_routes'));        
 
 

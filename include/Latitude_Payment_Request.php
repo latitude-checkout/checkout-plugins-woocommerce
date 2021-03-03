@@ -18,8 +18,13 @@ class Latitude_Payment_Request {
         $this->logger->debug($message, array('source' => 'latitude_checkout'));
     }
 
-    public function get_api_url( $is_test) {
+    public function get_purchase_api_url( $is_test) {
         $url = __( ( $is_test ? LatitudeConstants::API_URL_TEST : LatitudeConstants::API_URL_PROD) . "/purchase");
+        return $url;
+    }  
+
+    public function get_verify_purchase_api_url( $is_test, $transaction_id) {
+        $url = __( ( $is_test ? LatitudeConstants::API_URL_TEST : LatitudeConstants::API_URL_PROD) . "/purchase" . "/" . $transaction_id . "/verify");
         return $url;
     }  
 

@@ -2,13 +2,15 @@
 
 use Constants as LatitudeConstants; 
 
-class Latitude_Payment_Request { 
+class Latitude_Purchase_Request { 
  
  
     protected $logger = null;
+    protected $gateway;
 
     public function __construct(  
     ) { 
+        $this->gateway = WC_LatitudeCheckoutGateway::get_instance();
     } 
 
     private function log($message) {
@@ -18,17 +20,8 @@ class Latitude_Payment_Request {
         $this->logger->debug($message, array('source' => 'latitude_checkout'));
     }
 
-    public function get_purchase_api_url( $is_test) {
-        $url = __( ( $is_test ? LatitudeConstants::API_URL_TEST : LatitudeConstants::API_URL_PROD) . "/purchase");
-        return $url;
-    }  
-
-    public function get_verify_purchase_api_url( $is_test, $transaction_id) {
-        $url = __( ( $is_test ? LatitudeConstants::API_URL_TEST : LatitudeConstants::API_URL_PROD) . "/purchase" . "/" . $transaction_id . "/verify");
-        return $url;
-    }  
-
-    public function build_request_parameters($order_id, $merchant_id, $is_test) { 
+ 
+    public function build_parameters($order_id) { 
 
         global $woocommerce;
         $order = new WC_Order( $order_id );     
@@ -41,9 +34,9 @@ class Latitude_Payment_Request {
  
         $order_lines = $this->build_order_lines($order);  
         $payment_request = array (
-            "merchantId"            => $merchant_id,
+            "merchantId"            => $this->gateway->get_merchant_id(),
             "merchantName"          => get_option('blogname'),  
-            "isTest"                => $is_test,
+            "isTest"                => $this->gateway->get_test_mode(),
             "merchantReference"     => strval($order_id),  
             "amount"                => floatval($order->get_total()),
             "currency"              => $order->get_currency(),

@@ -26,8 +26,7 @@ class Constants
     const VERSION = "version";
     const ADVANCED_CONFIG = "advanced_config";
   
-    const API_URL_TEST = 'https://api.dev.latitudefinancial.com/v1/applybuy-checkout-service'; 
-    const API_URL_PROD = 'https://api.test.latitudefinancial.com/v1/applybuy-checkout-service';
+
  
 
     // const API_URL_PROD = 'https://api.latitudefinancial.com/v1/applybuy-checkout-service'; 

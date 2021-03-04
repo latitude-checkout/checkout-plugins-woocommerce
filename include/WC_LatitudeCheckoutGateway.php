@@ -34,7 +34,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 		 * Protected variables.
 		 * 
 		 */
-        protected $merchant_id, $merchant_secret, $test_mode, $payment_request = null;          
+        protected $merchant_id, $merchant_secret, $test_mode, $purchase_request, $checkout_service = null;          
         
         private $include_path; 
      	/**
@@ -58,16 +58,17 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             $this->merchant_id = $this->get_option('merchant_id');
             $this->merchant_secret = $this->get_option('merchant_secret');
             $this->test_mode = 'yes' === $this->get_option( 'testmode' ); 
-            self::$log_enabled = $this->test_mode;
- 
-            $this->payment_request = new Latitude_Payment_Request;
+            self::$log_enabled = $this->test_mode; 
+
+
+
         }  
 
         /**
 		 * Instantiate the class if no instance exists. Return the instance.
 		 * 
 		 */
-		public static function getInstance()
+		public static function get_instance()
 		{
 			if (is_null(self::$instance)) {
 				self::$instance = new self;
@@ -104,14 +105,37 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 				$this->merchant_id = $this->settings['merchant_id'];
             }
             if (array_key_exists('merchant_secret', $this->settings)) {
-				$this->merchant_id = $this->settings['merchant_secret'];
+				$this->merchant_secret = $this->settings['merchant_secret'];
             } 
 			if (array_key_exists('testmode', $this->settings)) {
-                $this->test_mode = ($this->settings['test_mode'] == 'yes');
+                $this->test_mode = ('yes' === $this->settings['testmode']);
                 self::$log_enabled = $this->test_mode;
 			} 
         }
         
+        /**
+		 * Get the Merchant ID from our user settings.  
+		 */
+		public function get_merchant_id() { 
+			return $this->settings['merchant_id'];
+		}
+
+		/**
+		 * Get the Merchant Secret Key from our user settings.  
+		 */
+		public function get_secret_key() {
+			return $this->settings['merchant_secret'];
+        }
+        
+        /**
+		 * Get the Test Mode Enabled from our user settings.  
+		 */
+		public function get_test_mode() {
+            $this->test_mode = ('yes' === $this->settings['testmode']);
+            $this->log(__('is test mode: ' . $this->test_mode)); 
+			return ($this->test_mode );
+        }
+
        /**
 		 *
 		 * Hooked onto the "woocommerce_gateway_icon" filter.
@@ -163,9 +187,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 			include "{$this->include_path}/Payment_Fields.html.php"; 
 			$html = ob_get_clean(); 
             echo apply_filters( 'latitude_html_at_checkout', $html);    
-            
-            $payload = $this->payment_request->build_request_parameters($order_id, $this->merchant_id, $this->test_mode);
-            $this->log(__('payload: ' . wp_json_encode($payload)));
+             
         }
 
 		/**
@@ -179,42 +201,27 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 return;
             } 
 
+            
+            $purchase_request = new Latitude_Purchase_Request;  
             $this->log('process_payment'); 
-            $payload = $this->payment_request->build_request_parameters($order_id, $this->merchant_id, $this->test_mode);
+            $payload = $purchase_request->build_parameters($order_id);
             $this->log(__('payload: ' . wp_json_encode($payload)));
 
-            // send the post via wp_remote_post
-            $url = $this->payment_request->get_purchase_api_url($this->test_mode);    
-            $this->log(__('sending to: ' . $url));       
-
-            $response = wp_remote_post($url, array(
-                'method'      => 'POST',
-                'headers'     => array(
-                    'Authorization' => 'Basic ' . base64_encode( $this->merchant_id . ':' . $this->merchant_secret ),
-                    'Content-Type'  => 'application/json',
-                ),
-                'body'        => wp_json_encode($payload) 
-            ));
-            $this->log(json_encode($response));  
+          
+            $checkout_service = new Latitude_Checkout_Service;
+            $response = $checkout_service->send_purchase_request($payload);
 
             global $woocommerce;
-            $order = new WC_Order( $order_id );   
+            $order = new WC_Order( $order_id );    
 
-            $rsp_code = $response['response']['code'];
-            if ($rsp_code != "200") {
-                $error_string = $response['response']['message'];
-                if (empty($error_string)) {
-                    $error_string = "Bad request.";
-                }
-                $this->log(__("error (response code): ". $error_string));
+            if (!is_array($response)  || $response['result'] == 'failure') {
                 return array(
                     'result' => 'failure',
                     'redirect' => $order->get_checkout_payment_url(false), //TODO: Go back to cart
-                );     
+                );                    
             }
-
-            $rsp_body = json_decode($response['body'], true); 
-
+               
+            $rsp_body = $response['response'];
             $result = $rsp_body['status'];
             if ($result != "completed") {
                 $error_string = $rsp_body['error'];
@@ -235,28 +242,13 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                     'result' => 'failure',
                     'redirect' => $order->get_checkout_payment_url(false), //TODO: Go back to cart
                 );     
-            }
-
-
+            } 
             $redirect_url = $rsp_body['redirectUrl'];
             $transaction_id = $rsp_body['transactionReference'];     
             $this->log(__("redirectUrl: ". $redirect_url));
             $this->log(__("transactionReference: ". $transaction_id)); 
             update_post_meta( $order_id , 'transaction_id', $transaction_id);
- 
-
-        //      //TODO: redirect URL here
-        //      wp_redirect($redirect_url);
-        //    // Reduce stock levels
-        //     // $order->reduce_order_stock();
-                    
-        //     // Remove cart
-        //     WC()->cart->empty_cart();
-        //     // Return thankyou redirect
-        //     return array(
-        //         'result' => 'success',
-        //         'redirect' => $this->get_return_url( $order ),
-        //     );        
+  
 
             return array(
                 'result' => 'success',
@@ -295,21 +287,34 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             $this->log('receipt_page');  
         }
 
-        public function on_order_received($order_id) {   
-            $this->log('on_order_received'); 
+        public function on_payment_callback($order_id) {   
+            $this->log('on_payment_callback'); 
+
+            if (array_key_exists('orderId', $_GET)) {
+				$latitudecheckout_order_id = $_GET['orderId'];
+
+                $this->log("Checking status of WooCommerce Order #{$order_id} (Afterpay Order #{$latitudecheckout_order_id})");
+            }
 
             $order = wc_get_order( $order_id );  
             $transaction_id = $order->get_meta('transaction_id');
             $this->log(__('transaction_id: ' . $transaction_id)); 
-
-
-            if ( $order->has_status( 'failed' ) ) {
-                $this->log('order failed');  
-                // redirect to cart??? 
-            } else {
-                $this->log('order verified');  
+            if ( empty($transaction_id)) {
+                // exit and redirect to card?
+               return $order_id;
             }
+        
+            $checkout_service = new Latitude_Checkout_Service;
+            $response = $checkout_service->verify_purchase_request($transaction_id); 
+            if ($response === false) {
+                $this->log("verify_purchase_request() returned false.");
+            } elseif (is_array($response)) {
+                $rsp_body = $response['response'];
+                $this->log("verify_purchase_request() returned data.");
+                //TODO ???
 
+            } 
+            return $order_id;
         }
  
   

@@ -41,7 +41,8 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
 		{   
 			if (class_exists('WC_Payment_Gateway')) {
 				require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'include/Constants.php';
-				require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'include/Latitude_Payment_Request.php'; 
+				require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'include/Latitude_Purchase_Request.php'; 
+				require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'include/Latitude_Checkout_Service.php'; 
 				require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'include/WC_LatitudeCheckoutGateway.php'; 
 			}
         }
@@ -53,15 +54,14 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
 		 */
 		public function __construct()
 		{
-			$gateway = WC_LatitudeCheckoutGateway::getInstance(); 
+			$gateway = WC_LatitudeCheckoutGateway::get_instance(); 
 			add_action( "woocommerce_update_options_payment_gateways_{$gateway->id}", array($gateway, 'process_admin_options'), 10, 0 );    
 			add_filter( 'woocommerce_payment_gateways', array($gateway, 'add_latitudecheckoutgateway'), 10, 1 );
 			
 			add_action( "woocommerce_update_options_payment_gateways_{$gateway->id}", array($gateway, 'refresh_configuration'), 11, 0 );   
             add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) ); 
-			add_action( "woocommerce_receipt_{$gateway->id}" , array($gateway, 'receipt_page'), 10, 1); 
-			add_action( 'woocommerce_thankyou', array($gateway, 'verify_order'), 10, 1); 
-			// add_action( 'woocommerce_checkout_update_order_meta',  array($gateway, 'update_order_data'), 10, 2);
+			add_action( "woocommerce_receipt_{$gateway->id}" , array($gateway, 'receipt_page'), 10, 1);  
+			add_filter( 'woocommerce_thankyou_order_id', array($gateway, 'on_payment_callback'), 10, 1 );
 			// add_action( 'rest_api_init', array( $gateway, 'register_routes'));        
 
 

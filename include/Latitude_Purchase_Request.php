@@ -23,8 +23,9 @@ class Latitude_Purchase_Request {
  
     public function build_parameters($order_id) { 
 
-        global $woocommerce;
-        $order = new WC_Order( $order_id );     
+        // global $woocommerce;
+        // $order = new WC_Order( $order_id );     
+        $order = wc_get_order( $order_id ); 
 
         // //TODO: check if only logged in users are allowed
         // if (!is_user_logged_in()) {
@@ -70,7 +71,7 @@ class Latitude_Purchase_Request {
             "orderLines"           => $order_lines,
             "merchantUrls"         => array(
                                         "cancel"        =>  WC()->cart->get_checkout_url(),
-                                        "callback"      => __( get_site_url(). LatitudeConstants::CALLBACK_ROUTE ),
+                                        "callback"      =>  "", //__( get_site_url(). LatitudeConstants::CALLBACK_ROUTE ),
                                         "complete"      => $order->get_checkout_order_received_url()
                                     ), 
             "totalDiscountAmount" =>  floatval($order->get_total_discount()),       

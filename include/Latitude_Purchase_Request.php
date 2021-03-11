@@ -78,7 +78,7 @@ class Latitude_Purchase_Request {
             "totalShippingAmount" =>  floatval($order->get_shipping_total()),                                            
             "totalTaxAmount"      =>  floatval($order->get_total_tax()), 
             "platformType"        =>  LatitudeConstants::WC_LATITUDE_GATEWAY_PLATFORM,
-            "platformVersion"     =>  $this->get_woocommerce_version(),
+            "platformVersion"     =>  WC()->version, //$this->get_woocommerce_version(),
             "pluginVersion"       =>  LatitudeConstants::WC_LATITUDE_GATEWAY_VERSION,
         );  
         return $payment_request;

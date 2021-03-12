@@ -61,11 +61,14 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
 			add_action( "woocommerce_update_options_payment_gateways_{$gateway->id}", array($gateway, 'refresh_configuration'), 11, 0 );   
             add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) ); 
 			add_action( "woocommerce_receipt_{$gateway->id}" , array($gateway, 'receipt_page'), 10, 1);  
-			add_action( 'template_redirect', array($gateway, 'check_for_declined_payments'), 10, 0 );
-			add_filter( 'woocommerce_thankyou_order_id', array($gateway, 'on_payment_callback'), 10, 1 ); 
-			
+			// add_action( 'template_redirect', array($gateway, 'check_for_declined_payments'), 10, 0 ); 
 
+			// add_action('init', function() {
+			// 	remove_filter('get_header',  array($gateway, 'wc_clear_cart_after_payment') );
+			// 	add_action('get_header',  array($gateway, 'st_wc_clear_cart_after_payment') ); });
 
+			add_action( 'woocommerce_api_latitude_checkout', array( $gateway, 'on_latitude_checkout_callback' ) );
+			//add_filter( 'woocommerce_thankyou_order_id', array($gateway, 'on_payment_callback'), 10, 1 );  
             add_filter('woocommerce_gateway_icon', array($gateway,'filter_latitude_gateway_icon'), 10, 2);
             add_filter('woocommerce_order_button_text', array($gateway, 'filter_place_order_button_text'), 10, 1 );  
 			add_filter( 'woocommerce_endpoint_order-pay_title', array($gateway,'filter_order_pay_title'), 10, 2  ); 

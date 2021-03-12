@@ -17,7 +17,7 @@ class Constants
     
     const CALLBACK_ROUTE = '/wp-json/latitude/v1/callback';
     const CANCEL_ROUTE = 'checkout/cart';
-    const COMPLETE_ROUTE = 'latitude/payment/complete';
+    const COMPLETE_ROUTE = '/wc-api/latitude_checkout';
 
     const ACTIVE = 'active';
     const MERCHANT_ID = 'merchant_id';

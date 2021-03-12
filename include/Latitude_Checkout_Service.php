@@ -76,12 +76,11 @@ class Latitude_Checkout_Service {
         $url = $this->get_verify_purchase_api($this->gateway->get_test_mode());  
         $this->log(__('sending verify_purchase_request to: ' . $url));      
 
-        $response = wp_remote_get( $url,  
-            array(    
-                'timeout' => 80,    
+        $response = wp_remote_post( $url,  
+            array(     
                 'headers'     => array(
                     'Authorization' => $this->build_auth_header(),   
-                    'Accept' => 'application/json'
+                    'Content-Type'  => 'application/json'
             ),
             'body'        => json_encode($payload) 
         ));

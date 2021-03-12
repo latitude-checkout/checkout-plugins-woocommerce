@@ -225,16 +225,8 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             }
                
             $rsp_body = $response['response'];
-            $result = $rsp_body['result'];
-            if ($result == 'failed') {
-                $error_string = $rsp_body['error'];
-                if (empty($error_string)) {
-                    $error_string = "Request failure";
-                } 
-                $this->log(__("error (response body): ". $error_string)); 
-                return $this->redirect_to_cart_on_error($order, $error_string);  
-            }
-
+            $result = $rsp_body['result']; 
+            
             if ($result == 'pending') { 
                 $error_string = $this->is_valid_order_response($rsp_body, $order);
                 if (!empty($error_string)) { 
@@ -248,43 +240,34 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 if (empty($redirect_url)) { 
                     return $this->redirect_to_cart_on_error($order, "Latitude Interest Free Gateway is not reachable."); 
                 }
+ 
+                if ( ! is_ajax() ) {
+                    wp_safe_redirect( $redirect_url );
+                    exit;
+                } 
+                wp_send_json(array(
+                        'result' => 'success',
+                        'redirect' => $redirect_url
+                    ));
+                // return array(
+                //     'result' => 'success',
+                //     'redirect' => $redirect_url
+                // );       
 
-                $transaction_reference = $rsp_body['transactionReference'];     
-                $this->log(__("transactionReference: ". $transaction_reference)); 
-                if (empty($transaction_reference)) {
-                    return $this->redirect_to_cart_on_error($order, "Latitude Interest Free Gateway cannot validate transaction"); 
-                }  
-                update_post_meta( $order_id , '_transactionReference', $transaction_reference);
-     
-                return array(
-                    'result' => 'success',
-                    'redirect' => $redirect_url,
-                );       
-            }
-
-            $this->log("Error: Payment request cannot proceed for this order. Order Reference: {$order_id}");
-            return array(
-                'result' => 'failure',
-                'redirect' => $order->get_checkout_payment_url(false), //TODO: Go back to cart
-            );     
-
-        }    
-
-        // FOR TESTING verify ENDPOINT only
-        private function by_pass_purchase_endpoint($order_id) {
-            $payload = array(   
-                "transactionReference" => "d344bd7d-6661-4366-8b42-0d4d62593bb8",
-                "merchantReference" => "424"
-            ); 
-            $checkout_service = new Latitude_Checkout_Service;
-            $response = $checkout_service->verify_purchase_request($payload); 
-
-            $order = wc_get_order( $order_id ); 
-            return array(
-                'result' => 'failure',
-                'redirect' => $order->get_checkout_payment_url(false), //TODO: Go back to cart
-            );    
-        }
+            } elseif ($result == 'failed') {
+                $error_string = $rsp_body['error'];
+                if (empty($error_string)) {
+                    $error_string = "Request failure";
+                } 
+                $this->log(__("error (response body): ". $error_string)); 
+                return $this->redirect_to_cart_on_error($order, $error_string);  
+            } else {
+                // Purchase request returned unexpected result (neither pending nor failed) 
+                $this->log(__("unexpected result received from purchase request: ". $result)); 
+                return $this->redirect_to_cart_on_error($order, "Unexpected result received from purchase request.");  
+            } 
+        }     
+ 
 
         /**
 		 *
@@ -338,9 +321,88 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             $this->log('receipt_page');  
 
             $order = wc_get_order( $order_id );   
-            $transaction_reference = $order->get_meta('_transactionReference');
-            $this->log(__('(on receipt_page) transaction_reference: ' . $transaction_reference)); 
+            
+            $is_pending = $this->is_order_pending($order); 
+            $this->log(__('(on receipt_page) is_pending: ' . $is_pending)); 
+            if ($is_pending) {
+                wc_print_notice("Payment declined for this order. ");
+                apply_filters( 'woocommerce_endpoint_order-pay_title', 'Pay for order', true );
+            }
 
+        }
+   
+        // public function on_payment_callback($order_id) {  
+        //     $this->log('on_payment_callback');  
+        public function on_latitude_checkout_callback() {
+            $this->log('on_latitude_checkout_callback');  
+ 
+            if (array_key_exists('gatewayReference', $_GET)) {
+				$gatewayReference = $_GET['gatewayReference']; 
+            }
+            if (array_key_exists('transactionReference', $_GET)) {
+				$transactionReference = $_GET['transactionReference'];
+            }
+            if (array_key_exists('merchantReference', $_GET)) {
+				$merchantReference = $_GET['merchantReference'];
+            } 
+            $this->log('gatewayReference: ' . $gatewayReference);  
+            $this->log('transactionReference: ' . $transactionReference);  
+            $this->log('merchantReference: ' . $merchantReference);  
+ 
+             
+            if (empty($gatewayReference) || empty($transactionReference) || empty($merchantReference)) { 
+                wp_redirect( wc_get_cart_url());
+                exit; 
+            }
+            $order = wc_get_order( $merchantReference );  
+            $payload = array(  
+                "gatewayReference" => $gatewayReference,
+                "transactionReference" => $transactionReference,
+                "merchantReference" => $merchantReference
+            ); 
+
+            $checkout_service = new Latitude_Checkout_Service;
+            $response = $checkout_service->verify_purchase_request($payload);  
+
+            if ($response === false) { 
+                $this->log("Verify purchase failed.");
+                $order->add_order_note( sprintf(__( '%s failed to verify purchase.', 'woo_latitudecheckout' ), $order->get_payment_method_title()) ); 
+                 // wc_add_notice( __( 'Payment failed due to /verify api error', 'woo_latitudecheckout' ), 'error' );
+                // if (wp_redirect( wc_get_checkout_url() )) {
+                //     exit;
+                // }
+            } elseif (is_array($response)) {
+                $rsp_body = $response['response']; 
+                $this->log("verify_purchase_request() returned data");
+                $this->log($rsp_body);
+
+                $is_order_pending =  $this->is_order_pending($order);
+
+                $result = $rsp_body['result'];
+                $payment_completed = false;
+                if ($result == "completed") {
+                    if ($is_order_pending) { 
+                        $this->log("Updating status of WooCommerce Order #{$order_id} to \"completed\".");
+                        $order->payment_complete($transactionReference);
+                        $payment_completed = true;
+                        $order->add_order_note( sprintf(__( 'Payment approved. Transaction reference: %s', 'woo_latitudecheckout' ), $transactionReference) ); 
+                        wc_empty_cart();   
+                    }   
+                } 
+                
+                if (!$payment_completed) {
+                    //TODO ??? -> payment failed -> display error and redirect to cart
+                    $this->log("Payment declined for WooCommerce Order #{$order_id}");
+                    $order->add_order_note( sprintf(__( 'Payment declined. Transaction reference: %s', 'woo_latitudecheckout' ), $transactionReference) );   
+                     
+                }
+
+            } 
+            
+            wp_redirect(  $order->get_checkout_payment_url(true)); 
+        }
+  
+        private function is_order_pending($order) {
             $is_pending = false;
             if (method_exists($order, 'has_status')) {  
                 $is_pending = $order->has_status( 'pending' ); 
@@ -350,95 +412,89 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                     $is_pending = true;
                 }
             }
-
-            $this->log(__('(on receipt_page) is_pending: ' . $is_pending)); 
-            if ($is_pending) {
-                wc_print_notice("Payment declined for this order. ");
-                apply_filters( 'woocommerce_endpoint_order-pay_title', 'Pay for order', true );
-            }
-
+            return $is_pending; 
         }
 
-        public function on_payment_callback($order_id) {   
-            $this->log('on_payment_callback');  
+        // public function on_old_payment_callback($order_id) {   
+        //     $this->log('on_old_payment_callback');   
 
-            $order = wc_get_order( $order_id );   
-            //get current order status
+        //     $order = wc_get_order( $order_id );   
+        //     //get current order status
 
-            $transaction_reference = $order->get_meta('_transactionReference');
-            $this->log(__('transaction_reference: ' . $transaction_reference)); 
-            if ( empty($transaction_reference)) {
-                // exit and redirect to card?
-               return $order_id;
-            }
+        //     $transaction_reference = $order->get_meta('_transactionReference');
+        //     $this->log(__('transaction_reference: ' . $transaction_reference)); 
+        //     if ( empty($transaction_reference)) {
+        //         // exit and redirect to card?
+        //        return $order_id;
+        //     }
         
-            $payload = array(  
-                "transactionReference" => $transaction_reference,
-                "merchantReference" => strval($order_id)
-            ); 
+        //     $payload = array(  
+        //         "transactionReference" => $transaction_reference,
+        //         "merchantReference" => strval($order_id)
+        //     ); 
 
-            $checkout_service = new Latitude_Checkout_Service;
-            $response = $checkout_service->verify_purchase_request($payload);  
+        //     $checkout_service = new Latitude_Checkout_Service;
+        //     $response = $checkout_service->verify_purchase_request($payload);  
 
-            if ($response === false) { 
-                $this->log("Payment declined for WooCommerce Order #{$order_id}. Cannot verify this transaction.");
-                $order->add_order_note( sprintf(__( 'Latitude Checkout Payment declined. Transaction reference: %s. Transaction cannot be verified.', 'woo_latitudecheckout' ), $transaction_reference) ); 
+        //     if ($response === false) { 
+        //         $this->log("Payment declined for WooCommerce Order #{$order_id}. Cannot verify this transaction.");
+        //         $order->add_order_note( sprintf(__( 'Latitude Checkout Payment declined. Transaction reference: %s. Transaction cannot be verified.', 'woo_latitudecheckout' ), $transaction_reference) ); 
 
-                // TODO: choose from either way to display error
-                /** option 1 **/
-                // wc_add_notice( __( 'Payment failed due to /verify api error', 'woo_latitudecheckout' ), 'error' );
-                // if (wp_redirect( wc_get_checkout_url() )) {
-                //     exit;
-                // }
+        //         // TODO: choose from either way to display error
+        //         /** option 1 **/
+        //         // wc_add_notice( __( 'Payment failed due to /verify api error', 'woo_latitudecheckout' ), 'error' );
+        //         // if (wp_redirect( wc_get_checkout_url() )) {
+        //         //     exit;
+        //         // }
                 
-                wp_redirect(  $order->get_checkout_payment_url(true));
-                exit; 
-            } elseif (is_array($response)) {
-                $rsp_body = $response['response']; 
-                $this->log("verify_purchase_request() returned data");
-                $this->log($rsp_body);
+        //         wp_redirect(  $order->get_checkout_payment_url(true));
+        //         exit; 
+        //     } elseif (is_array($response)) {
+        //         $rsp_body = $response['response']; 
+        //         $this->log("verify_purchase_request() returned data");
+        //         $this->log($rsp_body);
 
-                $is_pending = false;
-                if (method_exists($order, 'has_status')) {  
-                    $is_pending = $order->has_status( 'pending' ); 
-                } else {
-                    $this->log("order status: {$order->status}"); 
-                    if ($order->status == 'pending') {
-                        $is_pending = true;
-                    }
-                }
+        //         $is_pending = false;
+        //         if (method_exists($order, 'has_status')) {  
+        //             $is_pending = $order->has_status( 'pending' ); 
+        //         } else {
+        //             $this->log("order status: {$order->status}"); 
+        //             if ($order->status == 'pending') {
+        //                 $is_pending = true;
+        //             }
+        //         }
 
-                $result = $rsp_body['result'];
-                $payment_completed = false;
-                if ($result == "completed") {
-                    if ($is_pending) {
-                        //TODO ??? -> display error and redirect to cart
-                        $gateway_reference =  $result = $rsp_body['gatewayReference'];
-                        $promotion_reference =  $result = $rsp_body['promotionReference'];
-                        $merchant_reference =  $result = $rsp_body['merchantReference'];
-                        update_post_meta($order_id,'_gatewayReference' ,$gateway_reference);
-                        update_post_meta($order_id,'_promotionReference' ,$promotion_reference);
-                        update_post_meta($order_id,'_merchantReference' , $merchant_reference);
+        //         $result = $rsp_body['result'];
+        //         $payment_completed = false;
+        //         if ($result == "completed") {
+        //             if ($is_pending) {
+        //                 //TODO ??? -> display error and redirect to cart
+        //                 $gateway_reference =  $result = $rsp_body['gatewayReference'];
+        //                 $promotion_reference =  $result = $rsp_body['promotionReference'];
+        //                 $merchant_reference =  $result = $rsp_body['merchantReference'];
+        //                 update_post_meta($order_id,'_gatewayReference' ,$gateway_reference);
+        //                 update_post_meta($order_id,'_promotionReference' ,$promotion_reference);
+        //                 update_post_meta($order_id,'_merchantReference' , $merchant_reference);
 
-                        $this->log("Updating status of WooCommerce Order #{$order_id} to \"completed\".");
-                        $order->payment_complete($transaction_reference);
-                        $payment_completed = true;
-                        $order->add_order_note( sprintf(__( 'Payment approved. Transaction reference: %s', 'woo_latitudecheckout' ), $transaction_reference) ); 
-                        wc_empty_cart();   
-                    }   
-                } 
+        //                 $this->log("Updating status of WooCommerce Order #{$order_id} to \"completed\".");
+        //                 $order->payment_complete($transaction_reference);
+        //                 $payment_completed = true;
+        //                 $order->add_order_note( sprintf(__( 'Payment approved. Transaction reference: %s', 'woo_latitudecheckout' ), $transaction_reference) ); 
+        //                 wc_empty_cart();   
+        //             }   
+        //         } 
                 
-                if (!$payment_completed) {
-                    //TODO ??? -> payment failed -> display error and redirect to cart
-                    $this->log("Payment declined for WooCommerce Order #{$order_id}");
-                    $order->add_order_note( sprintf(__( 'Payment declined. Transaction reference: %s', 'woo_latitudecheckout' ), $transaction_reference) );   
-                    wp_redirect(  $order->get_checkout_payment_url(true));
-                   exit;  
-                }
+        //         if (!$payment_completed) {
+        //             //TODO ??? -> payment failed -> display error and redirect to cart
+        //             $this->log("Payment declined for WooCommerce Order #{$order_id}");
+        //             $order->add_order_note( sprintf(__( 'Payment declined. Transaction reference: %s', 'woo_latitudecheckout' ), $transaction_reference) );   
+        //             wp_redirect(  $order->get_checkout_payment_url(true));
+        //            exit;  
+        //         }
 
-            } 
-            return $order_id;
-        } 
+        //     } 
+        //     return $order_id;
+        // } 
 
         /**
 		 * Logging method. 

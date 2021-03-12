@@ -72,7 +72,7 @@ class Latitude_Purchase_Request {
             "merchantUrls"         => array(
                                         "cancel"        =>  WC()->cart->get_checkout_url(),
                                         "callback"      =>  "", //__( get_site_url(). LatitudeConstants::CALLBACK_ROUTE ),
-                                        "complete"      => $order->get_checkout_order_received_url()
+                                        "complete"      => __( get_site_url(). LatitudeConstants::COMPLETE_ROUTE ), //$order->get_checkout_order_received_url()
                                     ), 
             "totalDiscountAmount" =>  floatval($order->get_total_discount()),       
             "totalShippingAmount" =>  floatval($order->get_shipping_total()),                                            

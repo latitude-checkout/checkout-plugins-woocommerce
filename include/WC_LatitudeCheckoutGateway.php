@@ -348,7 +348,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 				$transactionReference = $_GET['transactionReference'];
             }
             if (array_key_exists('merchantReference', $_GET)) {
-				$merchantReference = $_GET['merchantReference'];
+				$order_id = $merchantReference = $_GET['merchantReference'];
             } 
             $this->log('gatewayReference: ' . $gatewayReference);  
             $this->log('transactionReference: ' . $transactionReference);  
@@ -357,12 +357,14 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 wp_redirect( wc_get_cart_url());
                 exit; 
             }
-            $order = wc_get_order( $merchantReference );  
+
             $payload = array(  
                 "gatewayReference" => $gatewayReference,
                 "transactionReference" => $transactionReference,
                 "merchantReference" => $merchantReference
             ); 
+
+            $order = wc_get_order( $order_id );  
 
             $checkout_service = new Latitude_Checkout_Service;
             $response = $checkout_service->verify_purchase_request($payload);  
@@ -387,6 +389,8 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                         $payment_completed = true;
                         $order->add_order_note( sprintf(__( 'Payment approved. Transaction reference: %s', 'woo_latitudecheckout' ), $transactionReference) ); 
                         wc_empty_cart();   
+                        wp_redirect($order->get_checkout_order_received_url());
+                        exit;
                     }   
                 } 
                 

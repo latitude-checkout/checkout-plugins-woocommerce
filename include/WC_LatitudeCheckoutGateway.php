@@ -347,9 +347,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             } 
             $this->log('gatewayReference: ' . $gatewayReference);  
             $this->log('transactionReference: ' . $transactionReference);  
-            $this->log('merchantReference: ' . $merchantReference);  
- 
-             
+            $this->log('merchantReference: ' . $merchantReference);   
             if (empty($gatewayReference) || empty($transactionReference) || empty($merchantReference)) { 
                 wp_redirect( wc_get_cart_url());
                 exit; 
@@ -367,10 +365,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             if ($response === false) { 
                 $this->log("Verify purchase failed.");
                 $order->add_order_note( sprintf(__( '%s failed to verify purchase.', 'woo_latitudecheckout' ), $order->get_payment_method_title()) ); 
-                 // wc_add_notice( __( 'Payment failed due to /verify api error', 'woo_latitudecheckout' ), 'error' );
-                // if (wp_redirect( wc_get_checkout_url() )) {
-                //     exit;
-                // }
+              
             } elseif (is_array($response)) {
                 $rsp_body = $response['response']; 
                 $this->log("verify_purchase_request() returned data");
@@ -414,92 +409,12 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             }
             return $is_pending; 
         }
-
-        // public function on_old_payment_callback($order_id) {   
-        //     $this->log('on_old_payment_callback');   
-
-        //     $order = wc_get_order( $order_id );   
-        //     //get current order status
-
-        //     $transaction_reference = $order->get_meta('_transactionReference');
-        //     $this->log(__('transaction_reference: ' . $transaction_reference)); 
-        //     if ( empty($transaction_reference)) {
-        //         // exit and redirect to card?
-        //        return $order_id;
-        //     }
-        
-        //     $payload = array(  
-        //         "transactionReference" => $transaction_reference,
-        //         "merchantReference" => strval($order_id)
-        //     ); 
-
-        //     $checkout_service = new Latitude_Checkout_Service;
-        //     $response = $checkout_service->verify_purchase_request($payload);  
-
-        //     if ($response === false) { 
-        //         $this->log("Payment declined for WooCommerce Order #{$order_id}. Cannot verify this transaction.");
-        //         $order->add_order_note( sprintf(__( 'Latitude Checkout Payment declined. Transaction reference: %s. Transaction cannot be verified.', 'woo_latitudecheckout' ), $transaction_reference) ); 
-
-        //         // TODO: choose from either way to display error
-        //         /** option 1 **/
-        //         // wc_add_notice( __( 'Payment failed due to /verify api error', 'woo_latitudecheckout' ), 'error' );
-        //         // if (wp_redirect( wc_get_checkout_url() )) {
-        //         //     exit;
-        //         // }
-                
-        //         wp_redirect(  $order->get_checkout_payment_url(true));
-        //         exit; 
-        //     } elseif (is_array($response)) {
-        //         $rsp_body = $response['response']; 
-        //         $this->log("verify_purchase_request() returned data");
-        //         $this->log($rsp_body);
-
-        //         $is_pending = false;
-        //         if (method_exists($order, 'has_status')) {  
-        //             $is_pending = $order->has_status( 'pending' ); 
-        //         } else {
-        //             $this->log("order status: {$order->status}"); 
-        //             if ($order->status == 'pending') {
-        //                 $is_pending = true;
-        //             }
-        //         }
-
-        //         $result = $rsp_body['result'];
-        //         $payment_completed = false;
-        //         if ($result == "completed") {
-        //             if ($is_pending) {
-        //                 //TODO ??? -> display error and redirect to cart
-        //                 $gateway_reference =  $result = $rsp_body['gatewayReference'];
-        //                 $promotion_reference =  $result = $rsp_body['promotionReference'];
-        //                 $merchant_reference =  $result = $rsp_body['merchantReference'];
-        //                 update_post_meta($order_id,'_gatewayReference' ,$gateway_reference);
-        //                 update_post_meta($order_id,'_promotionReference' ,$promotion_reference);
-        //                 update_post_meta($order_id,'_merchantReference' , $merchant_reference);
-
-        //                 $this->log("Updating status of WooCommerce Order #{$order_id} to \"completed\".");
-        //                 $order->payment_complete($transaction_reference);
-        //                 $payment_completed = true;
-        //                 $order->add_order_note( sprintf(__( 'Payment approved. Transaction reference: %s', 'woo_latitudecheckout' ), $transaction_reference) ); 
-        //                 wc_empty_cart();   
-        //             }   
-        //         } 
-                
-        //         if (!$payment_completed) {
-        //             //TODO ??? -> payment failed -> display error and redirect to cart
-        //             $this->log("Payment declined for WooCommerce Order #{$order_id}");
-        //             $order->add_order_note( sprintf(__( 'Payment declined. Transaction reference: %s', 'woo_latitudecheckout' ), $transaction_reference) );   
-        //             wp_redirect(  $order->get_checkout_payment_url(true));
-        //            exit;  
-        //         }
-
-        //     } 
-        //     return $order_id;
-        // } 
+ 
 
         /**
 		 * Logging method. 
 		 */
-		public static function log($message) {
+		protected static function log($message) {
 			if (is_null(self::$log_enabled)) {
 				# Get the settings key for the plugin
 				$gateway = new WC_LatitudeCheckoutGateway;
@@ -538,6 +453,8 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 self::$log->debug($message, array('source' => 'latitude_checkout'));
 			}
 		}
+
+   
 
     }
 }

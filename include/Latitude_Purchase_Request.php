@@ -22,16 +22,8 @@ class Latitude_Purchase_Request {
 
  
     public function build_parameters($order_id) { 
-
-        // global $woocommerce;
-        // $order = new WC_Order( $order_id );     
+ 
         $order = wc_get_order( $order_id ); 
-
-        // //TODO: check if only logged in users are allowed
-        // if (!is_user_logged_in()) {
-        //     // to exit or notify if user is logged or not
-        //     return;
-        // }
  
         $order_lines = $this->build_order_lines($order);  
         $payment_request = array (

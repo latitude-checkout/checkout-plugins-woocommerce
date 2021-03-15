@@ -198,9 +198,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             if(!$order_id) {
                 // log error for null order_id
                 return;
-            }  
-            
-            // $this->by_pass_purchase_endpoint($order_id);
+            }   
             
             $purchase_request = new Latitude_Purchase_Request;  
             $this->log('process_payment'); 
@@ -210,9 +208,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
           
             $checkout_service = new Latitude_Checkout_Service;
             $response = $checkout_service->send_purchase_request($payload);
-
-            // global $woocommerce;
-            // $order = new WC_Order( $order_id );    
+ 
             $order = wc_get_order( $order_id ); 
 
             if ($response == false) {
@@ -248,11 +244,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 wp_send_json(array(
                         'result' => 'success',
                         'redirect' => $redirect_url
-                    ));
-                // return array(
-                //     'result' => 'success',
-                //     'redirect' => $redirect_url
-                // );       
+                    )); 
 
             } elseif ($result == 'failed') {
                 $error_string = $rsp_body['error'];
@@ -308,6 +300,11 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             return $error;
         }
 
+        /**
+		 *
+		 * Hooked onto the "woocommerce_endpoint_order-pay_title" filter.
+		 *  
+		 */
         public function filter_order_pay_title($old_title, $payment_declined ) {
             //order-pay
             if ($payment_declined) {
@@ -317,6 +314,11 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
            
         }
 
+        /**
+		 *
+		 * Hooked onto the "woocommerce_receipt_{$gateway->id}" action.
+		 *  
+		 */
         public function receipt_page($order_id) {  
             $this->log('receipt_page');  
 
@@ -329,10 +331,13 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 apply_filters( 'woocommerce_endpoint_order-pay_title', 'Pay for order', true );
             }
 
-        }
-   
-        // public function on_payment_callback($order_id) {  
-        //     $this->log('on_payment_callback');  
+        } 
+
+        /**
+		 *
+		 * Hooked onto the "woocommerce_api_latitude_checkout" action.
+		 *  
+		 */        
         public function on_latitude_checkout_callback() {
             $this->log('on_latitude_checkout_callback');  
  
@@ -397,6 +402,11 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             wp_redirect(  $order->get_checkout_payment_url(true)); 
         }
   
+        /**
+		 *
+		 * Checks the pending status of the order
+		 *  
+		 */          
         private function is_order_pending($order) {
             $is_pending = false;
             if (method_exists($order, 'has_status')) {  
@@ -412,7 +422,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
  
 
         /**
-		 * Logging method. 
+		 * Logging method.  TODO: create log on error
 		 */
 		protected static function log($message) {
 			if (is_null(self::$log_enabled)) {

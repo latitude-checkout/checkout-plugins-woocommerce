@@ -373,22 +373,42 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 
             if ($response === false) { 
                 $this->log_error("Verify Purchase API failed.");
-                $order->add_order_note( sprintf(__( '%s failed to verify purchase.', 'woo_latitudecheckout' ), $order->get_payment_method_title()) ); 
+                $order->add_order_note( sprintf(__( '%s failed at Verify Purchase API.', 'woo_latitudecheckout' ), $order->get_payment_method_title()) ); 
               
             } elseif (is_array($response)) {
                 $rsp_body = $response['response']; 
                 $this->log("verify_purchase_request() returned data");
                 $this->log($rsp_body); 
                 $result = $rsp_body['result']; 
+                $transactionType = $rsp_body['transactionType']; 
+                $promotionReference = $rsp_body['promotionReference']; 
+                $message = $rsp_body['message'];
+                
                 if ($result == "completed") {
-                    $this->log("Updating status of WooCommerce Order #{$order_id} to \"completed\".");
-                    $order->payment_complete($transactionReference);
-                    $order->add_order_note( sprintf(__( 'Payment approved. Transaction reference: %s', 'woo_latitudecheckout' ), $transactionReference) ); 
-                    wc_empty_cart();   
-                    wp_redirect($order->get_checkout_order_received_url());
-                    exit; 
+                    if ( $transactionType == "sale") {
+                        $this->log("Updating status of WooCommerce Order #{$order_id} to \"completed\".");
+                        $order->payment_complete($transactionReference);
+                        $order->add_order_note( sprintf(__( 'Payment approved. Transaction reference: %s, Gateway reference: %s', 'woo_latitudecheckout' ), $transactionReference, $gatewayReference) ); 
+                        $order->update_meta_data( 'gatewayReference', $gatewayReference);
+                        $order->update_meta_data( 'transactionReference', $transactionReference);
+                        $order->update_meta_data( 'promotionReference', $promotionReference);
+                        $order->update_meta_data( 'transactionType', $transactionType);
+                        $order->save();
+                        wc_empty_cart();   
+                        wp_redirect($order->get_checkout_order_received_url());
+                        exit; 
+
+                    } elseif ( $transactionType == "authorisation") {
+                        // AUTHORISATION todo
+                    } else {
+                        // invalid TRANSTYPE
+                    }
+
                 } 
                 else {
+                    if (!empty($message)) {
+                        $this->log_warning("Verfiy Purchase Error Message:{$order_id}");
+                    }
                     $this->log_warning("Payment declined for WooCommerce Order #{$order_id}");
                     $order->add_order_note( sprintf(__( 'Payment declined. Transaction reference: %s', 'woo_latitudecheckout' ), $transactionReference) );   
                      
@@ -397,7 +417,9 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 // TODO
                 $this->log_error("Verify Purchase API returned invalid response.");
             }
-            wp_redirect(  $order->get_checkout_payment_url(true)); 
+
+            wc_print_notice("Payment declined for this order. ");
+            wp_redirect(  $order->get_checkout_payment_url(false)); 
         }
   
         /**
@@ -418,6 +440,30 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             return $is_pending; 
         }
  
+
+        /**
+		 *
+		 * Display additional order details in admin
+		 *  
+		 */       
+        public function display_order_data_in_admin( $order){
+            
+            if ( $order->get_payment_method() != $this->id ) {
+                return;
+            } 
+            ?> 
+             <p class="form-field form-field-wide"> <br>
+                <div class="latitude_payment_details">
+                <h3><?php esc_html_e( 'Latitude Interest Free Payment Details', 'woo_latitudecheckout' ); ?></h3>
+                    <?php   
+                    echo '<p><strong>' . __( 'Gateway Reference' ) . ': </strong><br>' . $order->get_meta('gatewayReference' ) . '<br></p>' ;
+                    echo '<p><strong>' . __( 'Transaction Reference' ) . ': </strong><br>' .  $order->get_meta( 'transactionReference')  . '<br></p>'; 
+                    echo '<p><strong>' . __( 'Promotion Reference' ) . ': </strong><br>' .  $order->get_meta('promotionReference' ) . '<br></p>';
+                    echo '<p><strong>' . __( 'Transaction Type' ) . ': </strong><br>' .  $order->get_meta( 'transactionType')  . '<br></p>'; 
+                    ?>
+                </div></p>
+            <?php 
+        } 
 
         /**
 		 * Logging method for debugging.  

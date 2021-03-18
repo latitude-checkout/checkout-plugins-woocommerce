@@ -65,6 +65,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             add_filter('woocommerce_gateway_icon', array($gateway,'filter_latitude_gateway_icon'), 10, 2);
             add_filter('woocommerce_order_button_text', array($gateway, 'filter_place_order_button_text'), 10, 1 );  
 			add_filter( 'woocommerce_endpoint_order-pay_title', array($gateway,'filter_order_pay_title'), 10, 2  ); 
+			add_action( 'woocommerce_admin_order_data_after_order_details',  array($gateway,'display_order_data_in_admin') );
         }         
 
          /**

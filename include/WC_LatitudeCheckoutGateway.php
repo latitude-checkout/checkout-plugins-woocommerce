@@ -221,7 +221,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                
             $rsp_body = $response['response'];
             $result = $rsp_body['result']; 
-            
+            $this->log($rsp_body);
             if ($result == 'pending') { 
                 $error_string = $this->is_valid_order_response($rsp_body, $order);
                 if (!empty($error_string)) { 
@@ -386,23 +386,24 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 
                 if ($result == "completed") {
                     if ( $transactionType == "sale") {
-                        $this->log("Updating status of WooCommerce Order #{$order_id} to \"completed\".");
-                        $order->payment_complete($transactionReference);
-                        $order->add_order_note( sprintf(__( 'Payment approved. Transaction reference: %s, Gateway reference: %s', 'woo_latitudecheckout' ), $transactionReference, $gatewayReference) ); 
-                        $order->update_meta_data( 'gatewayReference', $gatewayReference);
-                        $order->update_meta_data( 'transactionReference', $transactionReference);
-                        $order->update_meta_data( 'promotionReference', $promotionReference);
-                        $order->update_meta_data( 'transactionType', $transactionType);
-                        $order->save();
-                        wc_empty_cart();   
-                        wp_redirect($order->get_checkout_order_received_url());
-                        exit; 
-
+                        $this->log_info("WooCommerce Order #{$order_id} transaction is \"completed\".");
+                        $order->add_order_note( sprintf(__( 'Payment approved. Transaction reference: %s, Gateway reference: %s', 'woo_latitudecheckout' ), $transactionReference, $gatewayReference) );  
                     } elseif ( $transactionType == "authorisation") {
-                        // AUTHORISATION todo
+                        $this->log_info("WooCommerce Order #{$order_id} transaction is on \"authorisation\".");
+                        $order->add_order_note( sprintf(__( 'Payment under authorisation. Transaction reference: %s, Gateway reference: %s', 'woo_latitudecheckout' ), $transactionReference, $gatewayReference) );  
                     } else {
-                        // invalid TRANSTYPE
+                        $this->log_info("WooCommerce Order #{$order_id} transaction is \"accepted as {$transactionType}\".");
+                        $order->add_order_note( sprintf(__( 'Payment under $s. Transaction reference: %s, Gateway reference: %s', 'woo_latitudecheckout' ), $transactionType, $transactionReference, $gatewayReference) );  
                     }
+                    $order->payment_complete($transactionReference); 
+                    $order->update_meta_data( 'gatewayReference', $gatewayReference);
+                    $order->update_meta_data( 'transactionReference', $transactionReference);
+                    $order->update_meta_data( 'promotionReference', $promotionReference);
+                    $order->update_meta_data( 'transactionType', $transactionType);
+                    $order->save();
+                    wc_empty_cart();   
+                    wp_redirect($order->get_checkout_order_received_url());
+                    exit; 
 
                 } 
                 else {
@@ -500,6 +501,19 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             } 
             $message = self::format_message($message);
             self::$log->warning($message, array('source' => 'latitude_checkout'));
+			 
+        }
+
+        /**
+		 * Logging method for info 
+		 */
+        protected static function log_info($message) {
+          
+            if (is_null(self::$log)) {
+                self::$log = wc_get_logger();
+            } 
+            $message = self::format_message($message);
+            self::$log->info($message, array('source' => 'latitude_checkout'));
 			 
         }
 

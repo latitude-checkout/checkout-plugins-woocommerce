@@ -73,6 +73,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             $this->merchant_id = $this->get_option('merchant_id');
             $this->merchant_secret = $this->get_option('merchant_secret');
             $this->test_mode = 'yes' === $this->get_option('testmode');
+            $this->widget_data = $this->get_option('widget_content');
             self::$log_enabled = $this->test_mode;
         }
 
@@ -151,6 +152,33 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         {
             $this->test_mode = 'yes' === $this->settings['testmode'];
             return $this->test_mode;
+        }
+
+        /**
+         * Get the Widget settings from our user settings.  
+         */
+        public function get_widget_data()
+        {
+            echo '<div id="latitude-banner-container"></div>';
+            $widgetData = $this->settings['widget_content'];
+            $obj = json_decode($widgetData, true);
+            $product      = wc_get_product();
+            $category = get_the_terms($product->id, 'product_cat');
+            wp_enqueue_script('latitude_widget_js', '/wp-content/plugins/checkout-plugins-woocommerce/js/woocommerce.js');
+            wp_localize_script(
+                'latitude_widget_js',
+                'latitude_widget_js_vars',
+                array(
+                    'widgetSettings' => __($obj['productWidget']),
+                    "merchantId" => $this->merchant_id,
+                    "currency" => get_woocommerce_currency(),
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'category' => $category[0]->name,
+                    'price' => $product->price,
+                    'sku' => $product->sku
+                )
+            );
         }
 
         /**

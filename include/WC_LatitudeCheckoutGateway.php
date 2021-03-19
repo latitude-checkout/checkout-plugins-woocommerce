@@ -1,539 +1,707 @@
 <?php
- 
- use Constants as LatitudeConstants; 
- 
+
+use Constants as LatitudeConstants;
+
 /**
  * This is the Latitude Checkout - WooCommerce Payment Gateway Class.
  */
 if (!class_exists('WC_LatitudeCheckoutGateway')) {
+    class WC_LatitudeCheckoutGateway extends WC_Payment_Gateway
+    {
+        /**
+         * Public static variables.
+         *
+         */
+        public static $log = null,
+            $log_enabled = null;
 
-    
+        /**
+         * $version	    A reference to the plugin version, which will match
+         *								the value in the plugin comments.
+         */
+        public static $version = LatitudeConstants::WC_LATITUDE_GATEWAY_VERSION;
 
-    class WC_LatitudeCheckoutGateway extends WC_Payment_Gateway   {
+        /**
+         * Protected static variables.
+         *
+         */
+        protected static $instance = null;
 
-		/**
-		 * Public static variables.
-		 * 
-		 */
-        public static $log = null, $log_enabled = null;
+        /**
+         * Protected variables.
+         *
+         */
+        protected $merchant_id,
+            $merchant_secret,
+            $test_mode,
+            $purchase_request,
+            $checkout_service = null;
 
-		/**
-		 * $version	    A reference to the plugin version, which will match
-		 *								the value in the plugin comments.
-		 */
-		public static $version = LatitudeConstants::WC_LATITUDE_GATEWAY_VERSION;
+        private $include_path;
+        /**
+         * Class Constructor
+         *
+         */
 
-            
-    	/**
-		 * Protected static variables.
-		 * 
-		 */
-        protected static $instance = null;  
-
-    	/**
-		 * Protected variables.
-		 * 
-		 */
-        protected $merchant_id, $merchant_secret, $test_mode, $purchase_request, $checkout_service = null;          
-        
-        private $include_path; 
-     	/**
-		 * Class Constructor
-		 * 
-		 */       
-        public function __construct() { 
-    
+        public function __construct()
+        {
             $this->include_path = WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'include';
 
-            $this->id = LatitudeConstants::WC_LATITUDE_GATEWAY_ID;   
-            $this->method_title =  __(  LatitudeConstants::WC_LATITUDE_GATEWAY_NAME, 'woo_latitudecheckout');
-            $this->method_description = __( 'Use Latitude as payment method for WooCommerce orders.', 'woo_latitudecheckout'); 
-            $this->icon = apply_filters('woocommerce_gateway_icon', 10, 2 );  
+            $this->id = LatitudeConstants::WC_LATITUDE_GATEWAY_ID;
+            $this->method_title = __(
+                LatitudeConstants::WC_LATITUDE_GATEWAY_NAME,
+                'woo_latitudecheckout'
+            );
+            $this->method_description = sprintf(
+                __(
+                    'Use %s as payment method for WooCommerce orders.',
+                    'woo_latitudecheckout'
+                ),
+                LatitudeConstants::WC_LATITUDE_GATEWAY_NAME
+            );
+
+            $this->icon = apply_filters('woocommerce_gateway_icon', 10, 2);
             $this->has_fields = true; // in case you need a customform
-            $this->title =  _ ( LatitudeConstants::WC_LATITUDE_GATEWAY_NAME, 'woo_latitudecheckout');     
+            $this->title = _(
+                LatitudeConstants::WC_LATITUDE_GATEWAY_NAME,
+                'woo_latitudecheckout'
+            );
 
             $this->init_form_fields();
-            $this->init_settings(); 
+            $this->init_settings();
             $this->refresh_configuration();
             $this->merchant_id = $this->get_option('merchant_id');
             $this->merchant_secret = $this->get_option('merchant_secret');
-            $this->test_mode = 'yes' === $this->get_option( 'testmode' ); 
-            self::$log_enabled = $this->test_mode; 
-
-
-
-        }  
+            $this->test_mode = 'yes' === $this->get_option('testmode');
+            self::$log_enabled = $this->test_mode;
+        }
 
         /**
-		 * Instantiate the class if no instance exists. Return the instance.
-		 * 
-		 */
-		public static function get_instance()
-		{
-			if (is_null(self::$instance)) {
-				self::$instance = new self;
-			}
-			return self::$instance;
-        } 
- 
+         * Instantiate the class if no instance exists. Return the instance.
+         *
+         */
+        public static function get_instance()
+        {
+            if (is_null(self::$instance)) {
+                self::$instance = new self();
+            }
+            return self::$instance;
+        }
+
         /**
          * Adds the Latitude Checkout Payments Gateway to WooCommerce
-         * 
-         */ 
-        public function add_latitudecheckoutgateway( $gateways ) {
-            $gateways[] = 'WC_LatitudeCheckoutGateway';  
+         *
+         */
+
+        public function add_latitudecheckoutgateway($gateways)
+        {
+            $gateways[] = 'WC_LatitudeCheckoutGateway';
             return $gateways;
-        } 
+        }
 
-        
         /**
-        *  Default values for the plugin's Admin Form Fields
-        */       
-        public function init_form_fields(){ 
+         *  Default values for the plugin's Admin Form Fields
+         */
+
+        public function init_form_fields()
+        {
             include "{$this->include_path}/Admin_Form_Fields.php";
-        }    
-
+        }
 
         /**
-		 * Refresh cached configuration to ensure properties are up to date 
-		 *
-		 * Note:	Hooked onto the "woocommerce_update_options_payment_gateways_{$gateway->id}" Action.
-		 * 
-		 */
-		public function refresh_configuration() {
-			if (array_key_exists('merchant_id', $this->settings)) {
-				$this->merchant_id = $this->settings['merchant_id'];
+         * Refresh cached configuration to ensure properties are up to date
+         *
+         * Note:	Hooked onto the "woocommerce_update_options_payment_gateways_{$gateway->id}" Action.
+         *
+         */
+        public function refresh_configuration()
+        {
+            if (array_key_exists('merchant_id', $this->settings)) {
+                $this->merchant_id = $this->settings['merchant_id'];
             }
             if (array_key_exists('merchant_secret', $this->settings)) {
-				$this->merchant_secret = $this->settings['merchant_secret'];
-            } 
-			if (array_key_exists('testmode', $this->settings)) {
-                $this->test_mode = ('yes' === $this->settings['testmode']);
+                $this->merchant_secret = $this->settings['merchant_secret'];
+            }
+            if (array_key_exists('testmode', $this->settings)) {
+                $this->test_mode = 'yes' === $this->settings['testmode'];
                 self::$log_enabled = $this->test_mode;
-			} 
+            }
         }
-        
-        /**
-		 * Get the Merchant ID from our user settings.  
-		 */
-		public function get_merchant_id() { 
-			return $this->settings['merchant_id'];
-		}
 
-		/**
-		 * Get the Merchant Secret Key from our user settings.  
-		 */
-		public function get_secret_key() {
-			return $this->settings['merchant_secret'];
+        /**
+         * Get the Merchant ID from our user settings.
+         */
+        public function get_merchant_id()
+        {
+            return $this->settings['merchant_id'];
         }
-        
-        /**
-		 * Get the Test Mode Enabled from our user settings.  
-		 */
-		public function get_test_mode() {
-            $this->test_mode = ('yes' === $this->settings['testmode']); 
-			return ($this->test_mode );
-        } 
 
-       /**
-		 *
-		 * Hooked onto the "woocommerce_gateway_icon" filter.
-		 *  
-		 */
-        function filter_latitude_gateway_icon( $icon, $gateway_id ) {
-    
+        /**
+         * Get the Merchant Secret Key from our user settings.
+         */
+        public function get_secret_key()
+        {
+            return $this->settings['merchant_secret'];
+        }
+
+        /**
+         * Get the Test Mode Enabled from our user settings.
+         */
+        public function get_test_mode()
+        {
+            $this->test_mode = 'yes' === $this->settings['testmode'];
+            return $this->test_mode;
+        }
+
+        /**
+         *
+         * Hooked onto the "woocommerce_gateway_icon" filter.
+         *
+         */
+        function filter_latitude_gateway_icon($icon, $gateway_id)
+        {
             if ($gateway_id != LatitudeConstants::WC_LATITUDE_GATEWAY_ID) {
-				return $icon;
-            } 
+                return $icon;
+            }
 
             $icon_url = LatitudeConstants::AU_ICON_URL;
-            $icon_alt_text = "Latitude Interest Fee";
-            if ( 'NZD' == get_woocommerce_currency() ) { 
+            $icon_alt_text = 'Latitude Interest Fee';
+            if ('NZD' == get_woocommerce_currency()) {
                 $icon_url = LatitudeConstants::NZ_ICON_URL;
-                $icon_alt_text = "GEM Interest Fee";
+                $icon_alt_text = 'GEM Interest Fee';
             }
-			ob_start();
-
-			?><img src="<?php echo $icon_url; ?>" alt="<?php echo $icon_alt_text; ?>" /><?php
-
-			return ob_get_clean();
-             
-        }  
-        
- 		/**
-		 *
-		 * Hooked onto the "woocommerce_order_button_text" filter.
-		 *  
-		 */
-        public function filter_place_order_button_text($button) {    
-            $current_payment_method     = WC()->session->get('chosen_payment_method'); // The chosen payment    
-            if(  $current_payment_method == LatitudeConstants::WC_LATITUDE_GATEWAY_ID ) { 
-                $button = 'Choose a plan';
-            }  
-            return $button;
-        }         
-        
-		/**
-		 * Display as a payment option on the checkout page.
-		 *
-		 */        
-        public function payment_fields() {    
-            // TODO: add field validations here   
-            // $this->log("payment_fields here");
-
-			# Give other plugins a chance to manipulate or replace the HTML echoed by this funtion.
-			ob_start();
-			include "{$this->include_path}/Payment_Fields.html.php"; 
-			$html = ob_get_clean(); 
-            echo apply_filters( 'latitude_html_at_checkout', $html);    
-             
+            ob_start();
+            ?><img src="<?php echo $icon_url; ?>" alt="<?php echo $icon_alt_text; ?>" /><?php return ob_get_clean();
         }
 
-		/**
-		 * Default process payment
-		 *
-		 */    
-        public function process_payment( $order_id ) { 
+        /**
+         *
+         * Hooked onto the "woocommerce_order_button_text" filter.
+         *
+         */
+        public function filter_place_order_button_text($button)
+        {
+            $current_payment_method = WC()->session->get(
+                'chosen_payment_method'
+            ); // The chosen payment
+            if (
+                $current_payment_method ==
+                LatitudeConstants::WC_LATITUDE_GATEWAY_ID
+            ) {
+                $button = 'Choose a plan';
+            }
+            return $button;
+        }
 
-            if(!$order_id) { 
-                $this->log_error("Order ID cannot be null when processing payment.");
+        /**
+         * Display as a payment option on the checkout page.
+         *
+         */
+
+        public function payment_fields()
+        {
+            // TODO: add field validations here
+            // $this->log_debug("payment_fields here");
+
+            # Give other plugins a chance to manipulate or replace the HTML echoed by this funtion.
+            ob_start();
+            include "{$this->include_path}/Payment_Fields.html.php";
+            $html = ob_get_clean();
+            echo apply_filters('latitude_html_at_checkout', $html);
+        }
+
+        /**
+         * Default process payment
+         *
+         */
+
+        public function process_payment($order_id)
+        {
+            $this->log_info(
+                __(
+                    'Processing payment using ' .
+                        LatitudeConstants::WC_LATITUDE_GATEWAY_NAME .
+                        ' payment method.'
+                )
+            );
+            if (!$order_id) {
+                $this->log_error(
+                    'Order ID cannot be null when processing payment.'
+                );
                 return;
-            }   
-            
-            $purchase_request = new Latitude_Purchase_Request;   
-            $payload = $purchase_request->build_parameters($order_id);
-            $this->log(__('purchase payload: ' . wp_json_encode($payload)));
+            }
 
-          
-            $checkout_service = new Latitude_Checkout_Service;
+            $purchase_request = new Latitude_Purchase_Request();
+            $payload = $purchase_request->build_parameters($order_id);
+            $this->log_debug(
+                __('purchase payload: ' . wp_json_encode($payload))
+            );
+
+            $checkout_service = new Latitude_Checkout_Service();
             $response = $checkout_service->send_purchase_request($payload);
- 
-            $order = wc_get_order( $order_id ); 
+
+            $order = wc_get_order($order_id);
 
             if ($response == false) {
-                return $this->redirect_to_cart_on_error($order, "Invalid purchase request.");  
+                return $this->redirect_to_cart_on_error(
+                    $order,
+                    'Invalid purchase request.'
+                );
             }
 
-            if (is_array($response)  && $response['result'] == 'failure') {
-                $error_string = __("Error on Purchase Request API: " . $response['response'] ); 
-                return $this->redirect_to_cart_on_error($order, $error_string);  
+            if (is_array($response) && $response['result'] == 'failure') {
+                $error_string = __(
+                    'Error on Purchase Request API: ' . $response['response']
+                );
+                return $this->redirect_to_cart_on_error($order, $error_string);
             }
-               
+
             $rsp_body = $response['response'];
-            $result = $rsp_body['result']; 
-            $this->log($rsp_body);
-            if ($result == 'pending') { 
-                $error_string = $this->is_valid_order_response($rsp_body, $order);
-                if (!empty($error_string)) { 
-                    $this->log(__("Error:  (is_valid_order_response): ". $error_string));
-                    $error_string = __( "Error: Payment request returned invalid order details. Order Reference: {$order_id}. " . $error_string );
-                    return $this->redirect_to_cart_on_error($order, $error_string); 
-                } 
-                
-                $redirect_url = $rsp_body['redirectUrl'];
-                $this->log(__("redirectUrl: ". $redirect_url));
-                if (empty($redirect_url)) { 
-                    return $this->redirect_to_cart_on_error($order, "Latitude Interest Free Gateway is not reachable."); 
+            $result = $rsp_body['result'];
+            $this->log_debug($rsp_body);
+            if ($result == 'pending') {
+                $error_string = $this->is_valid_order_response(
+                    $rsp_body,
+                    $order
+                );
+                if (!empty($error_string)) {
+                    $this->log_debug(
+                        __(
+                            'Error:  (is_valid_order_response): ' .
+                                $error_string
+                        )
+                    );
+                    $error_string = __(
+                        "Error: Payment request returned invalid order details. Order Reference: {$order_id}. " .
+                            $error_string
+                    );
+                    return $this->redirect_to_cart_on_error(
+                        $order,
+                        $error_string
+                    );
                 }
- 
-                if ( ! is_ajax() ) {
-                    wp_safe_redirect( $redirect_url );
-                    exit;
-                } 
-                wp_send_json(array(
-                        'result' => 'success',
-                        'redirect' => $redirect_url
-                    )); 
 
+                $redirect_url = $rsp_body['redirectUrl'];
+                $this->log_debug(__('redirectUrl: ' . $redirect_url));
+                if (empty($redirect_url)) {
+                    return $this->redirect_to_cart_on_error(
+                        $order,
+                        'Latitude Interest Free Gateway is not reachable.'
+                    );
+                }
+
+                if (!is_ajax()) {
+                    wp_safe_redirect($redirect_url);
+                    exit();
+                }
+                wp_send_json([
+                    'result' => 'success',
+                    'redirect' => $redirect_url,
+                ]);
             } elseif ($result == 'failed') {
                 $error_string = $rsp_body['error'];
                 if (empty($error_string)) {
-                    $error_string = "Request failure";
-                } 
-                $this->log(__("error (response body): ". $error_string)); 
-                return $this->redirect_to_cart_on_error($order, $error_string);  
+                    $error_string = 'Request failure';
+                }
+                $this->log_debug(__('error (response body): ' . $error_string));
+                return $this->redirect_to_cart_on_error($order, $error_string);
             } else {
-                // Purchase request returned unexpected result (neither pending nor failed) 
-                $this->log(__("unexpected result received from purchase request: ". $result)); 
-                return $this->redirect_to_cart_on_error($order, "Unexpected result received from purchase request.");  
-            } 
-        }     
- 
-
-        /**
-		 *
-		 * Displays the error message on the cart.
-		 *  
-		 */
-        private function redirect_to_cart_on_error($order, $error_string) { 
-            wc_add_notice( __( $error_string , 'woo_latitudecheckout' ), 'error' );
-            return array(
-                'result' => 'failure',
-                'redirect' => $order->get_checkout_payment_url(false), 
-            );       
+                // Purchase request returned unexpected result (neither pending nor failed)
+                $this->log_debug(
+                    __(
+                        'unexpected result received from purchase request: ' .
+                            $result
+                    )
+                );
+                return $this->redirect_to_cart_on_error(
+                    $order,
+                    'Unexpected result received from purchase request.'
+                );
+            }
         }
 
-         /**
-		 *
-		 * Validates contents of the purchase_request to match current order.
-		 *  
-		 */
-        protected function is_valid_order_response($response, $order) {
-            $error = "";
+        /**
+         *
+         * Displays the error message on the cart.
+         *
+         */
+        private function redirect_to_cart_on_error($order, $error_string)
+        {
+            wc_add_notice(__($error_string, 'woo_latitudecheckout'), 'error');
+            return [
+                'result' => 'failure',
+                'redirect' => $order->get_checkout_payment_url(false),
+            ];
+        }
+
+        /**
+         *
+         * Validates contents of the purchase_request to match current order.
+         *
+         */
+        protected function is_valid_order_response($response, $order)
+        {
+            $error = '';
             if ($response['merchantId'] != $this->merchant_id) {
-                $error = "Failed to confirm Merchant ID.";
+                $error = 'Failed to confirm Merchant ID.';
                 return $error;
             }
             if ($response['merchantReference'] != $order->get_id()) {
-                $error = "Failed to confirm Order reference.";
+                $error = 'Failed to confirm Order reference.';
                 return $error;
             }
             if ($response['amount'] != $order->get_total()) {
-                $error = "Failed to confirm transaction amount.";
+                $error = 'Failed to confirm transaction amount.';
                 return $error;
-            }     
+            }
             if ($response['currency'] != $order->get_currency()) {
-                $error = "Failed to confirm transaction urrency";
+                $error = 'Failed to confirm transaction urrency';
                 return $error;
-            }               
+            }
             return $error;
         }
 
         /**
-		 *
-		 * Hooked onto the "woocommerce_endpoint_order-pay_title" filter.
-		 *  
-		 */
-        public function filter_order_pay_title($old_title, $payment_declined ) {
+         *
+         * Hooked onto the "woocommerce_endpoint_order-pay_title" filter.
+         *
+         */
+        public function filter_order_pay_title($old_title, $payment_declined)
+        {
             //order-pay
             if ($payment_declined) {
-                return "Payment failed";
+                return 'Payment failed';
             }
             return old_title;
-           
         }
 
         /**
-		 *
-		 * Hooked onto the "woocommerce_receipt_{$gateway->id}" action.
-		 *  
-		 */
-        public function receipt_page($order_id) {   
-
-            $order = wc_get_order( $order_id );    
-            $is_pending = $this->is_order_pending($order); 
-            $this->log(__('(on receipt_page) is_pending: ' . $is_pending)); 
+         *
+         * Hooked onto the "woocommerce_receipt_{$gateway->id}" action.
+         *
+         */
+        public function receipt_page($order_id)
+        {
+            $order = wc_get_order($order_id);
+            $is_pending = $this->is_order_pending($order);
+            $this->log_debug(
+                __('(on receipt_page) is_pending: ' . $is_pending)
+            );
             if ($is_pending) {
-                wc_print_notice("Payment declined for this order. ");
-                apply_filters( 'woocommerce_endpoint_order-pay_title', 'Pay for order', true );
-            } 
-        } 
+                wc_print_notice('Payment declined for this order. ');
+                apply_filters(
+                    'woocommerce_endpoint_order-pay_title',
+                    'Pay for order',
+                    true
+                );
+            }
+        }
 
         /**
-		 *
-		 * Hooked onto the "woocommerce_api_latitude_checkout" action.
-		 *  
-		 */        
-        public function on_latitude_checkout_callback() {
-            $this->log('on_latitude_checkout_callback');  
- 
+         *
+         * Hooked onto the "woocommerce_api_latitude_checkout" action.
+         *
+         */
+
+        public function on_latitude_checkout_callback()
+        {
+            $this->log_debug('on_latitude_checkout_callback');
+
             if (array_key_exists('gatewayReference', $_GET)) {
-				$gatewayReference = $_GET['gatewayReference']; 
+                $gatewayReference = $_GET['gatewayReference'];
             }
             if (array_key_exists('transactionReference', $_GET)) {
-				$transactionReference = $_GET['transactionReference'];
+                $transactionReference = $_GET['transactionReference'];
             }
             if (array_key_exists('merchantReference', $_GET)) {
-				$order_id = $merchantReference = $_GET['merchantReference'];
-            } 
-            $this->log("merchantReference: {$merchantReference}, transactionReference: {$transactionReference}, gatewayReference: {$gatewayReference}");
-            if (empty($gatewayReference) || empty($transactionReference) || empty($merchantReference)) { 
-                wp_redirect( wc_get_cart_url());
-                exit; 
+                $order_id = $merchantReference = $_GET['merchantReference'];
+            }
+            $this->log_debug(
+                "merchantReference: {$merchantReference}, transactionReference: {$transactionReference}, gatewayReference: {$gatewayReference}"
+            );
+            if (
+                empty($gatewayReference) ||
+                empty($transactionReference) ||
+                empty($merchantReference)
+            ) {
+                wp_redirect(wc_get_cart_url());
+                exit();
             }
 
-            $payload = array(  
-                "gatewayReference" => $gatewayReference,
-                "transactionReference" => $transactionReference,
-                "merchantReference" => $merchantReference
-            ); 
+            $payload = [
+                'gatewayReference' => $gatewayReference,
+                'transactionReference' => $transactionReference,
+                'merchantReference' => $merchantReference,
+            ];
 
-            $order = wc_get_order( $order_id );  
+            $order = wc_get_order($order_id);
             // check order status
-            $is_order_pending =  $this->is_order_pending($order);
-            if (!$is_order_pending) { 
-                $this->log_error("Cannot verify  purchase when order is no longer pending.");
-                $order->add_order_note( sprintf(__( 'Order status is not pending for payment, cannot proceed to verify. Transaction reference: %s', 'woo_latitudecheckout' ), $transactionReference) ); 
-                wp_redirect(  $order->get_checkout_payment_url(true)); 
-                exit;
+            $is_order_pending = $this->is_order_pending($order);
+            if (!$is_order_pending) {
+                $this->log_error(
+                    'Cannot verify  purchase when order is no longer pending.'
+                );
+                $order->add_order_note(
+                    sprintf(
+                        __(
+                            'Order status is not pending for payment, cannot proceed to verify. Transaction reference: %s',
+                            'woo_latitudecheckout'
+                        ),
+                        $transactionReference
+                    )
+                );
+                wp_redirect($order->get_checkout_payment_url(true));
+                exit();
             }
 
-            $checkout_service = new Latitude_Checkout_Service;
-            $response = $checkout_service->verify_purchase_request($payload);  
+            $checkout_service = new Latitude_Checkout_Service();
+            $response = $checkout_service->verify_purchase_request($payload);
 
-            if ($response === false) { 
-                $this->log_error("Verify Purchase API failed.");
-                $order->add_order_note( sprintf(__( '%s failed at Verify Purchase API.', 'woo_latitudecheckout' ), $order->get_payment_method_title()) ); 
-              
+            if ($response === false) {
+                $this->log_error('Verify Purchase API failed.');
+                $order->add_order_note(
+                    sprintf(
+                        __(
+                            '%s failed at Verify Purchase API.',
+                            'woo_latitudecheckout'
+                        ),
+                        $order->get_payment_method_title()
+                    )
+                );
             } elseif (is_array($response)) {
-                $rsp_body = $response['response']; 
-                $this->log("verify_purchase_request() returned data");
-                $this->log($rsp_body); 
-                $result = $rsp_body['result']; 
-                $transactionType = $rsp_body['transactionType']; 
-                $promotionReference = $rsp_body['promotionReference']; 
+                $rsp_body = $response['response'];
+                $this->log_debug('verify_purchase_request() returned data');
+                $this->log_debug($rsp_body);
+                $result = $rsp_body['result'];
+                $transactionType = $rsp_body['transactionType'];
+                $promotionReference = $rsp_body['promotionReference'];
                 $message = $rsp_body['message'];
-                
-                if ($result == "completed") {
-                    if ( $transactionType == "sale") {
-                        $this->log_info("WooCommerce Order #{$order_id} transaction is \"completed\".");
-                        $order->add_order_note( sprintf(__( 'Payment approved. Transaction reference: %s, Gateway reference: %s', 'woo_latitudecheckout' ), $transactionReference, $gatewayReference) );  
-                    } elseif ( $transactionType == "authorisation") {
-                        $this->log_info("WooCommerce Order #{$order_id} transaction is on \"authorisation\".");
-                        $order->add_order_note( sprintf(__( 'Payment under authorisation. Transaction reference: %s, Gateway reference: %s', 'woo_latitudecheckout' ), $transactionReference, $gatewayReference) );  
-                    } else {
-                        $this->log_info("WooCommerce Order #{$order_id} transaction is \"accepted as {$transactionType}\".");
-                        $order->add_order_note( sprintf(__( 'Payment under $s. Transaction reference: %s, Gateway reference: %s', 'woo_latitudecheckout' ), $transactionType, $transactionReference, $gatewayReference) );  
-                    }
-                    $order->payment_complete($transactionReference); 
-                    $order->update_meta_data( 'gatewayReference', $gatewayReference);
-                    $order->update_meta_data( 'transactionReference', $transactionReference);
-                    $order->update_meta_data( 'promotionReference', $promotionReference);
-                    $order->update_meta_data( 'transactionType', $transactionType);
-                    $order->save();
-                    wc_empty_cart();   
-                    wp_redirect($order->get_checkout_order_received_url());
-                    exit; 
 
-                } 
-                else {
-                    if (!empty($message)) {
-                        $this->log_warning("Verfiy Purchase Error Message:{$order_id}");
+                if ($result == 'completed') {
+                    if ($transactionType == 'sale') {
+                        $this->log_info(
+                            "WooCommerce Order #{$order_id} transaction is \"completed\"."
+                        );
+                        $order->add_order_note(
+                            sprintf(
+                                __(
+                                    'Payment approved. Transaction reference: %s, Gateway reference: %s',
+                                    'woo_latitudecheckout'
+                                ),
+                                $transactionReference,
+                                $gatewayReference
+                            )
+                        );
+                    } elseif ($transactionType == 'authorisation') {
+                        $this->log_info(
+                            "WooCommerce Order #{$order_id} transaction is on \"authorisation\"."
+                        );
+                        $order->add_order_note(
+                            sprintf(
+                                __(
+                                    'Payment under authorisation. Transaction reference: %s, Gateway reference: %s',
+                                    'woo_latitudecheckout'
+                                ),
+                                $transactionReference,
+                                $gatewayReference
+                            )
+                        );
+                    } else {
+                        $this->log_info(
+                            "WooCommerce Order #{$order_id} transaction is \"accepted as {$transactionType}\"."
+                        );
+                        $order->add_order_note(
+                            sprintf(
+                                __(
+                                    'Payment under $s. Transaction reference: %s, Gateway reference: %s',
+                                    'woo_latitudecheckout'
+                                ),
+                                $transactionType,
+                                $transactionReference,
+                                $gatewayReference
+                            )
+                        );
                     }
-                    $this->log_warning("Payment declined for WooCommerce Order #{$order_id}");
-                    $order->add_order_note( sprintf(__( 'Payment declined. Transaction reference: %s', 'woo_latitudecheckout' ), $transactionReference) );   
-                     
+                    $order->payment_complete($transactionReference);
+                    $order->update_meta_data(
+                        'gatewayReference',
+                        $gatewayReference
+                    );
+                    $order->update_meta_data(
+                        'transactionReference',
+                        $transactionReference
+                    );
+                    $order->update_meta_data(
+                        'promotionReference',
+                        $promotionReference
+                    );
+                    $order->update_meta_data(
+                        'transactionType',
+                        $transactionType
+                    );
+                    $order->save();
+                    wc_empty_cart();
+                    wp_redirect($order->get_checkout_order_received_url());
+                    exit();
+                } else {
+                    if (!empty($message)) {
+                        $this->log_warning(
+                            "Verfiy Purchase Error Message:{$order_id}"
+                        );
+                    }
+                    $this->log_warning(
+                        "Payment declined for WooCommerce Order #{$order_id}"
+                    );
+                    $order->add_order_note(
+                        sprintf(
+                            __(
+                                'Payment declined. Transaction reference: %s',
+                                'woo_latitudecheckout'
+                            ),
+                            $transactionReference
+                        )
+                    );
                 }
             } else {
                 // TODO
-                $this->log_error("Verify Purchase API returned invalid response.");
+                $this->log_error(
+                    'Verify Purchase API returned invalid response.'
+                );
             }
 
-            wc_print_notice("Payment declined for this order. ");
-            wp_redirect(  $order->get_checkout_payment_url(false)); 
+            wc_print_notice('Payment declined for this order. ');
+            wp_redirect($order->get_checkout_payment_url(false));
         }
-  
+
         /**
-		 *
-		 * Checks the pending status of the order
-		 *  
-		 */          
-        private function is_order_pending($order) {
+         *
+         * Checks the pending status of the order
+         *
+         */
+
+        private function is_order_pending($order)
+        {
             $is_pending = false;
-            if (method_exists($order, 'has_status')) {  
-                $is_pending = $order->has_status( 'pending' ); 
+            if (method_exists($order, 'has_status')) {
+                $is_pending = $order->has_status('pending');
             } else {
-                $this->log("order status: {$order->status}"); 
+                $this->log_debug("order status: {$order->status}");
                 if ($order->status == 'pending') {
                     $is_pending = true;
                 }
             }
-            return $is_pending; 
+            return $is_pending;
         }
- 
 
         /**
-		 *
-		 * Display additional order details in admin
-		 *  
-		 */       
-        public function display_order_data_in_admin( $order){
-            
-            if ( $order->get_payment_method() != $this->id ) {
+         *
+         * Display additional order details in admin
+         *
+         */
+
+        public function display_order_data_in_admin($order)
+        {
+            if ($order->get_payment_method() != $this->id) {
                 return;
-            } 
-            ?> 
+            } ?> 
              <p class="form-field form-field-wide"> <br>
                 <div class="latitude_payment_details">
-                <h3><?php esc_html_e( 'Latitude Interest Free Payment Details', 'woo_latitudecheckout' ); ?></h3>
-                    <?php   
-                    echo '<p><strong>' . __( 'Gateway Reference' ) . ': </strong><br>' . $order->get_meta('gatewayReference' ) . '<br></p>' ;
-                    echo '<p><strong>' . __( 'Transaction Reference' ) . ': </strong><br>' .  $order->get_meta( 'transactionReference')  . '<br></p>'; 
-                    echo '<p><strong>' . __( 'Promotion Reference' ) . ': </strong><br>' .  $order->get_meta('promotionReference' ) . '<br></p>';
-                    echo '<p><strong>' . __( 'Transaction Type' ) . ': </strong><br>' .  $order->get_meta( 'transactionType')  . '<br></p>'; 
-                    ?>
+                <h3><?php esc_html_e(
+                    'Latitude Interest Free Payment Details',
+                    'woo_latitudecheckout'
+                ); ?></h3>
+                    <?php
+                    echo '<p><strong>' .
+                        __('Gateway Reference') .
+                        ': </strong><br>' .
+                        $order->get_meta('gatewayReference') .
+                        '<br></p>';
+                    echo '<p><strong>' .
+                        __('Transaction Reference') .
+                        ': </strong><br>' .
+                        $order->get_meta('transactionReference') .
+                        '<br></p>';
+                    echo '<p><strong>' .
+                        __('Promotion Reference') .
+                        ': </strong><br>' .
+                        $order->get_meta('promotionReference') .
+                        '<br></p>';
+                    echo '<p><strong>' .
+                        __('Transaction Type') .
+                        ': </strong><br>' .
+                        $order->get_meta('transactionType') .
+                        '<br></p>';?>
                 </div></p>
-            <?php 
-        } 
+            <?php
+        }
 
         /**
-		 * Logging method for debugging.  
-		 */
-		protected static function log($message) {
-			if (is_null(self::$log_enabled)) {
-				# Get the settings key for the plugin
-				$gateway = new WC_LatitudeCheckoutGateway;
-				$settings_key = $gateway->get_option_key();
-				$settings = get_option( $settings_key );
+         * Logging method for debugging.
+         */
+        protected static function log_debug($message)
+        {
+            if (is_null(self::$log_enabled)) {
+                # Get the settings key for the plugin
+                $gateway = new WC_LatitudeCheckoutGateway();
+                $settings_key = $gateway->get_option_key();
+                $settings = get_option($settings_key);
 
-				if (array_key_exists('test_mode', $settings)) {
-					self::$log_enabled = ($settings['test_mode'] == 'yes');
-				} else {
-					self::$log_enabled = false;
-				}
-			}
-			if (self::$log_enabled) {
-				if (is_null(self::$log)) {
-					self::$log = wc_get_logger();
-                } 
+                if (array_key_exists('test_mode', $settings)) {
+                    self::$log_enabled = $settings['test_mode'] == 'yes';
+                } else {
+                    self::$log_enabled = false;
+                }
+            }
+            if (self::$log_enabled) {
+                if (is_null(self::$log)) {
+                    self::$log = wc_get_logger();
+                }
                 $message = self::format_message($message);
-                self::$log->debug($message, array('source' => 'latitude_checkout'));
-			}
-		} 
-
-        /**
-		 * Logging method for warnings 
-		 */
-        protected static function log_warning($message) {
-          
-            if (is_null(self::$log)) {
-                self::$log = wc_get_logger();
-            } 
-            $message = self::format_message($message);
-            self::$log->warning($message, array('source' => 'latitude_checkout'));
-			 
+                self::$log->debug($message, ['source' => 'latitude_checkout']);
+            }
         }
 
         /**
-		 * Logging method for info 
-		 */
-        protected static function log_info($message) {
-          
+         * Logging method for warnings
+         */
+        protected static function log_warning($message)
+        {
             if (is_null(self::$log)) {
                 self::$log = wc_get_logger();
-            } 
+            }
             $message = self::format_message($message);
-            self::$log->info($message, array('source' => 'latitude_checkout'));
-			 
+            self::$log->warning($message, ['source' => 'latitude_checkout']);
         }
 
         /**
-		 * Logging method for error 
-		 */
-        protected static function log_error($message) {
-          
+         * Logging method for info
+         */
+        protected static function log_info($message)
+        {
             if (is_null(self::$log)) {
                 self::$log = wc_get_logger();
-            } 
+            }
             $message = self::format_message($message);
-            self::$log->error($message, array('source' => 'latitude_checkout'));
-			 
+            self::$log->info($message, ['source' => 'latitude_checkout']);
         }
 
-        private static function format_message($message) {
-            if (is_array($message)) { 
+        /**
+         * Logging method for error
+         */
+        protected static function log_error($message)
+        {
+            if (is_null(self::$log)) {
+                self::$log = wc_get_logger();
+            }
+            $message = self::format_message($message);
+            self::$log->error($message, ['source' => 'latitude_checkout']);
+        }
+
+        private static function format_message($message)
+        {
+            if (is_array($message)) {
                 $message = print_r($message, true);
-            } elseif (is_object($message)) { 
+            } elseif (is_object($message)) {
                 $ob_get_length = ob_get_length();
                 if (!$ob_get_length) {
                     if ($ob_get_length === false) {

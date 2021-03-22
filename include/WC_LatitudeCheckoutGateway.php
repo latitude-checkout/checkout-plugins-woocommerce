@@ -169,7 +169,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 'latitude_widget_js',
                 'latitude_widget_js_vars',
                 array(
-                    'widgetSettings' => __($obj['productWidget']),
+                    'widgetSettings' => $obj,
                     "merchantId" => $this->merchant_id,
                     "currency" => get_woocommerce_currency(),
                     'id' => $product->id,

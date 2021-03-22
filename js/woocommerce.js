@@ -16,13 +16,7 @@
   },
 };
 
-window.LatitudeCheckoutOverride = {
-  productWidget: {
-    layout: "inversed",
-    paymentFrequency: "monthly",
-    promotionMonths: 12,
-  },
-};
+window.LatitudeCheckoutOverride = latitude_widget_js_vars.widgetSettings;
 
 (function () {
   function asyncLoad() {

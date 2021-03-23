@@ -155,29 +155,32 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         }
 
         /**
-         * Get the Widget settings from our user settings.  
+         * Get the Widget settings from our user settings.
          */
         public function get_widget_data()
         {
             echo '<div id="latitude-banner-container"></div>';
             $widgetData = $this->settings['widget_content'];
             $obj = json_decode($widgetData, true);
-            $product      = wc_get_product();
+            $product = wc_get_product();
             $category = get_the_terms($product->id, 'product_cat');
-            wp_enqueue_script('latitude_widget_js', '/wp-content/plugins/checkout-plugins-woocommerce/js/woocommerce.js');
+            wp_enqueue_script(
+                'latitude_widget_js',
+                '/wp-content/plugins/checkout-plugins-woocommerce/js/woocommerce.js'
+            );
             wp_localize_script(
                 'latitude_widget_js',
                 'latitude_widget_js_vars',
-                array(
+                [
                     'widgetSettings' => $obj,
-                    "merchantId" => $this->merchant_id,
-                    "currency" => get_woocommerce_currency(),
+                    'merchantId' => $this->merchant_id,
+                    'currency' => get_woocommerce_currency(),
                     'id' => $product->id,
                     'name' => $product->name,
                     'category' => $category[0]->name,
                     'price' => $product->price,
-                    'sku' => $product->sku
-                )
+                    'sku' => $product->sku,
+                ]
             );
         }
 
@@ -574,7 +577,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 } else {
                     if (!empty($message)) {
                         $this->log_warning(
-                            "Verfiy Purchase Error Message:{$order_id}"
+                            "Verfiy Purchase Error Message:{$message}"
                         );
                     }
                     $this->log_warning(

@@ -8,7 +8,7 @@ Requires PHP: 7.0
 License: GNU Public License
 License URI: https://www.gnu.org/licenses/
 
-Enabling Latitude Checkout Payment Gateway on a WooCommerce store.
+Enabling Latitude Interest Free Payment Gateway on a WooCommerce store.
 
 == Description ==
 
@@ -18,9 +18,8 @@ The Latitude Checkout provides a simple and secure integration for WooCommerce M
 
 This section outlines the steps to install the Laitude Interest Free plugin.
 
-1. Login to your WordPress Admin
-2. Next step
-3. Next step
+1. Upload `plugin-name.php` to the `/wp-content/plugins/` directory
+2. Activate the plugin through the 'Plugins' menu in WordPress 
 
 
 == Changelog ==

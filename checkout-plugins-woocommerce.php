@@ -1,10 +1,10 @@
 <?php
 /**
- * Plugin Name: Latitude Payment Gateway for WooCommerce
- * Description: Enabling Latitude Checkout Payment Gateway on a WooCommerce store.
+ * Plugin Name: Latitude Interest Free Gateway for WooCommerce
+ * Description: Enabling Latitude Interest Free Payment Gateway on a WooCommerce store.
  * Author: latitudefinancial
  * Author URI: https://www.latitudefinancial.com.au/
- * Version: 0.0.1
+ * Version:1.0.0
  * Text Domain: checkout-plugins-woocommerce
  * WC tested up to: 5.6
  *
@@ -33,13 +33,16 @@ define('WP_DEBUG', false);
 define('WP_DEBUG_LOG', false);
 define('WP_DEBUG_DISPLAY', false);
 
-define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '4.0');
+define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '5.6');
 define('WC_LATITUDE_GATEWAY__PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 if (!class_exists('LatitudeCheckoutPlugin')) {
     class LatitudeCheckoutPlugin
     {
         /**
+         *
+         * The plugin instance.
+         *
          * @var		LatitudeCheckoutPlugin		$instance	A static reference to an instance of this class.
          */
         protected static $instance;
@@ -47,23 +50,29 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
         /**
          * Import required classes.
          *
+         * @since    1.0.0
+         * @access   public
          */
         public static function load_classes()
         {
             if (class_exists('WC_Payment_Gateway')) {
                 require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR .
-                    'include/Constants.php';
+                    'includes/Constants.php';
                 require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR .
-                    'include/Latitude_Purchase_Request.php';
+                    'includes/Latitude_Purchase_Request.php';
                 require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR .
-                    'include/Latitude_Checkout_Service.php';
+                    'includes/Latitude_Checkout_Service.php';
                 require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR .
-                    'include/WC_LatitudeCheckoutGateway.php';
+                    'includes/WC_LatitudeCheckoutGateway.php';
             }
         }
 
         /**
-         * Class constructor. Called when an object of this class is instantiated.
+         * Plugin constructor.
+         *
+         * Instantiates the payment gateway and set plugin hooks.
+         *
+         * @since    1.0.0
          *
          */
         public function __construct()
@@ -132,6 +141,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
         /**
          * Note: Hooked onto the "wp_enqueue_scripts" Action
          *
+         *  @since    1.0.0
          */
         public function enqueue_scripts()
         {
@@ -149,6 +159,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
         /**
          * Initialise the class and return an instance.
          *
+         * @since    1.0.0
          */
         public static function init()
         {
@@ -165,6 +176,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
         /**
          * Callback for when this plugin is activated.
          *
+         * @since    1.0.0
          */
         public static function activate_plugin()
         {
@@ -177,6 +189,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
         /**
          * Callback for when this plugin is deactivated.
          *
+         * @since    1.0.0
          */
         public static function deactivate_plugin()
         {
@@ -189,6 +202,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
         /**
          * Callback for when the plugin is uninstalled. Remove all of its data.
          *
+         * @since    1.0.0
          */
         public static function uninstall_plugin()
         {

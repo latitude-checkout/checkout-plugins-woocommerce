@@ -180,6 +180,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                     'category' => $category[0]->name,
                     'price' => $product->price,
                     'sku' => $product->sku,
+                    'assetUrl' => $this->get_widget_asset_src(),
                 ]
             );
         }
@@ -252,6 +253,24 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 ($this->get_test_mode()
                     ? LatitudeConstants::PAYMENT_FIELDS_URL_TEST
                     : LatitudeConstants::PAYMENT_FIELDS_URL_PROD) .
+                    '/assets/content.js?platform=' .
+                    LatitudeConstants::WC_LATITUDE_GATEWAY_PLATFORM .
+                    '&merchantId=' .
+                    $this->get_merchant_id()
+            );
+            return $url;
+        }
+
+        /**
+         * Returns the asset url to display widget at product page.
+         *
+         */
+        protected function get_widget_asset_src()
+        {
+            $url = __(
+                ($this->get_test_mode()
+                    ? LatitudeConstants::WIDGETS_URL_TEST
+                    : LatitudeConstants::WIDGETS_URL_PROD) .
                     '/assets/content.js?platform=' .
                     LatitudeConstants::WC_LATITUDE_GATEWAY_PLATFORM .
                     '&merchantId=' .

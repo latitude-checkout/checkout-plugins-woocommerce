@@ -23,8 +23,7 @@ window.LatitudeCheckoutOverride = latitude_widget_js_vars.widgetSettings;
     var curr = document.createElement("script");
     curr.type = "text/javascript";
     curr.async = true;
-    curr.src =
-      "https://checkout.latitudefinancial.com/assets/content.js?platform=custom&merchantId=aulmerchantuser";
+    curr.src = latitude_widget_js_vars.assetUrl; 
 
     var scr = document.getElementsByTagName("script")[0];
     scr.parentNode.insertBefore(curr, scr);

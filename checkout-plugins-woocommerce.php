@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Latitude Payment Gateway for WooCommerce
- * Description: Integrates Latitude Payments into your Woocommerce store.
- * Author: Latitude Financial
+ * Description: Enabling Latitude Checkout Payment Gateway on a WooCommerce store.
+ * Author: latitudefinancial
  * Author URI: https://www.latitudefinancial.com.au/
  * Version: 0.0.1
  * Text Domain: checkout-plugins-woocommerce

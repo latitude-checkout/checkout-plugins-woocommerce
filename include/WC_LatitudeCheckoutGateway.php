@@ -242,6 +242,25 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         }
 
         /**
+         * Returns the asset url source to display in the payment fields at the checkout page.
+         *
+         */
+
+        protected function get_payment_fields_src()
+        {
+            $url = __(
+                ($this->get_test_mode()
+                    ? LatitudeConstants::PAYMENT_FIELDS_URL_TEST
+                    : LatitudeConstants::PAYMENT_FIELDS_URL_PROD) .
+                    '/assets/content.js?platform=' .
+                    LatitudeConstants::WC_LATITUDE_GATEWAY_PLATFORM .
+                    '&merchantId=' .
+                    $this->get_merchant_id()
+            );
+            return $url;
+        }
+
+        /**
          * Default process payment
          *
          */

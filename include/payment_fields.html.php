@@ -1,17 +1,16 @@
 <?php
- 
-$payment_field_url = "https://master.checkout.dev.merchant-services-np.lfscnp.com/assets/content.js?platform=magento2&merchantId=aulmerchantuser";
-$field_params = json_encode([ 
-        "merchantId" => $this->merchant_id,
-        "currency" => get_woocommerce_currency(),
-        "container" =>  "",
-        "page" => "checkout",            
-        "container" => [
-            "footer" => "latitude-payment--footer",
-            "main" =>  "latitude-payment--main", 
-        ] 
-    ]);      
- 
+
+$payment_field_url = $this->get_payment_fields_src();
+$field_params = json_encode([
+    'merchantId' => $this->get_merchant_id(),
+    'currency' => get_woocommerce_currency(),
+    'container' => '',
+    'page' => 'checkout',
+    'container' => [
+        'footer' => 'latitude-payment--footer',
+        'main' => 'latitude-payment--main',
+    ],
+]);
 ?> 
 <script language="Javascript" type="text/javascript">   
     var target_url = '<?php echo $payment_field_url; ?>';

@@ -121,6 +121,12 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
                 $gateway,
                 'display_order_data_in_admin',
             ]);
+            add_action(
+                'woocommerce_single_product_summary',
+                [$gateway, 'get_widget_data'],
+                10,
+                2
+            );
         }
 
         /**

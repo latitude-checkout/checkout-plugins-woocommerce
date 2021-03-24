@@ -73,6 +73,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             $this->merchant_id = $this->get_option('merchant_id');
             $this->merchant_secret = $this->get_option('merchant_secret');
             $this->test_mode = 'yes' === $this->get_option('testmode');
+            $this->widget_data = $this->get_option('widget_content');
             self::$log_enabled = $this->test_mode;
         }
 
@@ -154,6 +155,37 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         }
 
         /**
+         * Get the Widget settings from our user settings.
+         */
+        public function get_widget_data()
+        {
+            echo '<div id="latitude-banner-container"></div>';
+            $widgetData = $this->settings['widget_content'];
+            $obj = json_decode($widgetData, true);
+            $product = wc_get_product();
+            $category = get_the_terms($product->id, 'product_cat');
+            wp_enqueue_script(
+                'latitude_widget_js',
+                '/wp-content/plugins/checkout-plugins-woocommerce/js/woocommerce.js'
+            );
+            wp_localize_script(
+                'latitude_widget_js',
+                'latitude_widget_js_vars',
+                [
+                    'widgetSettings' => $obj,
+                    'merchantId' => $this->merchant_id,
+                    'currency' => get_woocommerce_currency(),
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'category' => $category[0]->name,
+                    'price' => $product->price,
+                    'sku' => $product->sku,
+                    'assetUrl' => $this->get_widget_asset_src(),
+                ]
+            );
+        }
+
+        /**
          *
          * Hooked onto the "woocommerce_gateway_icon" filter.
          *
@@ -208,6 +240,43 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             include "{$this->include_path}/Payment_Fields.html.php";
             $html = ob_get_clean();
             echo apply_filters('latitude_html_at_checkout', $html);
+        }
+
+        /**
+         * Returns the asset url source to display in the payment fields at the checkout page.
+         *
+         */
+
+        protected function get_payment_fields_src()
+        {
+            $url = __(
+                ($this->get_test_mode()
+                    ? LatitudeConstants::PAYMENT_FIELDS_URL_TEST
+                    : LatitudeConstants::PAYMENT_FIELDS_URL_PROD) .
+                    '/assets/content.js?platform=' .
+                    LatitudeConstants::WC_LATITUDE_GATEWAY_PLATFORM .
+                    '&merchantId=' .
+                    $this->get_merchant_id()
+            );
+            return $url;
+        }
+
+        /**
+         * Returns the asset url to display widget at product page.
+         *
+         */
+        protected function get_widget_asset_src()
+        {
+            $url = __(
+                ($this->get_test_mode()
+                    ? LatitudeConstants::WIDGETS_URL_TEST
+                    : LatitudeConstants::WIDGETS_URL_PROD) .
+                    '/assets/content.js?platform=' .
+                    LatitudeConstants::WC_LATITUDE_GATEWAY_PLATFORM .
+                    '&merchantId=' .
+                    $this->get_merchant_id()
+            );
+            return $url;
         }
 
         /**
@@ -546,7 +615,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 } else {
                     if (!empty($message)) {
                         $this->log_warning(
-                            "Verfiy Purchase Error Message:{$order_id}"
+                            "Verfiy Purchase Error Message:{$message}"
                         );
                     }
                     $this->log_warning(

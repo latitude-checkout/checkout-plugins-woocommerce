@@ -136,6 +136,12 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
                 10,
                 2
             );
+            add_action(
+                'woocommerce_before_checkout_form',
+                [$gateway, 'add_checkout_custom_style'], 
+                10, 
+                2
+            );
         }
 
         /**

@@ -221,6 +221,20 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 
         /**
          *
+         * Overwriting theme CSS to ensure #order_review stays full width to accommodate Latitude Checkout logo.  
+         *
+         */
+        public function add_checkout_custom_style()
+        {
+            wp_enqueue_style( 
+                'checkout', 
+                plugins_url( 'checkout-plugins-woocommerce/css/checkout.css')
+            );
+        }
+
+
+        /**
+         *
          * Hooked onto the "woocommerce_gateway_icon" filter.
          *
          */

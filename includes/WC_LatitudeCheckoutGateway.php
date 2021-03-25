@@ -95,6 +95,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             );
 
             $this->icon = apply_filters('woocommerce_gateway_icon', 10, 2);
+            $this->has_fields = true; // needed to be true for customizing payment fields
             $this->title = _(
                 LatitudeConstants::WC_LATITUDE_GATEWAY_NAME,
                 'woo_latitudecheckout'

@@ -104,11 +104,6 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             $this->init_form_fields();
             $this->init_settings();
             $this->refresh_configuration();
-            $this->merchant_id = $this->get_option('merchant_id');
-            $this->merchant_secret = $this->get_option('merchant_secret');
-            $this->test_mode = 'yes' === $this->get_option('testmode');
-            $this->widget_data = $this->get_option('widget_content');
-            self::$log_enabled = $this->test_mode;
         }
 
         /**
@@ -157,9 +152,13 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             if (array_key_exists('merchant_secret', $this->settings)) {
                 $this->merchant_secret = $this->settings['merchant_secret'];
             }
+            $this->test_mode = true;
             if (array_key_exists('testmode', $this->settings)) {
                 $this->test_mode = 'yes' === $this->settings['testmode'];
-                self::$log_enabled = $this->test_mode;
+            }
+            self::$log_enabled = $this->test_mode;
+            if (array_key_exists('widget_content', $this->settings)) {
+                $this->merchant_secret = $this->settings['widget_data'];
             }
         }
 
@@ -221,17 +220,16 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 
         /**
          *
-         * Overwriting theme CSS to ensure #order_review stays full width to accommodate Latitude Checkout logo.  
+         * Overwriting theme CSS to ensure #order_review stays full width to accommodate Latitude Checkout logo.
          *
          */
         public function add_checkout_custom_style()
         {
-            wp_enqueue_style( 
-                'checkout', 
-                plugins_url( 'checkout-plugins-woocommerce/css/checkout.css')
+            wp_enqueue_style(
+                'checkout',
+                plugins_url('checkout-plugins-woocommerce/css/checkout.css')
             );
         }
-
 
         /**
          *

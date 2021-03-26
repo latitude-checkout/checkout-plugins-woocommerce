@@ -78,15 +78,15 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
         public function __construct()
         {
             $gateway = WC_LatitudeCheckoutGateway::get_instance();
-            add_action(
-                "woocommerce_update_options_payment_gateways_{$gateway->id}",
-                [$gateway, 'process_admin_options'],
-                10,
-                0
-            );
             add_filter(
                 'woocommerce_payment_gateways',
                 [$gateway, 'add_latitudecheckoutgateway'],
+                10,
+                1
+            );
+            add_filter(
+                'plugin_action_links_' . plugin_basename(__FILE__),
+                [$this, 'add_settings_links'],
                 10,
                 1
             );
@@ -138,8 +138,8 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             );
             add_action(
                 'woocommerce_before_checkout_form',
-                [$gateway, 'add_checkout_custom_style'], 
-                10, 
+                [$gateway, 'add_checkout_custom_style'],
+                10,
                 2
             );
         }
@@ -216,6 +216,27 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
                 return;
             }
             return;
+        }
+
+        /**
+         * Note: Hooked onto the "plugin_action_links_checkout-plugins-woocommerce.php" Action.
+         *
+         * @since	1.0.0
+         *
+         */
+        public function add_settings_links($links)
+        {
+            $settings_links = [
+                '<a href="' .
+                admin_url(
+                    'admin.php?page=wc-settings&tab=checkout&section=latitudecheckout'
+                ) .
+                '">' .
+                __('Settings', 'woo_latitudecheckout') .
+                '</a>',
+            ];
+
+            return array_merge($settings_links, $links);
         }
     }
 

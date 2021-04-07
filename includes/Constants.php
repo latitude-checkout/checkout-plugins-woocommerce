@@ -12,10 +12,8 @@ class Constants
     const NZ_ICON_URL = 'https://assets.latitudefinancial.com/merchant-services/latitude/icon/gem-interest-free.svg';
 
     const ALLOWED_CURRENCY = ['AUD', 'NZD'];
-
-    const CALLBACK_ROUTE = '/wp-json/latitude/v1/callback';
-    const CANCEL_ROUTE = 'checkout/cart';
-    const COMPLETE_ROUTE = '/wc-api/latitude_checkout';
+  
+    const CALLBACK_URL = '/wc-api/latitude_checkout';
 
     const PAYMENT_FIELDS_URL_PROD = 'https://master.checkout.dev.merchant-services-np.lfscnp.com';
     const PAYMENT_FIELDS_URL_TEST = 'https://master.checkout.dev.merchant-services-np.lfscnp.com';

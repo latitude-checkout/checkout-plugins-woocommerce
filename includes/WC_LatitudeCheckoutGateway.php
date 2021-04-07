@@ -139,6 +139,17 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         }
 
         /**
+		 * Adds/Updates admin settings
+		 *
+		 * Note:	Hooked onto the "woocommerce_update_options_payment_gateways_" Action.
+		 * 
+		 */
+		public function process_admin_options() {
+			parent::process_admin_options();
+ 
+		}
+
+        /**
          * Refresh cached configuration to ensure properties are up to date
          *
          * Note:	Hooked onto the "woocommerce_update_options_payment_gateways_{$gateway->id}" Action.

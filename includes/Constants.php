@@ -5,7 +5,7 @@ class Constants
     // plugin information
     const WC_LATITUDE_GATEWAY_PLATFORM = 'woocommerce';
     const WC_LATITUDE_GATEWAY_ID = 'latitudecheckout';
-    const WC_LATITUDE_GATEWAY_VERSION = '0.0.1';
+    const WC_LATITUDE_GATEWAY_VERSION = '0.0.2';
     const WC_LATITUDE_GATEWAY_NAME = 'Latitude Interest Free';
 
     const AU_ICON_URL = 'https://assets.latitudefinancial.com/merchant-services/latitude/icon/latitude-interest-free.svg';

@@ -64,7 +64,7 @@ class Latitude_Checkout_Service
             'response' => $rsp_body,
         ];
     }
-
+  
     /**
      * Verifies the purchase request
      *

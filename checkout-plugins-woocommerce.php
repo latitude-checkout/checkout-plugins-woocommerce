@@ -4,7 +4,7 @@
  * Description: Enabling Latitude Interest Free Payment Gateway on a WooCommerce store.
  * Author: latitudefinancial
  * Author URI: https://www.latitudefinancial.com.au/
- * Version:1.0.0
+ * Version:0.0.2
  * Text Domain: checkout-plugins-woocommerce
  * WC tested up to: 5.6
  *
@@ -83,6 +83,12 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             * Actions
             */
             add_action( 'init', array($gateway, 'register_post_types'), 10, 0 );
+            add_action(
+                "woocommerce_update_options_payment_gateways_{$gateway->id}",
+                [$gateway, 'process_admin_options'],
+                10,
+                0
+            );
             add_action(
                 "woocommerce_update_options_payment_gateways_{$gateway->id}",
                 [$gateway, 'refresh_configuration'],

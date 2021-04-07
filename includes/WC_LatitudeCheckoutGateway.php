@@ -139,7 +139,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         }
 
         /**
-		 * Adds/Updates admin settings
+		 * Adds/Updates admin settings - needed to overload explicitly to update admin settings in some shops
 		 *
 		 * Note:	Hooked onto the "woocommerce_update_options_payment_gateways_" Action.
 		 * 

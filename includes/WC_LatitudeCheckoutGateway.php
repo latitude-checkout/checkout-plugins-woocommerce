@@ -510,12 +510,17 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                   
                 $result = $rsp_body['result']; 
                 if ($result != 'pending') { 
-                    return $this->update_post_meta_on_error($post_id, $result, "Purchase request could not be verified. Please contact the merchant.") ;
+                    $error_string = $rsp_body['error'];
+                    if (empty($error_string)){
+                        return $this->update_post_meta_on_error($post_id, $result, "Purchase request could not be verified. Please contact the merchant.") ;
+                    } else {
+                        return $this->update_post_meta_on_error($post_id, $result, "Purchase request failed. {$error_string}.") ;
+                    }
+                    
                 } else { 
 
                     $redirecturl_nonce = wp_create_nonce( "redirecturl_nonce-{$post_id}" );
-                    add_post_meta( $post_id, 'status', 'pending' ); 
-					add_post_meta( $post_id, 'created_via', 'pre_create_order' );  
+                    add_post_meta( $post_id, 'status', 'pending' );  
 					add_post_meta( $post_id, 'posted', base64_encode(serialize($post_data)) );
 					add_post_meta( $post_id, 'cart', base64_encode(serialize($cart)) );
 					add_post_meta( $post_id, 'cart_hash', base64_encode(serialize($cart_hash)) );                    
@@ -655,23 +660,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 
 			return false;
 		}
-       
-
-         
-
-        /**
-         *
-         * Displays the error message on the cart.
-         *
-         */
-        private function redirect_to_checkout_on_error($order, $error_string)
-        {
-            wc_add_notice(__($error_string, 'woo_latitudecheckout'), 'error');
-            return [
-                'result' => 'failure',
-                'redirect' => $order->get_checkout_payment_url(false),
-            ];
-        }
+        
  
         /**
          *

@@ -27,36 +27,35 @@ class Latitude_Purchase_Request
      * Create the purchase request payload from cart
      *
      */
-    public function create_payload_from_cart($cart, $post_id, $data) {
-
-       
+    public function create_payload_from_cart($quote, $quote_id) {
+        $cart = WC()->cart;    
         $total = $cart->get_total( 'edit' ); 
 
         $payload = array();
         $payload['merchantId'] = $this->gateway->get_merchant_id();
         $payload['merchantName'] = get_option('blogname');
         $payload['isTest'] = $this->gateway->get_test_mode();
-        $payload['merchantReference'] = strval($post_id);
+        $payload['merchantReference'] = strval($quote_id);
         $payload['amount'] =  floatval($total);
         $payload['currency'] = get_woocommerce_currency();
         $payload['promotionReference'] = '';
 
         $payload['customer'] = array( 
-            'firstName' => $this->check_null($data['billing_first_name']),
-            'lastName' => $this->check_null($data['billing_last_name']),
-            'phone' => $this->check_null($data['billing_phone']),
-            'email' => $this->check_null($data['billing_email'])
+            'firstName' => $this->check_null($quote['billing_first_name']),
+            'lastName' => $this->check_null($quote['billing_last_name']),
+            'phone' => $this->check_null($quote['billing_phone']),
+            'email' => $this->check_null($quote['billing_email'])
             ); 
 
-        $billing_phone = $this->check_null($data['billing_phone']);
+        $billing_phone = $this->check_null($quote['billing_phone']);
         $payload['billingAddress'] = array(
-            'name' => $this->get_formatted_full_name($data['billing_first_name'],$data['billing_last_name']),
-            'line1' => $this->check_null($data['billing_address_1']),
-            'line2' => $this->check_null($data['billing_address_2']),
-            'city' => $this->check_null($data['billing_city']), 
-            'postcode' => $this->check_null($data['billing_postcode']),
-            'state' => $this->check_null($data['billing_state']),
-            'countryCode' => $this->check_null($data['billing_country']),
+            'name' => $this->get_formatted_full_name($quote['billing_first_name'],$quote['billing_last_name']),
+            'line1' => $this->check_null($quote['billing_address_1']),
+            'line2' => $this->check_null($quote['billing_address_2']),
+            'city' => $this->check_null($quote['billing_city']), 
+            'postcode' => $this->check_null($quote['billing_postcode']),
+            'state' => $this->check_null($quote['billing_state']),
+            'countryCode' => $this->check_null($quote['billing_country']),
             'phone' => $billing_phone
         ); 
 
@@ -75,28 +74,32 @@ class Latitude_Purchase_Request
         }       
 
         if ($shipping_required) { 
-            $name = $this->get_formatted_full_name($data['shipping_first_name'],$data['shipping_last_name']);
-            if($name !="" && $data['shipping_address_1'] != ""){
+            $name = $this->get_formatted_full_name($quote['shipping_first_name'],$quote['shipping_last_name']);
+            if($name !="" && $quote['shipping_address_1'] != ""){
                 $payload['shippingAddress'] = array(
                     'name' => $name,
-                    'line1' => $this->check_null($data['shipping_address_1']),
-                    'line2' => $this->check_null($data['shipping_address_2']),
-                    'city' => $this->check_null($data['shipping_city']), 
-                    'postcode' => $this->check_null($data['shipping_postcode']),
-                    'state' => $this->check_null($data['shipping_state']),
-                    'countryCode' => $this->check_null($data['shipping_country']),
+                    'line1' => $this->check_null($quote['shipping_address_1']),
+                    'line2' => $this->check_null($quote['shipping_address_2']),
+                    'city' => $this->check_null($quote['shipping_city']), 
+                    'postcode' => $this->check_null($quote['shipping_postcode']),
+                    'state' => $this->check_null($quote['shipping_state']),
+                    'countryCode' => $this->check_null($quote['shipping_country']),
                     'phone' => $billing_phone
                 );        
-            }     
+            }  else {
+                $payload['shippingAddress'] = $payload['billingAddress'];
+            }
+        } else {
+            $payload['shippingAddress'] = $payload['billingAddress'];
         }
 
      
         // order line items 
         $payload['orderLines'] = $this->create_order_lines_from_cart($cart); 
         $payload['merchantUrls'] = array(
-            'cancel' => $this->build_cancel_request_url($post_id),
+            'cancel' => $this->build_cancel_request_url($quote_id),
             'callback' => '',
-            'complete' => $this->build_complete_request_url($post_id) 
+            'complete' => $this->build_complete_request_url($quote_id) 
         ); 
 
         $payload['totalDiscountAmount'] = floatval($cart->get_discount_total());
@@ -113,14 +116,14 @@ class Latitude_Purchase_Request
      * Builds the url callback after purchase request is confirmed
      *
      */
-    private function build_complete_request_url($post_id) {
-        $confirm_nonce = wp_create_nonce( "latitudecheckout_confirm_nonce-{$post_id}" ); 
+    private function build_complete_request_url($quote_id) {
+        $confirm_nonce = wp_create_nonce( "latitudecheckout_confirm_nonce-{$quote_id}" ); 
         $home_url = __(
             get_home_url() . LatitudeConstants::CALLBACK_URL);
 
         $return_url = add_query_arg( array(
             'post_type' => 'latitudecheckout_order',
-            'p' => $post_id,
+            'p' => $quote_id,
             'nonce' => $confirm_nonce 
         ),   $home_url);
 
@@ -131,7 +134,7 @@ class Latitude_Purchase_Request
      * Builds the url callback when purchase request is cancelled or returned to cart
      *
      */
-    private function build_cancel_request_url($post_id) { 
+    private function build_cancel_request_url($quote_id) { 
         return WC()->cart->get_cart_url();  
     }
 

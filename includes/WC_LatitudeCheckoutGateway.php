@@ -405,6 +405,21 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             return $url;
         }
 
+        public function validate_checkout_fields( $fields, $errors ){
+ 
+            if ( preg_match( '/\\d/', $fields[ 'billing_first_name' ] ) || preg_match( '/\\d/', $fields[ 'billing_last_name' ] )  ){
+                $errors->add( 'validation', 'Your first or last name contains a number.' );
+                return;
+            }
+
+            $currency = get_woocommerce_currency();
+            if (!in_array($currency, LatitudeConstants::ALLOWED_CURRENCY)) {  
+                $errors->add( 'validation', 'Unsupported currency for this payment method.' );
+                return;
+            }
+            
+        }
+
         /**
          * Override order creation
          *
@@ -414,31 +429,32 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         {
             $this->log_debug('create_order_quote');
 
-            $data = $checkout->get_posted_data();
+            $post_data = $checkout->get_posted_data();
+            $this->log_debug(json_encode($post_data));
+
             # Set session value of "lc_account_exists" to check for customer signed up at checkout or not
             WC()->session->set(
-                'lc_account_exists',
-                isset($data['createaccount']) ? $data['createaccount'] : 0
+                'latitude_account_exists',
+                isset($post_data['createaccount']) ? $post_data['createaccount'] : 0
             );
 
             if (
-                $data['payment_method'] !=
+                $post_data['payment_method'] !=
                 LatitudeConstants::WC_LATITUDE_GATEWAY_ID
             ) { 
                 $this->log_error("Cannot create order for payments other than " . LatitudeConstants::WC_LATITUDE_GATEWAY_NAME);
-                return;
+                return -1;
             }
- 
-            $cart = WC()->cart;   
+  
+              
             $post_array = array( 
                 'post_title' => 'Latitude Checkout Order', 
                 'post_content' => 'Redirecting to Latitude Interest Free to complete payment', 
                 'post_status' => 'publish',  
-                'post_type' => array('latitudecheckout_order'),  //post_type not reflected
+                'post_type' => array('latitudecheckout_order'),  //BUG-FOUND!! post_type not reflected
              ); 
 
-             //TODO: verify currency and is_cart() ?? 
-
+            
             // create a quote
             $post_id = wp_insert_post(  $post_array, true );   
             if (is_wp_error($post_id)){
@@ -446,20 +462,25 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 				self::log("Could not create \"latitudecheckout_order\" post. WordPress threw error(s): {$errors_str})");
 				return -1;
             } else {
-                
+                $cart = WC()->cart;
                 $cart_hash = $cart->get_cart_hash();
-				  
+				
+                $currency = get_woocommerce_currency();
+                if (!in_array($currency, LatitudeConstants::ALLOWED_CURRENCY)) { 
+                    return $this->update_post_meta_on_error($post_id, 'failed', __("Unsupported currency ". $currency)) ;
+                }
+        
 				$chosen_shipping_methods = WC()->session->get( 'chosen_shipping_methods' );
 				$shipping_packages = WC()->shipping()->get_packages();
 
 				$customer_id = apply_filters( 'woocommerce_checkout_customer_id', get_current_user_id() );
 				$order_vat_exempt = ( $cart->get_customer()->get_is_vat_exempt() ? 'yes' : 'no' );
-				$currency = get_woocommerce_currency();
+				
 				$prices_include_tax = ( get_option( 'woocommerce_prices_include_tax' ) === 'yes' );
 				$customer_ip_address = WC_Geolocation::get_ip_address();
 				$customer_user_agent = wc_get_user_agent();
-				$customer_note = ( isset( $data['order_comments'] ) ? $data['order_comments'] : '' );
-				$payment_method =  $data['payment_method'];
+				$customer_note = ( isset( $post_data['order_comments'] ) ? $post_data['order_comments'] : '' );
+				$payment_method =  $post_data['payment_method'];
 				$shipping_total = $cart->get_shipping_total();
 				$discount_total = $cart->get_discount_total();
 				$discount_tax = $cart->get_discount_tax();
@@ -469,7 +490,9 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 
                 $this->log_info('Creating payload for Purchase Request..'); 
                 $purchase_request = new Latitude_Purchase_Request();
-                $payload = $purchase_request->create_payload_from_cart($cart,$post_id, $data);
+                $payload = $purchase_request->create_payload_from_cart($post_data,$post_id);
+                
+                
                 $this->log_debug(
                     __('purchase payload: ' . wp_json_encode($payload))
                 );
@@ -477,11 +500,8 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 $checkout_service = new Latitude_Checkout_Service();
                 $response = $checkout_service->send_purchase_request($payload);
      
-                if ($response == false) {
-                    add_post_meta( $post_id, 'status', 'failed' );
-                    add_post_meta( $post_id, 'error', 'Latitude PurchaseRequest failed to verify purchase.' );
-                    $this->log_error("Latitude PurchaseRequest failed to verify purchase.");
-                    return -2;  
+                if ($response == false) { 
+                    return $this->update_post_meta_on_error($post_id, 'failed', "Latitude PurchaseRequest failed to verify purchase.") ;
                 }
     
                 if (is_array($response) && $response['result'] == 'failure') {
@@ -518,7 +538,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                     $redirecturl_nonce = wp_create_nonce( "redirecturl_nonce-{$post_id}" );
                     add_post_meta( $post_id, 'status', 'pending' ); 
 					add_post_meta( $post_id, 'created_via', 'pre_create_order' );  
-					add_post_meta( $post_id, 'posted', base64_encode(serialize($data)) );
+					add_post_meta( $post_id, 'posted', base64_encode(serialize($post_data)) );
 					add_post_meta( $post_id, 'cart', base64_encode(serialize($cart)) );
 					add_post_meta( $post_id, 'cart_hash', base64_encode(serialize($cart_hash)) );                    
                     add_post_meta( $post_id, 'merchant_id', $rsp_body['merchantId']);  
@@ -548,6 +568,17 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                     $this->process_payment($post_id);
                 }
             }  
+        }
+
+        /**
+         *  add error message on meta data
+         *
+         */
+        private function update_post_meta_on_error($post_id, $result, $error_string) {
+            add_post_meta( $post_id, 'status', $result );
+            add_post_meta( $post_id, 'error', $error_string );
+            $this->log_error($error_string);
+            return $post_id;   
         }
 
          /**

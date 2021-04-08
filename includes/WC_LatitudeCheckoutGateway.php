@@ -410,13 +410,8 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             if ( preg_match( '/\\d/', $fields[ 'billing_first_name' ] ) || preg_match( '/\\d/', $fields[ 'billing_last_name' ] )  ){
                 $errors->add( 'validation', 'Your first or last name contains a number.' );
                 return;
-            }
-
-            $currency = get_woocommerce_currency();
-            if (!in_array($currency, LatitudeConstants::ALLOWED_CURRENCY)) {  
-                $errors->add( 'validation', 'Unsupported currency for this payment method.' );
-                return;
-            }
+            } 
+            //TODO : Add additional field validations here
             
         }
 
@@ -459,17 +454,14 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             $post_id = wp_insert_post(  $post_array, true );   
             if (is_wp_error($post_id)){
                 $errors_str = implode($post_id->get_error_messages(), ' ');
-				self::log("Could not create \"latitudecheckout_order\" post. WordPress threw error(s): {$errors_str})");
-				return -1;
+				$this->log_error("Could not create \"latitudecheckout_order\" post. WordPress threw error(s): {$errors_str})");
+                $error = new WP_Error('CreateOrderError', $errors_str, 'woo_latitudecheckout'); 
+				return $error;
             } else {
                 $cart = WC()->cart;
                 $cart_hash = $cart->get_cart_hash();
 				
-                $currency = get_woocommerce_currency();
-                if (!in_array($currency, LatitudeConstants::ALLOWED_CURRENCY)) { 
-                    return $this->update_post_meta_on_error($post_id, 'failed', __("Unsupported currency ". $currency)) ;
-                }
-        
+                $currency = get_woocommerce_currency();  
 				$chosen_shipping_methods = WC()->session->get( 'chosen_shipping_methods' );
 				$shipping_packages = WC()->shipping()->get_packages();
 
@@ -501,38 +493,24 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 $response = $checkout_service->send_purchase_request($payload);
      
                 if ($response == false) { 
-                    return $this->update_post_meta_on_error($post_id, 'failed', "Latitude PurchaseRequest failed to verify purchase.") ;
+                    return $this->update_post_meta_on_error($post_id, 'failed', "Purchase request was not valid. Please contact the merchant.") ;
                 }
     
-                if (is_array($response) && $response['result'] == 'failure') {
-                    $error_string = __(
-                        'Error on Purchase Request API: ' . $response['response']
-                    );
-                    add_post_meta( $post_id, 'status', 'failed' );
-                    add_post_meta( $post_id, 'error', $error_string );
-                    $this->log_error("Latitude PurchaseRequest failed to verify purchase. {$error_string}");
-                    return -2;  
+                if (is_array($response) && $response['result'] == 'failure') { 
+                    $this->log_error(__( 'Error on Purchase Request API: ' . $response['response'] ));
+                    return $this->update_post_meta_on_error($post_id, 'failed', 'Purchase request or merchant configuration does not look correct. Please contact the merchant.') ;
                 }
     
                
                 $rsp_body = $response['response'];
                 $this->log_debug($rsp_body);
-                if (!is_array($rsp_body)) {
-                    add_post_meta( $post_id, 'status', 'failed' );
-                    add_post_meta( $post_id, 'error', 'Invalid data received when verifying purchase.' );
-                    $this->log_error("Latitude PurchaseRequest returned invalid response data.");
-                    return -2;  
+                if (!is_array($rsp_body)) { 
+                    return $this->update_post_meta_on_error($post_id, 'failed', "Purchase request returned invalid data. Please contact the merchant.") ;
                 } 
-                
-                //TODO: add currency check?
-
+                  
                 $result = $rsp_body['result']; 
-                if ($result != 'pending') {
-                    $error_string =  $rsp_body['error']; 
-                    add_post_meta( $post_id, 'status', $result );
-                    add_post_meta( $post_id, 'error', $error_string );
-                    $this->log_error("Latitude PurchaseRequest failed to verify purchase. {$error_string}");
-                    return -2;  
+                if ($result != 'pending') { 
+                    return $this->update_post_meta_on_error($post_id, $result, "Purchase request could not be verified. Please contact the merchant.") ;
                 } else { 
 
                     $redirecturl_nonce = wp_create_nonce( "redirecturl_nonce-{$post_id}" );
@@ -577,8 +555,8 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         private function update_post_meta_on_error($post_id, $result, $error_string) {
             add_post_meta( $post_id, 'status', $result );
             add_post_meta( $post_id, 'error', $error_string );
-            $this->log_error($error_string);
-            return $post_id;   
+            $this->log_error($error_string); 
+            return new WP_Error('create-order-error', $error_string ); 
         }
 
          /**
@@ -694,21 +672,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 'redirect' => $order->get_checkout_payment_url(false),
             ];
         }
-
-        /**
-         *
-         * Displays the error message on the cart.
-         *
-         */
-        private function redirect_to_cart_on_error($error_string)
-        {
-            wc_add_notice(__($error_string, 'woo_latitudecheckout'), 'error');
-            return [
-                'result' => 'failure',
-                'redirect' => WC()->cart->get_cart_url(),
-            ];
-        }
-
+ 
         /**
          *
          * Validates contents of the purchase_request to match current order.

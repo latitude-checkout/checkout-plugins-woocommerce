@@ -4,41 +4,10 @@
  *  @var WC_LatitudeCheckoutGateway $this
  */
 
-$payment_field_url = $this->get_payment_fields_src();
-$field_params = json_encode([
-    'merchantId' => $this->get_merchant_id(),
-    'currency' => get_woocommerce_currency(),
-    'container' => '',
-    'page' => 'checkout',
-    'container' => [
-        'footer' => 'latitude-payment--footer',
-        'main' => 'latitude-payment--main',
-    ],
-]);
-?> 
-<script language="Javascript" type="text/javascript">   
-    var target_url = '<?php echo $payment_field_url; ?>';
-    window.LatitudeCheckout = <?php echo $field_params; ?>;    
-    (function () {
-        function asyncLoad() {
-        
-            var curr = document.createElement("script");
-            curr.type = "text/javascript";
-            curr.async = true;
-            curr.src = '<?php echo $payment_field_url; ?>';
-            var scr = document.getElementsByTagName("script")[0];
-            scr.parentNode.insertBefore(curr, scr);   
-        } 
-
-        if (window.attachEvent) {
-            window.attachEvent("onload", asyncLoad);
-        } else {
-            window.addEventListener("load", asyncLoad, false);
-        }
-
-    })();      
-</script> 
-<div id="latitude-payment--main">
+ 
+?>  
+<p>hello there 1</p>
+<div id="latitude-payment--main"> 
 <div style="display: flex !important; justify-content: center !important">
 <svg
     version="1.1"

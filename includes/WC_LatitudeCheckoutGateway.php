@@ -43,15 +43,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         protected static $log = null,
             $log_enabled = null;
 
-        /**
-         * Protected static variable
-         *
-         *
-         * @var     string     $version           A reference to the plugin version. Defaults to the version constant defined in Constants.php.
-         *
-         */
-
-        protected static $version = LatitudeConstants::WC_LATITUDE_GATEWAY_VERSION;
+ 
 
         /**
          * Protected variables.
@@ -174,6 +166,14 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         }
 
         /**
+         * Get plugin version constant
+         */
+        public function get_plugin_version() 
+        {
+            return WC_LATITUDE_GATEWAY__PLUGIN_VERSION;
+        }
+
+        /**
          * Get the Merchant ID from our user settings.
          */
         public function get_merchant_id()
@@ -216,6 +216,8 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 'latitude_widget_js',
                 'latitude_widget_js_vars',
                 [
+                    'page' => 'product',
+                    'container' => 'latitude-banner-container',
                     'widgetSettings' => $obj,
                     'merchantId' => $this->merchant_id,
                     'currency' => get_woocommerce_currency(),
@@ -291,10 +293,79 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         {
             // TODO: additional field validations here when needed
             # Give other plugins a chance to manipulate or replace the HTML echoed by this funtion.
-            ob_start();
-            include "{$this->include_path}/Payment_Fields.html.php";
-            $html = ob_get_clean();
-            echo apply_filters('latitude_html_at_checkout', $html);
+           
+            ?>   
+            <div id="latitude-payment--main"> 
+            <div style="display: flex !important; justify-content: center !important">
+            <svg
+                version="1.1"
+                style="height: 50px !important"
+                id="L4"
+                xmlns="http://www.w3.org/2000/svg"
+                xmlns:xlink="http://www.w3.org/1999/xlink"
+                x="0px"
+                y="0px"
+                viewBox="0 0 100 100"
+                enable-background="new 0 0 0 0"
+                xml:space="preserve"
+            >
+                <circle fill="#0046AA" stroke="none" cx="6" cy="50" r="6">
+                <animate
+                    attributeName="opacity"
+                    dur="2s"
+                    values="0;1;0"
+                    repeatCount="indefinite"
+                    begin="0.1"
+                />
+                </circle>
+                <circle fill="#0046AA" stroke="none" cx="26" cy="50" r="6">
+                <animate
+                    attributeName="opacity"
+                    dur="2s"
+                    values="0;1;0"
+                    repeatCount="indefinite"
+                    begin="0.2"
+                />
+                </circle>
+                <circle fill="#0046AA" stroke="none" cx="46" cy="50" r="6">
+                <animate
+                    attributeName="opacity"
+                    dur="2s"
+                    values="0;1;0"
+                    repeatCount="indefinite"
+                    begin="0.3"
+                />
+                </circle>
+            </svg>
+            </div>
+            <p style="margin-top: 14px !important; margin-bottom: 14px !important">
+                You will be redirected to Latitude checkout to complete your order
+            </p>
+            </div>  
+            <div id="latitude-payment--footer"></div> 
+            <?php
+           
+            wp_enqueue_script(
+                'latitude_paymentfield_js',
+                '/wp-content/plugins/checkout-plugins-woocommerce/js/woocommerce.js'
+            );
+            wp_localize_script(
+                'latitude_paymentfield_js',
+                'latitude_widget_js_vars',
+                [
+                    'page' => 'checkout',
+                    'container' => [
+                        'footer' => 'latitude-payment--footer',
+                        'main' => 'latitude-payment--main',
+                    ], 
+                    'merchantId' => $this->merchant_id,
+                    'currency' => get_woocommerce_currency(), 
+                    'assetUrl' => $this->get_payment_fields_src(),
+                    'widgetSettings' => '',
+                ]
+            );
+
+
         }
 
         /**
@@ -539,8 +610,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         }
 
         
-        public function register_post_types() {
-            $this->log_debug('registering post type ...'); 
+        public function register_post_types() { 
 			register_post_type( 'latitudecheckout_order', array(
 				'labels' => array(
 					'name' => __( 'Latitude Interest Free Orders' ),

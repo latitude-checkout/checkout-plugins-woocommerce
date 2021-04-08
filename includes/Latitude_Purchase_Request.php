@@ -104,7 +104,7 @@ class Latitude_Purchase_Request
         $payload['totalTaxAmount'] = floatval($cart->get_total_tax()); 
         $payload['platformType'] = LatitudeConstants::WC_LATITUDE_GATEWAY_PLATFORM;
         $payload['platformVersion'] = WC()->version;
-        $payload['pluginVersion'] = LatitudeConstants::WC_LATITUDE_GATEWAY_VERSION;
+        $payload['pluginVersion'] = $this->gateway->get_plugin_version();
         return $payload;
 
     }

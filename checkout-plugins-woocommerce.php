@@ -4,7 +4,7 @@
  * Description: Enabling Latitude Interest Free Payment Gateway on a WooCommerce store.
  * Author: latitudefinancial
  * Author URI: https://www.latitudefinancial.com.au/
- * Version:1.0.0
+ * Version:0.0.43
  * Text Domain: checkout-plugins-woocommerce
  * WC tested up to: 5.6
  *
@@ -34,6 +34,7 @@ define('WP_DEBUG_LOG', false);
 define('WP_DEBUG_DISPLAY', false);
 
 define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '5.6');
+define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '0.0.43'); 
 define('WC_LATITUDE_GATEWAY__PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 if (!class_exists('LatitudeCheckoutPlugin')) {
@@ -78,19 +79,17 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
         public function __construct()
         {
             $gateway = WC_LatitudeCheckoutGateway::get_instance();
-            add_filter(
-                'woocommerce_payment_gateways',
-                [$gateway, 'add_latitudecheckoutgateway'],
-                10,
-                1
-            );
-            add_filter(
-                'plugin_action_links_' . plugin_basename(__FILE__),
-                [$this, 'add_settings_links'],
-                10,
-                1
-            );
 
+            /*
+            * Actions
+            */
+            add_action( 'init', array($gateway, 'register_post_types'), 10, 0 );
+            add_action(
+                "woocommerce_update_options_payment_gateways_{$gateway->id}",
+                [$gateway, 'process_admin_options'],
+                10,
+                0
+            );
             add_action(
                 "woocommerce_update_options_payment_gateways_{$gateway->id}",
                 [$gateway, 'refresh_configuration'],
@@ -108,6 +107,44 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
                 $gateway,
                 'on_latitude_checkout_callback',
             ]);
+            add_action('woocommerce_admin_order_data_after_order_details', [
+                $gateway,
+                'display_order_data_in_admin',
+            ]);
+            add_action(
+                'woocommerce_single_product_summary',
+                [$gateway, 'get_widget_data'],
+                10,
+                2
+            );
+            add_action(
+                'woocommerce_before_checkout_form',
+                [$gateway, 'add_checkout_custom_style'],
+                10,
+                2
+            );
+            add_action( 'woocommerce_after_checkout_validation', [
+                $gateway,
+                'validate_checkout_fields'],
+                10,
+                2
+            );
+           
+            /*
+            * Filters
+            */
+            add_filter(
+                'woocommerce_payment_gateways',
+                [$gateway, 'add_latitudecheckoutgateway'],
+                10,
+                1
+            );
+            add_filter(
+                'plugin_action_links_' . plugin_basename(__FILE__),
+                [$this, 'add_settings_links'],
+                10,
+                1
+            ); 
             add_filter(
                 'woocommerce_gateway_icon',
                 [$gateway, 'filter_latitude_gateway_icon'],
@@ -126,22 +163,10 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
                 10,
                 2
             );
-            add_action('woocommerce_admin_order_data_after_order_details', [
-                $gateway,
-                'display_order_data_in_admin',
-            ]);
-            add_action(
-                'woocommerce_single_product_summary',
-                [$gateway, 'get_widget_data'],
-                10,
-                2
-            );
-            add_action(
-                'woocommerce_before_checkout_form',
-                [$gateway, 'add_checkout_custom_style'],
-                10,
-                2
-            );
+            add_filter( 'woocommerce_create_order', array($gateway, 'create_order_quote'), 10, 2 );
+            add_filter( 'woocommerce_new_order_data', array($gateway, 'filter_new_order_data'), 10, 1 );
+
+
         }
 
         /**

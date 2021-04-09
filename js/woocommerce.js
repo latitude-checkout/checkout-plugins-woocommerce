@@ -1,7 +1,7 @@
-  window.LatitudeCheckout = {
+window.LatitudeCheckout = {
   merchantId: latitude_widget_js_vars.merchantId,
-  page: "product",
-  container: "latitude-banner-container",
+  page: latitude_widget_js_vars.page,
+  container: latitude_widget_js_vars.container,
   containerClass: "",
   currency: latitude_widget_js_vars.currency,
   layout: "",
@@ -23,7 +23,7 @@ window.LatitudeCheckoutOverride = latitude_widget_js_vars.widgetSettings;
     var curr = document.createElement("script");
     curr.type = "text/javascript";
     curr.async = true;
-    curr.src = latitude_widget_js_vars.assetUrl; 
+    curr.src = latitude_widget_js_vars.assetUrl;
 
     var scr = document.getElementsByTagName("script")[0];
     scr.parentNode.insertBefore(curr, scr);

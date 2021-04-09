@@ -552,7 +552,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             $is_order_pending = $this->is_order_pending($order);
             if (!$is_order_pending) {
                 $this->log_error(
-                    'Cannot verify  purchase when order is no longer pending.'
+                    'Cannot verify purchase when order is no longer pending.'
                 );
                 $order->add_order_note(
                     sprintf(

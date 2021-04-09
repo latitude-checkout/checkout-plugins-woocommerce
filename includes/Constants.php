@@ -13,7 +13,6 @@ class Constants
 
     const ALLOWED_CURRENCY = ['AUD', 'NZD'];
 
-    const CALLBACK_ROUTE = '/wp-json/latitude/v1/callback';
     const CANCEL_ROUTE = 'checkout/cart';
     const COMPLETE_ROUTE = '/wc-api/latitude_checkout';
 

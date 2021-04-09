@@ -82,7 +82,7 @@ $field_params = json_encode([
 </svg>
 </div>
 <p style="margin-top: 14px !important; margin-bottom: 14px !important">
-    You will be redirected to Latitude checkout to complete your order
+    You will be redirected to Latitude to complete your order
 </p>
 </div>  
 <div id="latitude-payment--footer"></div>  

@@ -7,6 +7,7 @@ class Constants
     const WC_LATITUDE_GATEWAY_ID = 'latitudecheckout'; 
     const WC_LATITUDE_GATEWAY_NAME = 'Latitude Interest Free';
 
+    // icon config
     const AU_ICON_URL = 'https://assets.latitudefinancial.com/merchant-services/latitude/icon/latitude-interest-free.svg';
     const AU_ICON_ALT_TEXT = 'Latitude Interest Fee';
     const NZ_ICON_URL = 'https://assets.latitudefinancial.com/merchant-services/latitude/icon/gem-interest-free.svg';
@@ -21,4 +22,8 @@ class Constants
 
     const WIDGETS_URL_PROD = 'https://checkout.latitudefinancial.com'; // to confirm if this url is the same for both test and prod env
     const WIDGETS_URL_TEST = 'https://checkout.latitudefinancial.com';
+
+    // wc order status
+    const WC_ORDER_FAILED = 'failed';
+    const WC_ORDER_CANCELLED = 'cancelled';
 }

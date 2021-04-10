@@ -4,7 +4,7 @@
  * Description: Enabling Latitude Interest Free Payment Gateway on a WooCommerce store.
  * Author: latitudefinancial
  * Author URI: https://www.latitudefinancial.com.au/
- * Version:0.0.43
+ * Version:0.0.51
  * Text Domain: checkout-plugins-woocommerce
  * WC tested up to: 5.6
  *
@@ -34,7 +34,7 @@ define('WP_DEBUG_LOG', false);
 define('WP_DEBUG_DISPLAY', false);
 
 define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '5.6');
-define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '0.0.43'); 
+define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '0.0.51'); 
 define('WC_LATITUDE_GATEWAY__PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 if (!class_exists('LatitudeCheckoutPlugin')) {
@@ -117,12 +117,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
                 10,
                 2
             );
-            add_action(
-                'woocommerce_before_checkout_form',
-                [$gateway, 'add_checkout_custom_style'],
-                10,
-                2
-            );
+            
             add_action( 'woocommerce_after_checkout_validation', [
                 $gateway,
                 'validate_checkout_fields'],
@@ -162,11 +157,8 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
                 [$gateway, 'filter_order_pay_title'],
                 10,
                 2
-            );
-            add_filter( 'woocommerce_create_order', array($gateway, 'create_order_quote'), 10, 2 );
-            add_filter( 'woocommerce_new_order_data', array($gateway, 'filter_new_order_data'), 10, 1 );
-
-
+            ); 
+ 
         }
 
         /**

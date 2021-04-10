@@ -328,7 +328,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             </svg>
             </div>
             <p style="margin-top: 14px !important; margin-bottom: 14px !important">
-                You will be redirected to Latitude checkout to complete your order
+                You will be redirected to Latitude complete your order
             </p>
             </div>  
             <div id="latitude-payment--footer"></div> 
@@ -404,251 +404,144 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             
         }
 
-        /**
-         * Override order creation
+/**
+         * Default process payment
          *
          */
 
-        public function create_order_quote($null, $checkout)
+        public function process_payment($order_id)
         {
-            $this->log_debug('create_order_quote');
-
-            $post_data = $checkout->get_posted_data();
-            $this->log_debug(json_encode($post_data));
-
-            # Set session value of "lc_account_exists" to check for customer signed up at checkout or not
-            WC()->session->set(
-                'latitude_account_exists',
-                isset($post_data['createaccount']) ? $post_data['createaccount'] : 0
-            );
-
-            if (
-                $post_data['payment_method'] !=
-                LatitudeConstants::WC_LATITUDE_GATEWAY_ID
-            ) { 
-                return;
-            }
-  
-              
-            $post_array = array( 
-                'post_title' => 'Latitude Checkout Order', 
-                'post_content' => 'Redirecting to Latitude Interest Free to complete payment', 
-                'post_status' => 'publish',  
-                'post_type' => array('latitudecheckout_order'),  //BUG-FOUND!! post_type not reflected
-             ); 
-
-            
-            // create a quote
-            $post_id = wp_insert_post(  $post_array, true );   
-            if (is_wp_error($post_id)){
-                $errors_str = implode($post_id->get_error_messages(), ' ');
-				$this->log_error("Could not create \"latitudecheckout_order\" post. WordPress threw error(s): {$errors_str})");
-                $error = new WP_Error('CreateOrderError', $errors_str, 'woo_latitudecheckout'); 
-				return $error;
-            } else {
-                $cart = WC()->cart;
-                $cart_hash = $cart->get_cart_hash();
-				
-                $currency = get_woocommerce_currency();  
-				$chosen_shipping_methods = WC()->session->get( 'chosen_shipping_methods' );
-				$shipping_packages = WC()->shipping()->get_packages();
-
-				$customer_id = apply_filters( 'woocommerce_checkout_customer_id', get_current_user_id() );
-				$order_vat_exempt = ( $cart->get_customer()->get_is_vat_exempt() ? 'yes' : 'no' );
-				
-				$prices_include_tax = ( get_option( 'woocommerce_prices_include_tax' ) === 'yes' );
-				$customer_ip_address = WC_Geolocation::get_ip_address();
-				$customer_user_agent = wc_get_user_agent();
-				$customer_note = ( isset( $post_data['order_comments'] ) ? $post_data['order_comments'] : '' );
-				$payment_method =  $post_data['payment_method'];
-				$shipping_total = $cart->get_shipping_total();
-				$discount_total = $cart->get_discount_total();
-				$discount_tax = $cart->get_discount_tax();
-				$cart_tax = $cart->get_cart_contents_tax() + $cart->get_fee_tax();
-				$shipping_tax = $cart->get_shipping_tax();
-				$total = $cart->get_total( 'edit' );
-
-                $this->log_info('Creating payload for Purchase Request..'); 
-                $purchase_request = new Latitude_Purchase_Request();
-                $payload = $purchase_request->create_payload_from_cart($post_data,$post_id);
-                
-                
-                $this->log_debug(
-                    __('purchase payload: ' . wp_json_encode($payload))
-                );
-    
-                $checkout_service = new Latitude_Checkout_Service();
-                $response = $checkout_service->send_purchase_request($payload);
-     
-                if ($response == false) { 
-                    return $this->update_post_meta_on_error($post_id, 'failed', "Purchase request was not valid. Please contact the merchant.") ;
-                }
-    
-                if (is_array($response) && $response['result'] == 'failure') { 
-                    $this->log_error(__( 'Error on Purchase Request API: ' . $response['response'] ));
-                    return $this->update_post_meta_on_error($post_id, 'failed', 'Purchase request or merchant configuration does not look correct. Please contact the merchant.') ;
-                }
-    
-               
-                $rsp_body = $response['response'];
-                $this->log_debug($rsp_body);
-                if (!is_array($rsp_body)) { 
-                    return $this->update_post_meta_on_error($post_id, 'failed', "Purchase request returned invalid data. Please contact the merchant.") ;
-                } 
-                  
-                $result = $rsp_body['result']; 
-                if ($result != 'pending') { 
-                    $error_string = $rsp_body['error'];
-                    if (empty($error_string)){
-                        return $this->update_post_meta_on_error($post_id, $result, "Purchase request could not be verified. Please contact the merchant.") ;
-                    } else {
-                        return $this->update_post_meta_on_error($post_id, $result, "Purchase request failed. {$error_string}.") ;
-                    }
-                    
-                } else { 
-
-                    $redirecturl_nonce = wp_create_nonce( "redirecturl_nonce-{$post_id}" );
-                    add_post_meta( $post_id, 'status', 'pending' );  
-					add_post_meta( $post_id, 'posted', base64_encode(serialize($post_data)) );
-					add_post_meta( $post_id, 'cart', base64_encode(serialize($cart)) );
-					add_post_meta( $post_id, 'cart_hash', base64_encode(serialize($cart_hash)) );                    
-                    add_post_meta( $post_id, 'merchant_id', $rsp_body['merchantId']);  
-                    add_post_meta( $post_id, 'merchant_reference', $rsp_body['merchantReference']);  
-                    add_post_meta( $post_id, 'amount', $rsp_body['amount'] );  
-                    add_post_meta( $post_id, 'currency', $rsp_body['currency'] );  
-                    add_post_meta( $post_id, 'redirect_url', $rsp_body['redirectUrl']); // to remove
-                    add_post_meta( $post_id, 'redirecturl_nonce', $redirecturl_nonce); 
-
-					add_post_meta( $post_id, 'chosen_shipping_methods', base64_encode(serialize($chosen_shipping_methods)) );
-					add_post_meta( $post_id, 'shipping_packages', base64_encode(serialize($shipping_packages)) );
-
-					add_post_meta( $post_id, 'customer_id', base64_encode(serialize($customer_id)) );
-					add_post_meta( $post_id, 'order_vat_exempt', base64_encode(serialize($order_vat_exempt)) );
-					add_post_meta( $post_id, 'currency', base64_encode(serialize($currency)) );
-					add_post_meta( $post_id, 'prices_include_tax', base64_encode(serialize($prices_include_tax)) );
-					add_post_meta( $post_id, 'customer_ip_address', base64_encode(serialize($customer_ip_address)) );
-					add_post_meta( $post_id, 'customer_user_agent', base64_encode(serialize($customer_user_agent)) );
-					add_post_meta( $post_id, 'customer_note', base64_encode(serialize($customer_note)) );
-					add_post_meta( $post_id, 'payment_method', base64_encode(serialize($payment_method)) );
-					add_post_meta( $post_id, 'shipping_total', base64_encode(serialize($shipping_total)) );
-					add_post_meta( $post_id, 'discount_total', base64_encode(serialize($discount_total)) );
-					add_post_meta( $post_id, 'discount_tax', base64_encode(serialize($discount_tax)) );
-					add_post_meta( $post_id, 'cart_tax', base64_encode(serialize($cart_tax)) );
-					add_post_meta( $post_id, 'shipping_tax', base64_encode(serialize($shipping_tax)) );
-					add_post_meta( $post_id, 'total', base64_encode(serialize($total)) );
-                    $this->process_payment($post_id);
-                }
-            }  
-        }
-
-        /**
-         *  add error message on meta data
-         *
-         */
-        private function update_post_meta_on_error($post_id, $result, $error_string) {
-            add_post_meta( $post_id, 'status', $result );
-            add_post_meta( $post_id, 'error', $error_string );
-            $this->log_error($error_string); 
-            return new WP_Error('create-order-error', $error_string ); 
-        }
-
-         /**
-         *  process payment called in create order override 
-         *
-         */
-        public function process_payment($order_id) {
-
             $this->log_info(
                 __(
-                    "Processing order ID : {$order_id}, using payment gateway: " .
-                        LatitudeConstants::WC_LATITUDE_GATEWAY_NAME
+                    'Processing payment using ' .
+                        LatitudeConstants::WC_LATITUDE_GATEWAY_NAME .
+                        ' payment method.'
                 )
             );
+            if (!$order_id) {
+                $this->log_error(
+                    'Order ID cannot be null when processing payment.'
+                );
+                return;
+            }
 
-            if ($order_id === -2) {
-                $this->log_error('process_payment ...purchase request failed'); 
-                # purchase request failed
-                wp_send_json(array(
-                    'result'	=> 'success',
-                    'messages'	=> '<div class="woocommerce-error">There was a problem preparing your payment. Please try again.</div>'
-                ));
-            } elseif ($order_id === -1) {
-                # failed to create pre order 
-                $this->log_error('process_payment ...failed to create pre order '); 
-                wp_send_json(array(
-                    'result'	=> 'success',
-                    'messages'	=> '<div class="woocommerce-error">There was a problem preparing your payment. Please try again.</div>'
-                ));
-            } elseif ($order_id > 0) {
-                $this->log_debug('process_payment ...get_post_meta'); 
-                // send verify purchase request here
-                $quote = get_post($order_id); 
-                $this->log_debug($quote); 
-                $redirect_url = get_post_meta( $order_id, 'redirect_url', true );
-                if (is_null($redirect_url) || empty($redirect_url)) {
-                    $this->log_warning('process_payment ...redirect_url is empty '); 
-                    wp_send_json(array(
-                        'result'	=> 'success',
-                        'messages'	=> '<div class="woocommerce-error">There was a problem preparing your payment. Please try again.</div>'
-                    ));
-                } else {
-                    $this->log_info(
+            $purchase_request = new Latitude_Purchase_Request();
+            $payload = $purchase_request->build_parameters($order_id);
+            $this->log_debug($payload);
+
+            $checkout_service = new Latitude_Checkout_Service();
+            $response = $checkout_service->send_purchase_request($payload);
+
+            $order = wc_get_order($order_id);
+
+            if ($response == false) {
+                return $this->redirect_to_cart_on_api_error(
+                    $order,
+                    'Purchase Request was not valid. Please contact Merchant.'
+                );
+            }
+
+            if (is_array($response) && $response['result'] == 'failure') { 
+                $error_string = __( "Purchase Request returned with error : {$response['error']}.");
+                $this->log_error($error_string);
+                $order->add_order_note(__( $error_string , 'woo_latitudecheckout' ));
+                $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __( 'Purchase request API failed. ', 'woo_latitudecheckout' ) );
+                return $this->redirect_to_cart_on_api_error($order, 'Purchase Request was not valid. Please contact Merchant.');
+            }
+
+            $rsp_body = $response['response'];
+            $result = $rsp_body['result'];
+            $this->log_debug($rsp_body);
+            if ($result == 'pending') {
+                $error_string = $this->is_valid_order_response(
+                    $rsp_body,
+                    $order
+                );
+                if (!empty($error_string)) {
+                    $this->log_error(
                         __(
-                            'Redirect URL: ' .
-                            $redirect_url
+                            'Error:  (is_valid_order_response): ' .
+                                $error_string
                         )
                     );
+                    $error_string = __(
+                        "Error: Payment request returned invalid order details. Order Reference: {$order_id}. " .
+                            $error_string
+                    );
+                    return $this->redirect_to_cart_on_error(
+                        $order,
+                        $error_string
+                    );
+                }
 
-                    if (!is_ajax()) {
-                        wp_safe_redirect($redirect_url);
-                        exit();
-                    }
-                    wp_send_json([
-                        'result' => 'success',
-                        'redirect' => $redirect_url,
-                    ]);  
-                } 
+                $redirect_url = $rsp_body['redirectUrl'];
+                $this->log_debug(__('redirectUrl: ' . $redirect_url));
+                if (empty($redirect_url)) {
+                    return $this->redirect_to_cart_on_error(
+                        $order,
+                        'Latitude Interest Free Gateway is not reachable.'
+                    );
+                }
+
+                if (!is_ajax()) {
+                    wp_safe_redirect($redirect_url);
+                    exit();
+                }
+                wp_send_json([
+                    'result' => 'success',
+                    'redirect' => $redirect_url,
+                ]);
+            } elseif ($result == 'failed') {
+                $error_string = $rsp_body['error'];
+                if (empty($error_string)) {
+                    $error_string = 'Purchase Request was not valid. Please contact Merchant.';
+                }  
+                $order->add_order_note(__( 'Latitude Checkout Gateway Error: ' . $error_string , 'woo_latitudecheckout' ));
+                $this->log_error( __('Latitude Checkout Gateway Error: ' . $error_string));
+                return $this->redirect_to_cart_on_error($order, $error_string);
+            } else {
+                // Purchase request returned unexpected result (neither pending nor failed)
+                $this->log_debug(
+                    __(
+                        'unexpected result received from purchase request: ' .
+                            $result
+                    )
+                );
+                return $this->redirect_to_cart_on_error(
+                    $order,
+                    'Unexpected result received from purchase request.'
+                );
             }
         }
 
-        
-        public function register_post_types() { 
-			register_post_type( 'latitudecheckout_order', array(
-				'labels' => array(
-					'name' => __( 'Latitude Interest Free Orders' ),
-					'singular_name' => __( 'Latitude Interest Free Order' ),
-					'not_found' => __( 'No orders found.' ),
-					'all_items' => __( 'View All' )
-				),
-				'supports' => array(
-					'custom-fields'
-				),
-				'public' => true,
-				'publicly_queriable' => false,
-				'show_ui' => false, # Set to true to render Admin UI for this post type.
-				'can_export' => false,
-				'exclude_from_search' => true,
-				'show_in_nav_menus' => false,
-				'has_archive' => false,
-				'rewrite' => false
-			));
-		}
 
-        private function is_post_latitudecheckout_order($post) {
-			if (is_numeric($post) && $post > 0) {
-				$post = get_post( (int)$post );
-			}
+        /**
+         *
+         * Displays the error message on the cart.
+         *
+         */
+        private function redirect_to_cart_on_api_error($order, $error_string)
+        { 
+            wc_add_notice(__($error_string, 'woo_latitudecheckout'), 'error');
+            return [
+                'result' => 'failure',
+                'redirect' => $order->get_checkout_payment_url(false),
+            ];
+        }       
 
-			if ($post instanceof WP_Post) {
-				if (($post->post_type === 'latitudecheckout_order') ||
-                ($post->post_title === 'Latitude Checkout Order')) {
-					return true;
-				}
-			}
-
-			return false;
-		}
-        
+        /**
+         *
+         * Displays the error message on the cart.
+         *
+         */
+        private function redirect_to_cart_on_error($order, $error_string)
+        {
+            wc_add_notice(__($error_string, 'woo_latitudecheckout'), 'error');
+            return [
+                'result' => 'failure',
+                'redirect' => $order->get_checkout_payment_url(false),
+            ];
+        }       
  
         /**
          *
@@ -712,37 +605,16 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 );
             }
         }
-
-        /**
+ 
+         /**
          *
          * Hooked onto the "woocommerce_api_latitude_checkout" action.
          *
          */
-        public function on_latitude_checkout_callback() {
+
+        public function on_latitude_checkout_callback()
+        {
             $this->log_debug('on_latitude_checkout_callback');
-            if (is_admin()) {
-                return;
-            }
-
-            if (empty($_GET)) {
-                return;
-            }
-
-            $quote = null;
-            if (array_key_exists('post_type', $_GET) && array_key_exists('p', $_GET)) {
-                if ($_GET['post_type'] == 'latitudecheckout_order' && is_numeric($_GET['p'])) {
-                    $quote = get_post( (int)$_GET['p'] );
-                }
-            }  
-            if (is_null($quote)) {
-                $quote = get_post(); 
-            } 
-            $this->log_debug($quote);
-            if (!$this->is_post_latitudecheckout_order($latitudecheckout_post)) {
-                $this->log_debug('this is NOT a valid latitudecheckout_order post');
-            } else {
-                $this->log_debug('this is a valid latitudecheckout_order post');
-            }
 
             if (array_key_exists('gatewayReference', $_GET)) {
                 $gatewayReference = $_GET['gatewayReference'];
@@ -751,7 +623,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 $transactionReference = $_GET['transactionReference'];
             }
             if (array_key_exists('merchantReference', $_GET)) {
-                $merchantReference = $_GET['merchantReference'];
+                $order_id = $merchantReference = $_GET['merchantReference'];
             }
             $this->log_debug(
                 "merchantReference: {$merchantReference}, transactionReference: {$transactionReference}, gatewayReference: {$gatewayReference}"
@@ -760,8 +632,9 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 empty($gatewayReference) ||
                 empty($transactionReference) ||
                 empty($merchantReference)
-            ) { 
-                $this->update_and_trash_post( $quote->ID, "Missing parameters on callback.");
+            ) {
+                wp_redirect(wc_get_cart_url());
+                exit();
             }
 
             $payload = [
@@ -770,16 +643,43 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 'merchantReference' => $merchantReference,
             ];
 
-            $this->log_debug('verify_purchase ... ');
-            $this->log_debug($payload); 
-            
+            $order = wc_get_order($order_id);
+            // check order status
+            $is_order_pending = $this->is_order_pending($order);
+            if (!$is_order_pending) {
+                $this->log_error(
+                    'Cannot verify purchase when order is no longer pending.'
+                );
+                $order->add_order_note(
+                    sprintf(
+                        __(
+                            'Order status is not pending for payment, cannot proceed to verify. Transaction reference: %s',
+                            'woo_latitudecheckout'
+                        ),
+                        $transactionReference
+                    )
+                );
+                wp_redirect($order->get_checkout_payment_url(true));
+                exit();
+            }
+
             $checkout_service = new Latitude_Checkout_Service();
             $response = $checkout_service->verify_purchase_request($payload);
 
-            if ($response === false) { 
-                $this->update_and_trash_post( $quote->ID, "Verify Purchase API failed.");  
+            if ($response === false) {
+                $this->log_error('Verify Purchase API failed.');
+                $order->add_order_note(
+                    sprintf(
+                        __(
+                            '%s failed at Verify Purchase API.',
+                            'woo_latitudecheckout'
+                        ),
+                        $order->get_payment_method_title()
+                    )
+                );
             } elseif (is_array($response)) {
-                $rsp_body = $response['response']; 
+                $rsp_body = $response['response'];
+                $this->log_debug('verify_purchase_request() returned data');
                 $this->log_debug($rsp_body);
                 $result = $rsp_body['result'];
                 $transactionType = $rsp_body['transactionType'];
@@ -787,196 +687,100 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 $message = $rsp_body['message'];
 
                 if ($result == 'completed') {
-
-                    $orderReference = [
-                        'gatewayReference' => $gatewayReference,
-                        'transactionReference' => $transactionReference,
-                        'merchantReference' => $merchantReference,
-                        'promotionReference' => $promotionReference,
-                        'transactionType' => $transactionType
-                    ];
-
-                    $order = $this->create_wc_order($quote->ID, $orderReference);
-                    
-                    if (!is_wp_error($order)) {
-                        do_action( 'woocommerce_checkout_order_processed', $quote->ID, $posted, $order );
-                        if ($transactionType == 'sale') {
-                            $this->log_info(
-                                "WooCommerce Order #{$merchantReference} transaction is \"completed\"."
-                            ); 
-                            $order->add_order_note(
-                                sprintf(
-                                    __(
-                                        'Payment approved. Transaction reference: %s, Gateway reference: %s',
-                                        'woo_latitudecheckout'
-                                    ),
-                                    $transactionReference,
-                                    $gatewayReference
-                                )
-                            );
-                            $order->payment_complete($transactionReference);
-                        } else {
-                            // assume returned $transactionType == 'authorisation'  
-                            $this->log_info(
-                                "WooCommerce Order #{$merchantReference} transaction is   \"{$transactionType}\"."
-                            ); 
-                            $order->add_order_note(
-                                sprintf(
-                                    __(
-                                        'Payment under %s. Transaction reference: %s, Gateway reference: %s',
-                                        'woo_latitudecheckout'
-                                    ),
-                                    $transactionType,
-                                    $transactionReference,
-                                    $gatewayReference
-                                )
-                            );
-                            $order->update_status( 'on-hold' ); 
-                        }   
-                        $order->save(); 
-                        if (wp_redirect( $order->get_checkout_order_received_url() )) {
-                            exit;
-                        }
+                    if ($transactionType == 'sale') {
+                        $this->log_info(
+                            "WooCommerce Order #{$order_id} transaction is \"completed\"."
+                        );
+                        $order->add_order_note(
+                            sprintf(
+                                __(
+                                    'Payment approved. Transaction reference: %s, Gateway reference: %s',
+                                    'woo_latitudecheckout'
+                                ),
+                                $transactionReference,
+                                $gatewayReference
+                            )
+                        );
+                    } elseif ($transactionType == 'authorisation') {
+                        $this->log_info(
+                            "WooCommerce Order #{$order_id} transaction is on \"authorisation\"."
+                        );
+                        $order->add_order_note(
+                            sprintf(
+                                __(
+                                    'Payment under authorisation. Transaction reference: %s, Gateway reference: %s',
+                                    'woo_latitudecheckout'
+                                ),
+                                $transactionReference,
+                                $gatewayReference
+                            )
+                        );
+                    } else {
+                        $this->log_info(
+                            "WooCommerce Order #{$order_id} transaction is \"accepted as {$transactionType}\"."
+                        );
+                        $order->add_order_note(
+                            sprintf(
+                                __(
+                                    'Payment under $s. Transaction reference: %s, Gateway reference: %s',
+                                    'woo_latitudecheckout'
+                                ),
+                                $transactionType,
+                                $transactionReference,
+                                $gatewayReference
+                            )
+                        );
                     }
-                    return $order;
-
+                    $order->payment_complete($transactionReference);
+                    $order->update_meta_data(
+                        'gatewayReference',
+                        $gatewayReference
+                    );
+                    $order->update_meta_data(
+                        'transactionReference',
+                        $transactionReference
+                    );
+                    $order->update_meta_data(
+                        'promotionReference',
+                        $promotionReference
+                    );
+                    $order->update_meta_data(
+                        'transactionType',
+                        $transactionType
+                    );
+                    $order->save();
+                    wc_empty_cart();
+                    wp_redirect($order->get_checkout_order_received_url());
+                    exit();
                 } else {
-                    $error_string = __ ("Failed to verify purchase. {$message}"); 
-                    $this->log_warning("Failed to verify purchase for quote #{$quote->ID}. {$message}");
-                    $this->update_and_trash_post( $quote->ID, $error_string);
+                    if (!empty($message)) {
+                        $this->log_warning(
+                            "Verfiy Purchase Error Message:{$message}"
+                        );
+                    }
+                    $this->log_warning(
+                        "Payment declined for WooCommerce Order #{$order_id}"
+                    );
+                    $order->add_order_note(
+                        sprintf(
+                            __(
+                                'Payment declined. Transaction reference: %s',
+                                'woo_latitudecheckout'
+                            ),
+                            $transactionReference
+                        )
+                    );
                 }
-            } else { 
-                $this->update_and_trash_post( $quote->ID, 'Your payment could not be processed. Please try again.');
-            }  
-            return $false;
+            } else {
+                // TODO
+                $this->log_error(
+                    'Verify Purchase API returned invalid response.'
+                );
+            }
+
+            wc_print_notice('Payment declined for this order. ');
+            wp_redirect($order->get_checkout_payment_url(false));
         }
-
-        //create_wc_order_from_afterpay_quote_3_6
-        private function create_wc_order($post_id, $orderReference) {
-            $checkout = WC()->checkout;
-            //
-            $data = $this->unserialize_base64_decode(get_post_meta( $post_id, 'posted', true ));
-            $cart = $this->unserialize_base64_decode(get_post_meta( $post_id, 'cart', true ));
-            $cart_hash = $this->unserialize_base64_decode(get_post_meta( $post_id, 'cart_hash', true ));
-            $chosen_shipping_methods = $this->unserialize_base64_decode(get_post_meta( $post_id, 'chosen_shipping_methods', true ));
-			$shipping_packages = $this->unserialize_base64_decode(get_post_meta( $post_id, 'shipping_packages', true ));
-        	$customer_id = $this->unserialize_base64_decode(get_post_meta( $post_id, 'customer_id', true ));
-			$order_vat_exempt = $this->unserialize_base64_decode(get_post_meta( $post_id, 'order_vat_exempt', true ));
-			$currency = $this->unserialize_base64_decode(get_post_meta( $post_id, 'currency', true ));
-			$prices_include_tax = $this->unserialize_base64_decode(get_post_meta( $post_id, 'prices_include_tax', true ));
-			$customer_ip_address = $this->unserialize_base64_decode(get_post_meta( $post_id, 'customer_ip_address', true ));
-			$customer_user_agent = $this->unserialize_base64_decode(get_post_meta( $post_id, 'customer_user_agent', true ));
-			$customer_note = $this->unserialize_base64_decode(get_post_meta( $post_id, 'customer_note', true ));
-			$payment_method = $this->unserialize_base64_decode(get_post_meta( $post_id, 'payment_method', true ));
-			$shipping_total = $this->unserialize_base64_decode(get_post_meta( $post_id, 'shipping_total', true ));
-			$discount_total = $this->unserialize_base64_decode(get_post_meta( $post_id, 'discount_total', true ));
-			$discount_tax = $this->unserialize_base64_decode(get_post_meta( $post_id, 'discount_tax', true ));
-			$cart_tax = $this->unserialize_base64_decode(get_post_meta( $post_id, 'cart_tax', true ));
-			$shipping_tax = $this->unserialize_base64_decode(get_post_meta( $post_id, 'shipping_tax', true ));
-			$total = $this->unserialize_base64_decode(get_post_meta( $post_id, 'total', true ));    
-
-            try {
-
-				# Force-delete the quote item. This will make its ID available to be used as the WC_Order ID. 
-				wp_delete_post( $post_id, true ); 
-	            $order = new WC_Order();
-
-	            $fields_prefix = array(
-	                'shipping' => true,
-	                'billing'  => true,
-	            );
-
-	            $shipping_fields = array(
-	                'shipping_method' => true,
-	                'shipping_total'  => true,
-	                'shipping_tax'    => true,
-	            );
-	            foreach ( $data as $key => $value ) {
-	                if ( is_callable( array( $order, "set_{$key}" ) ) ) {
-	                    $order->{"set_{$key}"}( $value );
-	                } elseif ( isset( $fields_prefix[ current( explode( '_', $key ) ) ] ) ) {
-	                    if ( ! isset( $shipping_fields[ $key ] ) ) {
-	                        $order->update_meta_data( '_' . $key, $value );
-	                    }
-	                }
-	            }
-
-	            $order->set_created_via( 'checkout' );
-	            $order->set_cart_hash( $cart_hash );
-	            $order->set_customer_id( $customer_id );
-	            $order->add_meta_data( 'is_vat_exempt', $order_vat_exempt );
-	            $order->set_currency( $currency );
-	            $order->set_prices_include_tax( $prices_include_tax );
-	            $order->set_customer_ip_address( $customer_ip_address );
-	            $order->set_customer_user_agent( $customer_user_agent );
-	            $order->set_customer_note( $customer_note );
-	            $order->set_payment_method( $payment_method );
-	            $order->set_shipping_total( $shipping_total );
-	            $order->set_discount_total( $discount_total );
-	            $order->set_discount_tax( $discount_tax );
-	            $order->set_cart_tax( $cart_tax );
-	            $order->set_shipping_tax( $shipping_tax );
-	            $order->set_total( $total );
-
-                $order->payment_complete($transactionReference);
-                $order->add_meta_data( 'gatewayReference',  $orderReference['gatewayReference'] );
-                $order->add_meta_data( 'transactionReference', $orderReference['transactionReference'] );
-                $order->add_meta_data( 'promotionReference', $orderReference['promotionReference'] );
-                $order->add_meta_data(  'transactionType', $orderReference['transactionType'] );
-
-	            $checkout->create_order_line_items( $order, $cart );
-	            $checkout->create_order_fee_lines( $order, $cart );
-	            $checkout->create_order_shipping_lines( $order, $chosen_shipping_methods, $shipping_packages );
-	            $checkout->create_order_tax_lines( $order, $cart );
-	            $checkout->create_order_coupon_lines( $order, $cart );
- 
-	            $GLOBALS['latitudecheckout_order_id'] = $post_id;
-
-	            do_action( 'woocommerce_checkout_create_order', $order, $data );
-
-	            $order_id = $order->save();
-
-	            do_action( 'woocommerce_checkout_update_order_meta', $order_id, $data );
-
-	            # Clear globals after use, if not already cleared. 
-	            if (isset($GLOBALS['latitudecheckout_order_id'])) {
-					unset($GLOBALS['latitudecheckout_order_id']);
-				}
-
-	            return $order;
-	        } catch ( Exception $e ) {
-	            return new WP_Error( 'checkout-error', $e->getMessage() );
-	        }
-
-        }
-
-        public function filter_new_order_data( $order_data ) {
-			if (array_key_exists('latitudecheckout_order_id', $GLOBALS) && is_numeric($GLOBALS['latitudecheckout_order_id']) && $GLOBALS['latitudecheckout_order_id'] > 0) {
-				$order_data['import_id'] = (int)$GLOBALS['latitudecheckout_order_id'];
-				unset($GLOBALS['latitudecheckout_order_id']);
-			}
-			return $order_data;
-		}
-
-        private function unserialize_base64_decode($string) {
-            return unserialize(base64_decode($string));
-        }
-
-        private function update_and_trash_post($post_id, $error_string) {
-            $this->log_error(
-                __( "Deleting post #{$post_id} on error: " . $error_string)
-            );
-
-            update_post_meta( $post_id, 'status', 'failed' );
-            if (function_exists('wp_trash_post')) {
-                wp_trash_post( $post_id );
-            } 
-
-            # Store an error notice and redirect the customer back to the checkout.
-            wc_add_notice(__($error_string, 'woo_latitudecheckout'), 'error');
-            wp_safe_redirect( wc_get_checkout_url() ); 
-        }
-
          
         /**
          *

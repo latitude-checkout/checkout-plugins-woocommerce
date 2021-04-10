@@ -31,7 +31,7 @@ class Latitude_Purchase_Request
     {
         $order = wc_get_order($order_id);
 
-        $order_lines = $this->build_order_lines($order);
+        $order_lines = $this->build_order_lines($order); 
         $payment_request = [
             'merchantId' => $this->gateway->get_merchant_id(),
             'merchantName' => get_option('blogname'),
@@ -46,26 +46,8 @@ class Latitude_Purchase_Request
                 'phone' => $order->get_billing_phone(),
                 'email' => $order->get_billing_email(),
             ],
-            'billingAddress' => [
-                'name' => $order->get_formatted_billing_full_name(),
-                'line1' => $order->get_billing_address_1(),
-                'line2' => $order->get_billing_address_2(),
-                'city' => $order->get_billing_city(),
-                'postcode' => $order->get_billing_postcode(),
-                'state' => $order->get_billing_state(),
-                'countryCode' => $order->get_billing_country(),
-                'phone' => $order->get_billing_phone(),
-            ],
-            'shippingAddress' => [
-                'name' => $order->get_formatted_shipping_full_name(),
-                'line1' => $order->get_shipping_address_1(),
-                'line2' => $order->get_shipping_address_2(),
-                'city' => $order->get_shipping_city(),
-                'postcode' => $order->get_shipping_postcode(),
-                'state' => $order->get_shipping_state(),
-                'countryCode' => $order->get_shipping_country(),
-                'phone' => $order->get_billing_phone(),
-            ],
+            'billingAddress' => $this->get_billing_address($order),
+            'shippingAddress' => $this->get_shipping_address($order),
             'orderLines' => $order_lines,
             'merchantUrls' => [
                 'cancel' => $order->get_cancel_order_url_raw(), //$this->build_cancel_request_url($order_id),
@@ -78,22 +60,7 @@ class Latitude_Purchase_Request
             'platformType' => LatitudeConstants::WC_LATITUDE_GATEWAY_PLATFORM,
             'platformVersion' => WC()->version,
             'pluginVersion' => $this->gateway->get_plugin_version(),
-        ];
-
-        if (empty($payment_request['shippingAddress']['name'])) {
-            $payment_request['shippingAddress'] = [
-                'name' => $order->get_formatted_billing_full_name(),
-                'line1' => $order->get_billing_address_1(),
-                'line2' => $order->get_billing_address_2(),
-                'city' => $order->get_billing_city(),
-                'postcode' => $order->get_billing_postcode(),
-                'state' => $order->get_billing_state(),
-                'countryCode' => $order->get_billing_country(),
-                'phone' => $order->get_billing_phone(),
-            ];
-        }
-
-
+        ]; 
         return $payment_request;
     }
   
@@ -158,5 +125,52 @@ class Latitude_Purchase_Request
         return is_null($value)?$default_value:$value;
     }
 
+    /**
+     * Returns billing details
+     *
+     */    
+    private function get_billing_address($order) 
+    {
+        $billing_address =   array(
+            'name' => $order->get_formatted_billing_full_name(),
+            'line1' => $order->get_billing_address_1(),
+            'line2' => $order->get_billing_address_2(),
+            'city' => $order->get_billing_city(),
+            'postcode' => $order->get_billing_postcode(),
+            'state' => $order->get_billing_state(),
+            'countryCode' => $order->get_billing_country(),
+            'phone' => $order->get_billing_phone(),
+        );
+        return $billing_address;
+    }
   
+
+    /**
+     * Returns shipping details
+     *
+     */    
+    private function get_shipping_address($order) 
+    { 
+      
+        if($order->get_shipping_first_name() == '' || $order->get_shipping_address_1() == '' ||  wc_ship_to_billing_address_only())
+        { 
+            $shipping_address = $this->get_billing_address($order);
+        } else { 
+            $shipping_address =   array(
+                'name' => $order->get_formatted_shipping_full_name(),
+                'line1' => $order->get_shipping_address_1(),
+                'line2' => $order->get_shipping_address_2(),
+                'city' => $order->get_shipping_city(),
+                'postcode' => $order->get_shipping_postcode(),
+                'state' => $order->get_shipping_state(),
+                'countryCode' => $order->get_shipping_country(),
+                'phone' => $order->get_billing_phone(),
+            );           
+        
+           
+        }
+        $this->gateway::log_debug( wp_json_encode($shipping_address));  
+        return $shipping_address;
+    }
+
 }

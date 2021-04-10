@@ -584,12 +584,13 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         {
             $this->log_debug('... on_load_cart_page'); 
  
-            if (array_key_exists('cancel_order', $_GET) && array_key_exists('order_id', $_GET)) {
-                $order_id = (int)$_GET['order_id'];
-                $cancel_order = $_GET['cancel_order'];
-                $this->log_debug(__("cart page params: order_id:{$order_id}, cancel_order: {$cancel_order}"));
+            if (array_key_exists('cancel_order', $_GET) && array_key_exists('order_id', $_GET) && 
+                    $_GET['cancel_order'] === 'true') {
+                $order_id = (int)$_GET['order_id']; 
+                $this->log_info(__("Order cancelled by customer:{$order_id}"));
                 $order = wc_get_order($order_id);
-                $order->update_status( LatitudeConstants::WC_ORDER_CANCELLED, __( 'Unpaid order cancelled. ', 'woo_latitudecheckout' ) );
+                $order->update_status( LatitudeConstants::WC_ORDER_CANCELLED);
+                $order->add_order_note(__(  "Latitude Interest Free order #{$order_id} was cancelled by customer.", 'woo_latitudecheckout' ));
             }
 
         }

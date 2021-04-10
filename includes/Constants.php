@@ -26,4 +26,6 @@ class Constants
     // wc order status
     const WC_ORDER_FAILED = 'failed';
     const WC_ORDER_CANCELLED = 'cancelled';
+    const WC_ORDER_PENDING = 'pending';
+    const WC_ORDER_ONHOLD = 'on-hold';
 }

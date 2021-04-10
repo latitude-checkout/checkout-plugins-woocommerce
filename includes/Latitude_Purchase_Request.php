@@ -68,9 +68,9 @@ class Latitude_Purchase_Request
             ],
             'orderLines' => $order_lines,
             'merchantUrls' => [
-                'cancel' => $this->build_cancel_request_url($order_id),
+                'cancel' => $order->get_cancel_order_url_raw(), //$this->build_cancel_request_url($order_id),
                 'callback' => '',
-                'complete' => $this->build_complete_request_url($order_id) 
+                'complete' => $this->build_complete_request_url() 
             ],
             'totalDiscountAmount' => floatval($order->get_total_discount()),
             'totalShippingAmount' => floatval($order->get_shipping_total()),
@@ -131,19 +131,13 @@ class Latitude_Purchase_Request
      * Builds the url callback after purchase request is confirmed
      *
      */
-    private function build_complete_request_url($quote_id) { 
+    private function build_complete_request_url() { 
         $return_url = __(
             get_home_url() . LatitudeConstants::CALLBACK_URL); 
         return $return_url;
     } 
 
-    /**
-     * Builds the url callback when purchase request is cancelled or returned to cart
-     *
-     */
-    private function build_cancel_request_url($quote_id) { 
-        return WC()->cart->get_cart_url();  
-    }
+    
  
     /**
      * Formats floating value

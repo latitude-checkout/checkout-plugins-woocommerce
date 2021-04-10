@@ -125,6 +125,9 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
                 2
             );
            
+            add_action( 'woocommerce_before_cart', [
+                $gateway,
+                'on_load_cart_page']);
             /*
             * Filters
             */

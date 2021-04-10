@@ -476,6 +476,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                     );
                 }
                 $this->log_debug(__('redirectUrl: ' . $redirect_url));
+                $order->update_status( LatitudeConstants::WC_ORDER_PENDING);
 
                 if (!is_ajax()) {
                     wp_safe_redirect($redirect_url);
@@ -571,6 +572,26 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 ]; 
             }
             return true;
+        }
+
+         /**
+         *
+         * Hooked onto the "woocommerce_before_cart" action.
+         *
+         */
+
+        public function on_load_cart_page()
+        {
+            $this->log_debug('... on_load_cart_page'); 
+ 
+            if (array_key_exists('cancel_order', $_GET) && array_key_exists('order_id', $_GET)) {
+                $order_id = (int)$_GET['order_id'];
+                $cancel_order = $_GET['cancel_order'];
+                $this->log_debug(__("cart page params: order_id:{$order_id}, cancel_order: {$cancel_order}"));
+                $order = wc_get_order($order_id);
+                $order->update_status( LatitudeConstants::WC_ORDER_CANCELLED, __( 'Unpaid order cancelled. ', 'woo_latitudecheckout' ) );
+            }
+
         }
 
         /**

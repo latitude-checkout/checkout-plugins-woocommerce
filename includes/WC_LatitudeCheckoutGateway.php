@@ -453,35 +453,29 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             $result = $rsp_body['result'];
             $this->log_debug($rsp_body);
             if ($result == 'pending') {
-                $error_string = $this->is_valid_order_response(
+                $is_valid = $this->validate_order_response(
                     $rsp_body,
                     $order
                 );
-                if (!empty($error_string)) {
-                    $this->log_error(
-                        __(
-                            'Error:  (is_valid_order_response): ' .
-                                $error_string
-                        )
-                    );
+                if ($is_valid !== true) { 
                     $error_string = __(
-                        "Error: Payment request returned invalid order details. Order Reference: {$order_id}. " .
-                            $error_string
+                        " Invalid order response. Error: {$is_valid['error']} "  
                     );
+                    $this->log_error($error_string);
                     return $this->redirect_to_cart_on_error(
                         $order,
                         $error_string
                     );
                 }
 
-                $redirect_url = $rsp_body['redirectUrl'];
-                $this->log_debug(__('redirectUrl: ' . $redirect_url));
+                $redirect_url = $rsp_body['redirectUrl']; 
                 if (empty($redirect_url)) {
                     return $this->redirect_to_cart_on_error(
                         $order,
                         'Latitude Interest Free Gateway is not reachable.'
                     );
                 }
+                $this->log_debug(__('redirectUrl: ' . $redirect_url));
 
                 if (!is_ajax()) {
                     wp_safe_redirect($redirect_url);
@@ -495,21 +489,21 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 $error_string = $rsp_body['error'];
                 if (empty($error_string)) {
                     $error_string = 'Purchase Request was not valid. Please contact Merchant.';
-                }  
-                $order->add_order_note(__( 'Latitude Checkout Gateway Error: ' . $error_string , 'woo_latitudecheckout' ));
-                $this->log_error( __('Latitude Checkout Gateway Error: ' . $error_string));
-                return $this->redirect_to_cart_on_error($order, $error_string);
+                }     
+                $this->log_error( __( "Purchase Request returned with error : {$error_string}."));
+                $order->add_order_note(__(  "Purchase Request returned with error : {$error_string}.", 'woo_latitudecheckout' ));
+                $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __( 'Purchase request failed. ', 'woo_latitudecheckout' ) );
+                return $this->redirect_to_cart_on_api_error($order, $error_string);
             } else {
                 // Purchase request returned unexpected result (neither pending nor failed)
-                $this->log_debug(
-                    __(
-                        'unexpected result received from purchase request: ' .
-                            $result
-                    )
+                $error_string =  __(
+                    'Unexpected result received from purchase request: ' .
+                        $result
                 );
+                $this->log_error($error_string); 
                 return $this->redirect_to_cart_on_error(
                     $order,
-                    'Unexpected result received from purchase request.'
+                    $error_string
                 );
             }
         }
@@ -536,7 +530,9 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
          */
         private function redirect_to_cart_on_error($order, $error_string)
         {
-            wc_add_notice(__($error_string, 'woo_latitudecheckout'), 'error');
+            $order->add_order_note(__( $error_string , 'woo_latitudecheckout' ));
+            $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __( 'Purchase request not valid. ', 'woo_latitudecheckout' ) );
+            wc_add_notice(__( "Payment failed. Please try again.", 'woo_latitudecheckout'), 'error');
             return [
                 'result' => 'failure',
                 'redirect' => $order->get_checkout_payment_url(false),
@@ -548,26 +544,33 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
          * Validates contents of the purchase_request to match current order.
          *
          */
-        protected function is_valid_order_response($response, $order)
-        {
-            $error = '';
+        protected function validate_order_response($response, $order)
+        { 
             if ($response['merchantId'] != $this->merchant_id) {
-                $error = 'Failed to confirm Merchant ID.';
-                return $error;
+                return [ 
+                    'valid' => false,
+                    'error' => 'Failed to confirm Merchant ID.'
+                ]; 
             }
-            if ($response['merchantReference'] != $order->get_id()) {
-                $error = 'Failed to confirm Order reference.';
-                return $error;
+            if ($response['merchantReference'] != $order->get_id()) { 
+                return [ 
+                    'valid' => false,
+                    'error' => 'Failed to confirm Order reference.'
+                ]; 
             }
-            if ($response['amount'] != $order->get_total()) {
-                $error = 'Failed to confirm transaction amount.';
-                return $error;
+            if ($response['amount'] != $order->get_total()) { 
+                return [ 
+                    'valid' => false,
+                    'error' => 'Failed to confirm transaction amount.'
+                ]; 
             }
-            if ($response['currency'] != $order->get_currency()) {
-                $error = 'Failed to confirm transaction urrency';
-                return $error;
+            if ($response['currency'] != $order->get_currency()) { 
+                return [ 
+                    'valid' => false,
+                    'error' => 'Failed to confirm transaction urrency'
+                ]; 
             }
-            return $error;
+            return true;
         }
 
         /**

@@ -249,7 +249,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 $icon_url = LatitudeConstants::NZ_ICON_URL;
                 $icon_alt_text = LatitudeConstants::NZ_ICON_ALT_TEXT;
             }
-            
+
             ob_start();
             ?><img src="<?php echo $icon_url; ?>" alt="<?php echo $icon_alt_text; ?>" /><?php return ob_get_clean();
         }
@@ -426,8 +426,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 $post_data['payment_method'] !=
                 LatitudeConstants::WC_LATITUDE_GATEWAY_ID
             ) { 
-                $this->log_error("Cannot create order for payments other than " . LatitudeConstants::WC_LATITUDE_GATEWAY_NAME);
-                return -1;
+                return;
             }
   
               

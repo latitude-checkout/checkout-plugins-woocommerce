@@ -244,11 +244,12 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             }
 
             $icon_url = LatitudeConstants::AU_ICON_URL;
-            $icon_alt_text = 'Latitude Interest Fee';
+            $icon_alt_text = LatitudeConstants::AU_ICON_ALT_TEXT;
             if ('NZD' == get_woocommerce_currency()) {
                 $icon_url = LatitudeConstants::NZ_ICON_URL;
-                $icon_alt_text = 'GEM Interest Fee';
+                $icon_alt_text = LatitudeConstants::NZ_ICON_ALT_TEXT;
             }
+            
             ob_start();
             ?><img src="<?php echo $icon_url; ?>" alt="<?php echo $icon_alt_text; ?>" /><?php return ob_get_clean();
         }

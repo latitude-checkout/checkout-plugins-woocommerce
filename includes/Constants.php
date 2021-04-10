@@ -8,8 +8,10 @@ class Constants
     const WC_LATITUDE_GATEWAY_NAME = 'Latitude Interest Free';
 
     const AU_ICON_URL = 'https://assets.latitudefinancial.com/merchant-services/latitude/icon/latitude-interest-free.svg';
+    const AU_ICON_ALT_TEXT = 'Latitude Interest Fee';
     const NZ_ICON_URL = 'https://assets.latitudefinancial.com/merchant-services/latitude/icon/gem-interest-free.svg';
-
+    CONST NZ_ICON_ALT_TEXT =  'GEM Interest Fee';
+    
     const ALLOWED_CURRENCY = ['AUD', 'NZD'];
   
     const CALLBACK_URL = '/wc-api/latitude_checkout';

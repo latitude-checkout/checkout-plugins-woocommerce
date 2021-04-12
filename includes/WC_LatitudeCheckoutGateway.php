@@ -439,7 +439,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             
         }
 
-/**
+        /**
          * Default process payment
          *
          */
@@ -623,7 +623,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             if ( $current_payment_method !=  LatitudeConstants::WC_LATITUDE_GATEWAY_ID ) {
                return;
             }   
-            
+
             if (array_key_exists('cancel_order', $_GET) && array_key_exists('order_id', $_GET) && 
                     $_GET['cancel_order'] === 'true') {
                 $order_id = (int)$_GET['order_id']; 

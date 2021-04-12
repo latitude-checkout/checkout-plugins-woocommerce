@@ -606,14 +606,17 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
          */
 
         public function on_load_cart_page()
-        {
-            $this->log_debug('... on_load_cart_page'); 
- 
+        { 
+            $current_payment_method = WC()->session->get( 'chosen_payment_method'  );   
+            if ( $current_payment_method !=  LatitudeConstants::WC_LATITUDE_GATEWAY_ID ) {
+               return;
+            }   
+            
             if (array_key_exists('cancel_order', $_GET) && array_key_exists('order_id', $_GET) && 
                     $_GET['cancel_order'] === 'true') {
                 $order_id = (int)$_GET['order_id']; 
                 $this->log_info(__("Order cancelled by customer:{$order_id}"));
-                $order = wc_get_order($order_id);
+                $order = wc_get_order($order_id); 
                 $order->update_status( LatitudeConstants::WC_ORDER_CANCELLED);
                 $order->add_order_note(__(  "Latitude Interest Free order #{$order_id} was cancelled by customer.", 'woo_latitudecheckout' ));
             }
@@ -705,14 +708,17 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 $order->add_order_note(
                     sprintf(
                         __(
-                            'Order status is not pending for payment, cannot proceed to verify. Transaction reference: %s',
+                            'Order status is not pending for payment, cannot proceed to verify. Transaction reference: %s.',
                             'woo_latitudecheckout'
                         ),
                         $transactionReference
                     )
                 );
                 $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __( 'Purchase cannot verify order on this status.', 'woo_latitudecheckout' ) ); 
-                exit();
+                $this->redirect_on_verify_api_failure($order);
+                // wc_print_notice('Failed to verify order details. Please contact merchant.');
+                // wp_redirect(wc_get_cart_url());
+                // exit();
             }
 
             $checkout_service = new Latitude_Checkout_Service();
@@ -730,6 +736,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                     )
                 );
                 $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __( 'Verify Purchase API failed.', 'woo_latitudecheckout' ) ); 
+                $this->redirect_on_verify_api_failure($order);
             } elseif (is_array($response)) {
                 $rsp_body = $response['response'];
                 $this->log_debug('verify_purchase_request() returned data');
@@ -813,16 +820,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                     }
                     $this->log_warning(
                         "Payment declined for WooCommerce Order #{$order_id}"
-                    );
-                    // $order->add_order_note(
-                    //     sprintf(
-                    //         __(
-                    //             'Payment declined. Transaction reference: %s',
-                    //             'woo_latitudecheckout'
-                    //         ),
-                    //         $transactionReference
-                    //     )
-                    // );
+                    ); 
                     $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __(  sprintf(
                         __(
                             'Payment declined. Transaction reference: %s',
@@ -830,18 +828,28 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                         ),
                         $transactionReference
                     ), 'woo_latitudecheckout' ) ); 
+                    $this->redirect_on_verify_api_failure($order);
                 }
             } else {
                 // TODO
                 $this->log_error(
                     'Verify Purchase API returned invalid response.'
                 );
+                $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __( 'Verify Purchase API failed.', 'woo_latitudecheckout' ) ); 
+                redirect_on_verify_api_failure($order);
             }
-            $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __( 'Verify Purchase API failed.', 'woo_latitudecheckout' ) ); 
-            wc_print_notice('Payment declined for this order. ');
-            wp_redirect($order->get_checkout_payment_url(false));
+            return;
         }
          
+
+        private function  redirect_on_verify_api_failure($order)
+        {
+           
+            wc_print_notice('Payment declined for this order. Please contact merchant.');
+            wp_redirect($order->get_checkout_payment_url(false));
+
+        }
+
         /**
          *
          * Checks the pending status of the order

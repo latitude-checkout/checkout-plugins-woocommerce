@@ -44,25 +44,33 @@ class Latitude_Checkout_Service
         ]);
         $this->gateway::log_debug(json_encode($response));
 
-        $rsp_code = $response['response']['code'];
-        if ($rsp_code != '200') {
-            // get error from somewhere else
-
-            $error_string = $response['response']['message'];
-            if (empty($error_string)) {
-                $error_string = 'Bad request.';
-            }
+        if (is_wp_error($response)) {
+            $errors_str = implode($response->get_error_messages(), ' '); 
             return [
                 'result' => 'failure',
-                'response' => $error_string,
+                'error' => $errors_str,
             ];
         }
 
+        $rsp_code = $response['response']['code'];
+       
+        if ($rsp_code != '200') {
+            // get error from somewhere else 
+            $error_string = $response['response']['message'];
+            if (empty($error_string)) {
+                $error_string = 'Bad request';
+            }
+            return [
+                'result' => 'failure',
+                'error' => $error_string,
+            ];
+        }  
+
         $rsp_body = json_decode($response['body'], true);
         return [
-            'result' => 'success',
+            'result' => 'success', 
             'response' => $rsp_body,
-        ];
+        ];   
     }
   
     /**

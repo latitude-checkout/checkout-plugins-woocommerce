@@ -23,152 +23,96 @@ class Latitude_Purchase_Request
         $this->gateway = WC_LatitudeCheckoutGateway::get_instance();
     }
 
+/**
+     * Builds the purchase request payload
+    *
+    */
+    public function build_parameters($order_id)
+    {
+        $order = wc_get_order($order_id);
+
+        $order_lines = $this->build_order_lines($order); 
+        $payment_request = [
+            'merchantId' => $this->gateway->get_merchant_id(),
+            'merchantName' => get_option('blogname'),
+            'isTest' => $this->gateway->get_test_mode(),
+            'merchantReference' => strval($order_id),
+            'amount' => floatval($order->get_total()),
+            'currency' => $order->get_currency(),
+            'promotionReference' => '',
+            'customer' => [
+                'firstName' => $order->get_billing_first_name(),
+                'lastName' => $order->get_billing_last_name(),
+                'phone' => $order->get_billing_phone(),
+                'email' => $order->get_billing_email(),
+            ],
+            'billingAddress' => $this->get_billing_address($order),
+            'shippingAddress' => $this->get_shipping_address($order),
+            'orderLines' => $order_lines,
+            'merchantUrls' => [
+                'cancel' => $order->get_cancel_order_url_raw(), //$this->build_cancel_request_url($order_id),
+                'callback' => '',
+                'complete' => $this->build_complete_request_url() 
+            ],
+            'totalDiscountAmount' => floatval($order->get_total_discount()),
+            'totalShippingAmount' => floatval($order->get_shipping_total()),
+            'totalTaxAmount' => floatval($order->get_total_tax()),
+            'platformType' => LatitudeConstants::WC_LATITUDE_GATEWAY_PLATFORM,
+            'platformVersion' => WC()->version,
+            'pluginVersion' => $this->gateway->get_plugin_version(),
+        ]; 
+        return $payment_request;
+    }
+  
     /**
-     * Create the purchase request payload from cart
-     *
-     */
-    public function create_payload_from_cart($quote, $quote_id) {
-        $cart = WC()->cart;    
-        $total = $cart->get_total( 'edit' ); 
+     * Builds the order lines for the purchase request payload
+    *
+    */
+    private function build_order_lines($order)
+    {
+        $order_lines = [];
+        foreach ($order->get_items() as $key => $item):
+            $product = $item->get_product(); 
+            $shipping_class = $product->get_shipping_class();
+            $shipping_required = isset($shipping_class) ? true : false;
 
-        $payload = array();
-        $payload['merchantId'] = $this->gateway->get_merchant_id();
-        $payload['merchantName'] = get_option('blogname');
-        $payload['isTest'] = $this->gateway->get_test_mode();
-        $payload['merchantReference'] = strval($quote_id);
-        $payload['amount'] =  floatval($total);
-        $payload['currency'] = get_woocommerce_currency();
-        $payload['promotionReference'] = '';
+            $this->gateway::log_debug(sprintf(
+                __(
+                    'product: %s,  shipping_class: %s, shipping_required: %d',
+                    'woo_latitudecheckout'
+                ),
+                $item->get_name(), $product->get_shipping_class(), $shipping_required
+            ));
 
-        $payload['customer'] = array( 
-            'firstName' => $this->check_null($quote['billing_first_name']),
-            'lastName' => $this->check_null($quote['billing_last_name']),
-            'phone' => $this->check_null($quote['billing_phone']),
-            'email' => $this->check_null($quote['billing_email'])
-            ); 
+            $order_line = [
+                'name' => $item->get_name(),
+                'productUrl' => $product->get_permalink(),
+                'sku' => $product->get_sku(),
+                'quantity' => $item->get_quantity(),
+                'unitPrice' => floatval($product->get_price()),
+                'amount' => floatval($item->get_total()),
+                'tax' => floatval($item->get_total_tax()),
+                'requiresShipping' => $shipping_required,
+                'isGiftCard' => false, //TODO
+            ];
+            array_push($order_lines, $order_line);
+        endforeach;
 
-        $billing_phone = $this->check_null($quote['billing_phone']);
-        $payload['billingAddress'] = array(
-            'name' => $this->get_formatted_full_name($quote['billing_first_name'],$quote['billing_last_name']),
-            'line1' => $this->check_null($quote['billing_address_1']),
-            'line2' => $this->check_null($quote['billing_address_2']),
-            'city' => $this->check_null($quote['billing_city']), 
-            'postcode' => $this->check_null($quote['billing_postcode']),
-            'state' => $this->check_null($quote['billing_state']),
-            'countryCode' => $this->check_null($quote['billing_country']),
-            'phone' => $billing_phone
-        ); 
-
-        $methods_without_shipping_arr = apply_filters( 'woocommerce_order_hide_shipping_address', array('local_pickup') );
-        $shipping_required = false;
-
-        $chosen_shipping_methods = WC()->session->get( 'chosen_shipping_methods' );
-        if (!empty($chosen_shipping_methods)) {
-            foreach ($chosen_shipping_methods as $shipping_method_id) {
-                $shipping_method_name = current(explode(':', $shipping_method_id));
-                if (!in_array($shipping_method_name, $methods_without_shipping_arr)) {
-                    $shipping_required = true;
-                    break;
-                }
-            }
-        }       
-
-        if ($shipping_required) { 
-            $name = $this->get_formatted_full_name($quote['shipping_first_name'],$quote['shipping_last_name']);
-            if($name !="" && $quote['shipping_address_1'] != ""){
-                $payload['shippingAddress'] = array(
-                    'name' => $name,
-                    'line1' => $this->check_null($quote['shipping_address_1']),
-                    'line2' => $this->check_null($quote['shipping_address_2']),
-                    'city' => $this->check_null($quote['shipping_city']), 
-                    'postcode' => $this->check_null($quote['shipping_postcode']),
-                    'state' => $this->check_null($quote['shipping_state']),
-                    'countryCode' => $this->check_null($quote['shipping_country']),
-                    'phone' => $billing_phone
-                );        
-            }  else {
-                $payload['shippingAddress'] = $payload['billingAddress'];
-            }
-        } else {
-            $payload['shippingAddress'] = $payload['billingAddress'];
-        }
-
-     
-        // order line items 
-        $payload['orderLines'] = $this->create_order_lines_from_cart($cart); 
-        $payload['merchantUrls'] = array(
-            'cancel' => $this->build_cancel_request_url($quote_id),
-            'callback' => '',
-            'complete' => $this->build_complete_request_url($quote_id) 
-        ); 
-
-        $payload['totalDiscountAmount'] = floatval($cart->get_discount_total());
-        $payload['totalShippingAmount'] = floatval($cart->get_shipping_total());
-        $payload['totalTaxAmount'] = floatval($cart->get_total_tax()); 
-        $payload['platformType'] = LatitudeConstants::WC_LATITUDE_GATEWAY_PLATFORM;
-        $payload['platformVersion'] = WC()->version;
-        $payload['pluginVersion'] = $this->gateway->get_plugin_version();
-        return $payload;
-
+        return $order_lines;
     }
 
     /**
      * Builds the url callback after purchase request is confirmed
      *
      */
-    private function build_complete_request_url($quote_id) {
-        $confirm_nonce = wp_create_nonce( "latitudecheckout_confirm_nonce-{$quote_id}" ); 
-        $home_url = __(
-            get_home_url() . LatitudeConstants::CALLBACK_URL);
-
-        $return_url = add_query_arg( array(
-            'post_type' => 'latitudecheckout_order',
-            'p' => $quote_id,
-            'nonce' => $confirm_nonce 
-        ),   $home_url);
-
+    private function build_complete_request_url() { 
+        $return_url = __(
+            get_home_url() . LatitudeConstants::CALLBACK_URL); 
         return $return_url;
-    }
-
-    /**
-     * Builds the url callback when purchase request is cancelled or returned to cart
-     *
-     */
-    private function build_cancel_request_url($quote_id) { 
-        return WC()->cart->get_cart_url();  
-    }
-
-    /**
-     * Builds the order lines for the purchase request payload
-     *
-     */
-    private function create_order_lines_from_cart($cart) {
- 
-        $order_lines = [];
-        foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
-            $product = $cart_item['data']; 
-            $itemTotal = $cart_item['line_total']; //$cart->get_product_subtotal( $product, $cart_item['quantity'] );
-            $itemTotalTax =   $cart_item['line_tax'];
-            $shipping_required = empty($product->get_shipping_class_id())
-            ? false
-            : true;
-
-            $order_line = [
-                'name' => $product->get_name(),
-                'productUrl' =>$product->get_permalink(), 
-                'sku' =>  $product->get_sku(),
-                'quantity' => $cart_item['quantity'],
-                'unitPrice' => floatval($product->get_price()),
-                'amount' => floatval($itemTotal),
-                'tax' => floatval($itemTotalTax),
-                'requiresShipping' => $shipping_required,
-                'isGiftCard' => false, //TODO
-            ];
-            array_push($order_lines, $order_line);
-        } 
-        return $order_lines;
     } 
-     
+
+    
+ 
     /**
      * Formats floating value
      *
@@ -189,19 +133,51 @@ class Latitude_Purchase_Request
     }
 
     /**
-     * Formats customer name
+     * Returns billing details
      *
-     */ 
-    private function get_formatted_full_name($firstname, $lastname) {
-        if (!empty($firstname) && !empty($lastname)) {
-            $name = $firstname . ' ' . $lastname;
-        } elseif (!empty($firstname)) {
-            $name = $firstname;
-        } elseif (!empty($lastname)) {
-            $name = $lastname;
-        } else {
-            $name = '';
-        }
-        return $name;
+     */    
+    private function get_billing_address($order) 
+    {
+        $billing_address =   array(
+            'name' => $order->get_formatted_billing_full_name(),
+            'line1' => $order->get_billing_address_1(),
+            'line2' => $order->get_billing_address_2(),
+            'city' => $order->get_billing_city(),
+            'postcode' => $order->get_billing_postcode(),
+            'state' => $order->get_billing_state(),
+            'countryCode' => $order->get_billing_country(),
+            'phone' => $order->get_billing_phone(),
+        );
+        return $billing_address;
     }
+  
+
+    /**
+     * Returns shipping details
+     *
+     */    
+    private function get_shipping_address($order) 
+    { 
+      
+        if($order->get_shipping_first_name() == '' || $order->get_shipping_address_1() == '' ||  wc_ship_to_billing_address_only())
+        { 
+            $shipping_address = $this->get_billing_address($order);
+        } else { 
+            $shipping_address =   array(
+                'name' => $order->get_formatted_shipping_full_name(),
+                'line1' => $order->get_shipping_address_1(),
+                'line2' => $order->get_shipping_address_2(),
+                'city' => $order->get_shipping_city(),
+                'postcode' => $order->get_shipping_postcode(),
+                'state' => $order->get_shipping_state(),
+                'countryCode' => $order->get_shipping_country(),
+                'phone' => $order->get_billing_phone(),
+            );           
+        
+           
+        }
+        $this->gateway::log_debug( wp_json_encode($shipping_address));  
+        return $shipping_address;
+    }
+
 }

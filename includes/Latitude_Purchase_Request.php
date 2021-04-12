@@ -72,11 +72,18 @@ class Latitude_Purchase_Request
     {
         $order_lines = [];
         foreach ($order->get_items() as $key => $item):
-            $product = $item->get_product();
+            $product = $item->get_product(); 
+            $shipping_class = $product->get_shipping_class();
+            $shipping_required = isset($shipping_class) ? true : false;
 
-            $shipping_required = !empty($product->get_shipping_class())
-                ? false
-                : true;
+            $this->gateway::log_debug(sprintf(
+                __(
+                    'product: %s,  shipping_class: %s, shipping_required: %d',
+                    'woo_latitudecheckout'
+                ),
+                $item->get_name(), $product->get_shipping_class(), $shipping_required
+            ));
+
             $order_line = [
                 'name' => $item->get_name(),
                 'productUrl' => $product->get_permalink(),

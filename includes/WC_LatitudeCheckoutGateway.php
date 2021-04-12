@@ -78,6 +78,10 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 LatitudeConstants::WC_LATITUDE_GATEWAY_NAME,
                 'woo_latitudecheckout'
             );
+            $this->method_name = __(
+                LatitudeConstants::WC_LATITUDE_GATEWAY_NAME,
+                'woo_latitudecheckout'
+            );
             $this->method_description = sprintf(
                 __(
                     'Use %s as payment method for WooCommerce orders.',
@@ -149,6 +153,13 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
          */
         public function refresh_configuration()
         {
+            if (array_key_exists('title', $this->settings)) {
+				$this->title = _(
+                    LatitudeConstants::WC_LATITUDE_GATEWAY_NAME,
+                    'woo_latitudecheckout'
+                );
+    
+			}
             if (array_key_exists('merchant_id', $this->settings)) {
                 $this->merchant_id = $this->settings['merchant_id'];
             }
@@ -171,6 +182,18 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         public function get_plugin_version() 
         {
             return WC_LATITUDE_GATEWAY__PLUGIN_VERSION;
+        }
+
+        /**
+         * Get the Payment Gateway title. Some themes are not able to display title
+         */
+        public function get_title()
+        {
+            $this->title = _(
+                LatitudeConstants::WC_LATITUDE_GATEWAY_NAME,
+                'woo_latitudecheckout'
+            );
+            return $this->title;
         }
 
         /**
@@ -434,6 +457,8 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 
             $order = wc_get_order($order_id);
 
+            //$order->get_payment_method();
+            $this->log_debug(__('Check ORDER PAYMENT METHOD: ' . $order->get_payment_method()));
             if ($response == false) {
                 return $this->redirect_to_cart_on_api_error(
                     $order,
@@ -658,6 +683,8 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 empty($transactionReference) ||
                 empty($merchantReference)
             ) {
+                 
+                wc_print_notice('Failed to verify order details. Please contact merchant.');
                 wp_redirect(wc_get_cart_url());
                 exit();
             }
@@ -684,7 +711,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                         $transactionReference
                     )
                 );
-                wp_redirect($order->get_checkout_payment_url(true));
+                $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __( 'Purchase cannot verify order on this status.', 'woo_latitudecheckout' ) ); 
                 exit();
             }
 
@@ -702,6 +729,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                         $order->get_payment_method_title()
                     )
                 );
+                $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __( 'Verify Purchase API failed.', 'woo_latitudecheckout' ) ); 
             } elseif (is_array($response)) {
                 $rsp_body = $response['response'];
                 $this->log_debug('verify_purchase_request() returned data');
@@ -786,15 +814,22 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                     $this->log_warning(
                         "Payment declined for WooCommerce Order #{$order_id}"
                     );
-                    $order->add_order_note(
-                        sprintf(
-                            __(
-                                'Payment declined. Transaction reference: %s',
-                                'woo_latitudecheckout'
-                            ),
-                            $transactionReference
-                        )
-                    );
+                    // $order->add_order_note(
+                    //     sprintf(
+                    //         __(
+                    //             'Payment declined. Transaction reference: %s',
+                    //             'woo_latitudecheckout'
+                    //         ),
+                    //         $transactionReference
+                    //     )
+                    // );
+                    $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __(  sprintf(
+                        __(
+                            'Payment declined. Transaction reference: %s',
+                            'woo_latitudecheckout'
+                        ),
+                        $transactionReference
+                    ), 'woo_latitudecheckout' ) ); 
                 }
             } else {
                 // TODO
@@ -802,7 +837,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                     'Verify Purchase API returned invalid response.'
                 );
             }
-
+            $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __( 'Verify Purchase API failed.', 'woo_latitudecheckout' ) ); 
             wc_print_notice('Payment declined for this order. ');
             wp_redirect($order->get_checkout_payment_url(false));
         }

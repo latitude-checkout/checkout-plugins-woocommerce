@@ -629,8 +629,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 $order_id = (int)$_GET['order_id']; 
                 $this->log_info(__("Order cancelled by customer:{$order_id}"));
                 $order = wc_get_order($order_id); 
-                $order->update_status( LatitudeConstants::WC_ORDER_CANCELLED);
-                $order->add_order_note(__(  "Latitude Interest Free order #{$order_id} was cancelled by customer.", 'woo_latitudecheckout' ));
+                $order->update_status( LatitudeConstants::WC_ORDER_CANCELLED); 
             }
 
         }

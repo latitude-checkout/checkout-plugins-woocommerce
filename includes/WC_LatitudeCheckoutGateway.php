@@ -694,24 +694,24 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             ];
 
             $order = wc_get_order($order_id);
-            // check order status
-            $is_order_pending = $this->is_order_pending($order);
-            if (!$is_order_pending) {
-                $this->log_error(
-                    'Cannot verify purchase when order is no longer pending.'
-                );
-                $order->add_order_note(
-                    sprintf(
-                        __(
-                            'Order status is not pending for payment, cannot proceed to verify. Transaction reference: %s.',
-                            'woo_latitudecheckout'
-                        ),
-                        $transactionReference
-                    )
-                );
-                $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __( 'Purchase cannot verify order on this status.', 'woo_latitudecheckout' ) ); 
-                $this->redirect_on_verify_api_failure($order); 
-            }
+            // // check order status
+            // $is_order_pending = $this->is_order_pending($order);
+            // if (!$is_order_pending) {
+            //     $this->log_error(
+            //         'Cannot verify purchase when order is no longer pending.'
+            //     );
+            //     $order->add_order_note(
+            //         sprintf(
+            //             __(
+            //                 'Order status is not pending for payment, cannot proceed to verify. Transaction reference: %s.',
+            //                 'woo_latitudecheckout'
+            //             ),
+            //             $transactionReference
+            //         )
+            //     );
+            //     $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __( 'Purchase cannot verify order on this status.', 'woo_latitudecheckout' ) ); 
+            //     $this->redirect_on_verify_api_failure($order); 
+            // }
 
             $checkout_service = new Latitude_Checkout_Service();
             $response = $checkout_service->verify_purchase_request($payload);
@@ -746,7 +746,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                         $order->add_order_note(
                             sprintf(
                                 __(
-                                    'Payment approved. Transaction reference: %s, Gateway reference: %s',
+                                    'Payment approved. Transaction reference: %s, Gateway reference: %s.',
                                     'woo_latitudecheckout'
                                 ),
                                 $transactionReference,
@@ -783,7 +783,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                             )
                         );
                     }
-                    $order->payment_complete($transactionReference);
+                    $order->payment_complete();
                     $order->update_meta_data(
                         'gatewayReference',
                         $gatewayReference
@@ -833,31 +833,12 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             return;
         }
          
-
-        // public function add_cancel_notice() 
-        // {
-        //     $current_payment_method = WC()->session->get( 'chosen_payment_method'  );   
-        //     if ( $current_payment_method !=  LatitudeConstants::WC_LATITUDE_GATEWAY_ID ) {
-        //        return;
-        //     }   
-
-        //     $cancelled_by_api_failure = WC()->session->get("latitudecheckout_purchaserequest_failed");
-        //     if ($cancelled_by_api_failure ) 
-        //     {
-        //         wc_add_notice( __('Payment declined for this order. Please contact merchant.', 'woo_latitudecheckout'), 'error'); 
-        //     }
-        //     WC()->session->__unset( 'latitudecheckout_purchaserequest_failed' );
-            
-        // }
-
+ 
         private function  redirect_on_verify_api_failure( $order)
-        {
-           
-            //wc_print_notice('Payment declined for this order. Please contact merchant.');
-            //wp_redirect($order->get_checkout_payment_url(false));
-            wc_add_notice( __('Payment declined for this order. Please contact merchant.', 'woo_latitudecheckout'), 'error');  
-            wp_redirect($order->get_cancel_order_url_raw());
-            exit(); 
+        {  
+            wc_add_notice(__('Payment declined for this order. Please contact merchant.', 'woo_latitudecheckout'), 'error');
+            wp_redirect(wc_get_checkout_url()); 
+            exit; 
         }
 
         /**

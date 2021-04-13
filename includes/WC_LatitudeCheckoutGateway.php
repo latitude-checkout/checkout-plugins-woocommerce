@@ -50,12 +50,10 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
          *
          *
          * @var     string     $merchant_id         Merchant Unique ID configuration. Set at the admin page.
-         * @var     string     $merchant_secret     Merchant Secret Key configuration. Set at the admin page.
-         * @var     string     $test_mode           Whether payment gateway will be run in test mode or not. Set at the admin page.
-         * @var     string     $widget_data         Product widget configuration. Set at the admin page.
+         * @var     string     $merchant_secret     Merchant Secret Key configuration. Set at the admin page. 
          *
          */
-        protected $merchant_id, $merchant_secret, $test_mode;
+        protected $merchant_id, $merchant_secret;
 
         /**
          * Private variables.
@@ -157,6 +155,11 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                     WC_Admin_Settings::add_error('Error: Merchant details cannot be empty.');  
                } 
             }
+
+            if (array_key_exists('test_mode', $this->settings)) {
+                
+            }
+
 		}
 
         private function is_valid_widget_settings($widget_content) 
@@ -179,11 +182,10 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             if (array_key_exists('merchant_secret', $this->settings)) {
                 $this->merchant_secret = $this->settings['merchant_secret'];
             }
-            $this->test_mode = true;
+            self::$log_enabled = true;
             if (array_key_exists('test_mode', $this->settings)) {
-                $this->test_mode = 'yes' === $this->settings['test_mode'];
-            }
-            self::$log_enabled = $this->test_mode; 
+                self::$log_enabled = 'yes' === $this->settings['test_mode'];
+            } 
         }
 
 
@@ -216,8 +218,11 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
          */
         public function get_test_mode()
         {
-            $this->test_mode = 'yes' === $this->settings['test_mode'];
-            return $this->test_mode;
+            $test_mode = true;
+            if (array_key_exists('test_mode', $this->settings)) {
+                $test_mode = 'yes' === $this->settings['test_mode'];
+            }
+            return $test_mode;
         }
 
         /**

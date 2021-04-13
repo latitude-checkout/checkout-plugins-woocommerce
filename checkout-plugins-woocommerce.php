@@ -5,7 +5,7 @@
  * Description: Enabling Latitude Interest Free Payment Gateway on a WooCommerce store.
  * Author: latitudefinancial
  * Author URI: https://www.latitudefinancial.com.au/
- * Version:0.0.67
+ * Version:0.0.69
  * Text Domain: checkout-plugins-woocommerce
  * WC tested up to: 5.6
  *
@@ -35,7 +35,7 @@ define('WP_DEBUG_LOG', false);
 define('WP_DEBUG_DISPLAY', false);
 
 define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '5.6');
-define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '0.0.67'); 
+define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '0.0.69'); 
 define('WC_LATITUDE_GATEWAY__PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 if (!class_exists('LatitudeCheckoutPlugin')) {
@@ -98,40 +98,11 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             /*
             * Filters
             */
-            add_filter(
-                'woocommerce_payment_gateways',
-                [$gateway, 'add_latitudecheckoutgateway'],
-                10,
-                1
-            );
-            add_filter(
-                'plugin_action_links_' . plugin_basename(__FILE__),
-                [$this, 'add_settings_links'],
-                10,
-                1
-            ); 
-            add_filter(
-                'woocommerce_gateway_icon',
-                [$gateway, 'filter_latitude_gateway_icon'],
-                10,
-                2
-            );
-            add_filter(
-                'woocommerce_order_button_text',
-                [$gateway, 'filter_place_order_button_text'],
-                10,
-                1
-            );
-            add_filter(
-                'woocommerce_endpoint_order-pay_title',
-                [$gateway, 'filter_order_pay_title'],
-                10,
-                2
-            ); 
-            // add_filter(
-            //     'woocommerce_order_cancelled_notice',
-            //     [$gateway, 'add_cancel_notice'],
-            // )
+            add_filter( 'woocommerce_payment_gateways', [$gateway, 'add_latitudecheckoutgateway'], 10, 1 );
+            add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), [$this, 'add_settings_links'], 10, 1 ); 
+            add_filter( 'woocommerce_gateway_icon', [$gateway, 'filter_latitude_gateway_icon'], 10, 2 );
+            add_filter( 'woocommerce_order_button_text', [$gateway, 'filter_place_order_button_text'], 10, 1 );
+            add_filter( 'woocommerce_endpoint_order-pay_title', [$gateway, 'filter_order_pay_title'], 10, 2 );  
  
         }
 

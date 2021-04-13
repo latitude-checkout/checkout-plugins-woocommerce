@@ -113,17 +113,6 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         }
 
         /**
-         * Adds the Latitude Checkout Payments Gateway to WooCommerce
-         *
-         */
-
-        public function add_latitudecheckoutgateway($gateways)
-        {
-            $gateways[] = 'WC_LatitudeCheckoutGateway';
-            return $gateways;
-        }
-
-        /**
          *  Default values for the plugin's Admin Form Fields
          */
 
@@ -237,7 +226,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             $category = get_the_terms($product->id, 'product_cat');
             wp_enqueue_script(
                 'latitude_widget_js',
-                '/wp-content/plugins/checkout-plugins-woocommerce/js/woocommerce.js'
+                '/wp-content/plugins/checkout-plugins-woocommerce/assets/js/woocommerce.js'
             );
             wp_localize_script(
                 'latitude_widget_js',
@@ -289,7 +278,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         {
             wp_enqueue_style( 
                 'latitude_checkout-styles', 
-                plugins_url( 'checkout-plugins-woocommerce/css/latitude.css')
+                plugins_url( 'checkout-plugins-woocommerce/assets/css/latitude.css')
             );
         }
 
@@ -375,7 +364,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
            
             wp_enqueue_script(
                 'latitude_paymentfield_js',
-                '/wp-content/plugins/checkout-plugins-woocommerce/js/woocommerce.js'
+                '/wp-content/plugins/checkout-plugins-woocommerce/assets/js/woocommerce.js'
             );
             wp_localize_script(
                 'latitude_paymentfield_js',

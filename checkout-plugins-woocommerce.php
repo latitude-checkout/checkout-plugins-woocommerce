@@ -98,7 +98,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             /*
             * Filters
             */
-            add_filter( 'woocommerce_payment_gateways', [$gateway, 'add_latitudecheckoutgateway'], 10, 1 );
+            add_filter( 'woocommerce_payment_gateways', [$this, 'add_gateways'], 10, 1 );
             add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), [$this, 'add_settings_links'], 10, 1 ); 
             add_filter( 'woocommerce_gateway_icon', [$gateway, 'filter_latitude_gateway_icon'], 10, 2 );
             add_filter( 'woocommerce_order_button_text', [$gateway, 'filter_place_order_button_text'], 10, 1 );
@@ -119,7 +119,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
 
             wp_enqueue_script(
                 'latitude_payment_fields_js',
-                plugins_url('js/latitude-payment-fields.js', __FILE__),
+                '/wp-content/plugins/checkout-plugins-woocommerce/assets/js/latitude-payment-fields.js', 
                 ['jquery']
             );
         }
@@ -169,8 +169,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
 
         /**
          * Callback for when the plugin is uninstalled. Remove all of its data.
-         *
-         * @since    1.0.0
+         * 
          */
         public static function uninstall_plugin()
         {
@@ -180,10 +179,22 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             return;
         }
 
+
+        /**
+         * Adds the Latitude Checkout Payments Gateway to WooCommerce
+         *
+         */
+
+        public function add_gateways($gateways)
+        {
+            $gateways[] = 'WC_LatitudeCheckoutGateway';
+            return $gateways;
+        }
+
+
         /**
          * Note: Hooked onto the "plugin_action_links_checkout-plugins-woocommerce.php" Action.
-         *
-         * @since	1.0.0
+         * 
          *
          */
         public function add_settings_links($links)
@@ -202,17 +213,8 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
         }
     }
 
-    register_activation_hook(__FILE__, [
-        'LatitudeCheckoutPlugin',
-        'activate_plugin',
-    ]);
-    register_deactivation_hook(__FILE__, [
-        'LatitudeCheckoutPlugin',
-        'deactivate_plugin',
-    ]);
-    register_uninstall_hook(__FILE__, [
-        'LatitudeCheckoutPlugin',
-        'uninstall_plugin',
-    ]);
+    register_activation_hook(__FILE__, [ 'LatitudeCheckoutPlugin', 'activate_plugin', ]);
+    register_deactivation_hook(__FILE__, [ 'LatitudeCheckoutPlugin', 'deactivate_plugin', ]);
+    register_uninstall_hook(__FILE__, [ 'LatitudeCheckoutPlugin', 'uninstall_plugin', ]);
     add_action('plugins_loaded', ['LatitudeCheckoutPlugin', 'init'], 10, 0);
 }

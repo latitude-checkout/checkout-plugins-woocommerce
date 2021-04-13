@@ -57,16 +57,15 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
          */
         public static function load_classes()
         {
-            if (class_exists('WC_Payment_Gateway')) {
-                require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR .
-                    'includes/Constants.php';
-                require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR .
-                    'includes/Latitude_Purchase_Request.php';
-                require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR .
-                    'includes/Latitude_Checkout_Service.php';
-                require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR .
-                    'includes/WC_LatitudeCheckoutGateway.php';
-            }
+            if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
+				return;
+			}
+
+             
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes/Constants.php'; 
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/Latitude_Purchase_Request.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/Latitude_Checkout_Service.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/WC_LatitudeCheckoutGateway.php'; 
         }
 
         /**
@@ -83,10 +82,8 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
 
             /*
             * Actions
-            */
-            add_action( 'init', array($gateway, 'register_post_types'), 10, 0 );
-            add_action("woocommerce_update_options_payment_gateways_{$gateway->id}",[$gateway, 'process_admin_options'],10,0 );
-            add_action("woocommerce_update_options_payment_gateways_{$gateway->id}",[$gateway, 'refresh_configuration'],11,0);
+            */ 
+            add_action("woocommerce_update_options_payment_gateways_{$gateway->id}",[$gateway, 'process_admin_options'],10,0 ); 
             add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
             add_action("woocommerce_receipt_{$gateway->id}",[$gateway, 'receipt_page'],10,1);
             add_action('woocommerce_api_latitude_checkout', [$gateway,'on_latitude_checkout_callback',]);

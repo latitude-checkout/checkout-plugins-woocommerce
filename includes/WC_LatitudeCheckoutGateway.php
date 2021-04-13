@@ -141,9 +141,29 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 		 * 
 		 */
 		public function process_admin_options() {
-			parent::process_admin_options();
- 
+			parent::process_admin_options(); 
+
+            if (array_key_exists('widget_content', $this->settings)) { 
+                if ( $this->is_valid_widget_settings($this->settings['widget_content'])  === false )
+                {
+                    WC_Admin_Settings::add_error('Error: Invalid widget content.');  
+                }
+            } 
+            if (array_key_exists('merchant_secret', $this->settings) && 
+                array_key_exists('merchant_id', $this->settings)) 
+            {
+               if(empty($this->settings['merchant_secret']) || empty($this->settings['merchant_id']))
+               {
+                    WC_Admin_Settings::add_error('Error: Merchant details cannot be empty.');  
+               } 
+            }
 		}
+
+        private function is_valid_widget_settings($widget_content) 
+        {    
+            return ( json_decode( $widget_content , true ) == NULL ) ? false : true ; 
+        }
+       
 
         /**
          * Refresh cached configuration to ensure properties are up to date
@@ -160,14 +180,12 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 $this->merchant_secret = $this->settings['merchant_secret'];
             }
             $this->test_mode = true;
-            if (array_key_exists('testmode', $this->settings)) {
-                $this->test_mode = 'yes' === $this->settings['testmode'];
+            if (array_key_exists('test_mode', $this->settings)) {
+                $this->test_mode = 'yes' === $this->settings['test_mode'];
             }
-            self::$log_enabled = $this->test_mode;
-            if (array_key_exists('widget_content', $this->settings)) {
-                $this->merchant_secret = $this->settings['widget_data'];
-            }
+            self::$log_enabled = $this->test_mode; 
         }
+
 
         /**
          * Get plugin version constant
@@ -198,7 +216,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
          */
         public function get_test_mode()
         {
-            $this->test_mode = 'yes' === $this->settings['testmode'];
+            $this->test_mode = 'yes' === $this->settings['test_mode'];
             return $this->test_mode;
         }
 
@@ -693,26 +711,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 'merchantReference' => $merchantReference,
             ];
 
-            $order = wc_get_order($order_id);
-            // // check order status
-            // $is_order_pending = $this->is_order_pending($order);
-            // if (!$is_order_pending) {
-            //     $this->log_error(
-            //         'Cannot verify purchase when order is no longer pending.'
-            //     );
-            //     $order->add_order_note(
-            //         sprintf(
-            //             __(
-            //                 'Order status is not pending for payment, cannot proceed to verify. Transaction reference: %s.',
-            //                 'woo_latitudecheckout'
-            //             ),
-            //             $transactionReference
-            //         )
-            //     );
-            //     $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __( 'Purchase cannot verify order on this status.', 'woo_latitudecheckout' ) ); 
-            //     $this->redirect_on_verify_api_failure($order); 
-            // }
-
+            $order = wc_get_order($order_id);  
             $checkout_service = new Latitude_Checkout_Service();
             $response = $checkout_service->verify_purchase_request($payload);
 
@@ -804,15 +803,17 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                     wc_empty_cart();
                     wp_redirect($order->get_checkout_order_received_url());
                     exit();
-                } else {
-                    if (!empty($message)) {
-                        $this->log_warning(
-                            "Verfiy Purchase Error Message:{$message}."
-                        );
-                    }
-                    $this->log_warning(
+                } else { 
+                    $this->log_error(
                         "Payment declined for WooCommerce Order #{$order_id}."
                     ); 
+                    if (!empty($message)) { 
+                        $this->log_error(
+                            "API error message returned:{$message}."
+                        );
+                        $order->add_order_note(  __( $message, 'woo_latitudecheckout' )  );
+                    }
+  
                     $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __(  sprintf(
                         __(
                             'Payment declined. Transaction reference: %s, Gateway reference: %s.',
@@ -836,7 +837,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
  
         private function  redirect_on_verify_api_failure( $order)
         {  
-            wc_add_notice(__('Payment declined for this order. Please contact merchant.', 'woo_latitudecheckout'), 'error');
+            wc_add_notice(__('Payment declined for this order. Please try again or select other payment method.', 'woo_latitudecheckout'), 'error');
             wp_redirect(wc_get_checkout_url()); 
             exit; 
         }

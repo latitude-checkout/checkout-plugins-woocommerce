@@ -5,7 +5,7 @@
  * Description: Enabling Latitude Interest Free Payment Gateway on a WooCommerce store.
  * Author: latitudefinancial
  * Author URI: https://www.latitudefinancial.com.au/
- * Version:0.0.65
+ * Version:0.0.67
  * Text Domain: checkout-plugins-woocommerce
  * WC tested up to: 5.6
  *
@@ -35,7 +35,7 @@ define('WP_DEBUG_LOG', false);
 define('WP_DEBUG_DISPLAY', false);
 
 define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '5.6');
-define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '0.0.65'); 
+define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '0.0.67'); 
 define('WC_LATITUDE_GATEWAY__PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 if (!class_exists('LatitudeCheckoutPlugin')) {
@@ -85,56 +85,16 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             * Actions
             */
             add_action( 'init', array($gateway, 'register_post_types'), 10, 0 );
-            add_action(
-                "woocommerce_update_options_payment_gateways_{$gateway->id}",
-                [$gateway, 'process_admin_options'],
-                10,
-                0
-            );
-            add_action(
-                "woocommerce_update_options_payment_gateways_{$gateway->id}",
-                [$gateway, 'refresh_configuration'],
-                11,
-                0
-            );
+            add_action("woocommerce_update_options_payment_gateways_{$gateway->id}",[$gateway, 'process_admin_options'],10,0 );
+            add_action("woocommerce_update_options_payment_gateways_{$gateway->id}",[$gateway, 'refresh_configuration'],11,0);
             add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
-            add_action(
-                "woocommerce_receipt_{$gateway->id}",
-                [$gateway, 'receipt_page'],
-                10,
-                1
-            );
-            add_action('woocommerce_api_latitude_checkout', [
-                $gateway,
-                'on_latitude_checkout_callback',
-            ]);
-            add_action('woocommerce_admin_order_data_after_order_details', [
-                $gateway,
-                'display_order_data_in_admin',
-            ]);
-            add_action(
-                'woocommerce_before_checkout_form',
-                [$gateway, 'add_checkout_custom_style'],
-                10,
-                2
-            ); 
-            add_action(
-                'woocommerce_single_product_summary',
-                [$gateway, 'get_widget_data'],
-                10,
-                2
-            );
-            
-            add_action( 'woocommerce_after_checkout_validation', [
-                $gateway,
-                'validate_checkout_fields'],
-                10,
-                2
-            );
-           
-            add_action( 'woocommerce_before_cart', [
-                $gateway,
-                'on_load_cart_page']);
+            add_action("woocommerce_receipt_{$gateway->id}",[$gateway, 'receipt_page'],10,1);
+            add_action('woocommerce_api_latitude_checkout', [$gateway,'on_latitude_checkout_callback',]);
+            add_action('woocommerce_admin_order_data_after_order_details', [$gateway,'display_order_data_in_admin',]);
+            add_action('woocommerce_before_checkout_form',[$gateway, 'add_checkout_custom_style'],10,2); 
+            add_action('woocommerce_single_product_summary',[$gateway, 'get_widget_data'],10,2);
+            add_action( 'woocommerce_after_checkout_validation', [ $gateway, 'validate_checkout_fields'], 10, 2 ); 
+            add_action( 'woocommerce_before_cart', [ $gateway, 'on_load_cart_page']);
             /*
             * Filters
             */

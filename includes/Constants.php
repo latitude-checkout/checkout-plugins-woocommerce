@@ -3,12 +3,6 @@
 class Environment_Settings
 { 
     const CALLBACK_URL = '/wc-api/latitude_checkout';
-
-    const PAYMENT_FIELDS_URL_PROD = 'https://master.checkout.dev.merchant-services-np.lfscnp.com';
-    const PAYMENT_FIELDS_URL_TEST = 'https://master.checkout.dev.merchant-services-np.lfscnp.com';
-
-    const WIDGETS_URL_PROD = 'https://checkout.latitudefinancial.com'; // to confirm if this url is the same for both test and prod env
-    const WIDGETS_URL_TEST = 'https://checkout.latitudefinancial.com';
  
     const ALLOWED_CURRENCY = ['AUD', 'NZD'];
     const location_settings = array(

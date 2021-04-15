@@ -97,9 +97,9 @@ class Latitude_Request_Purchase_Order
      * Builds the url callback after purchase request is confirmed
      *
      */
-    private function get_complete_callback_url() { 
+    private function get_complete_callback_url() {  
         $return_url = __(
-            get_home_url() . '/wc-api/latitude_checkout' ); 
+            get_home_url() . '/wc-api/lc-purchase-complete' ); 
         return $return_url;
     } 
  

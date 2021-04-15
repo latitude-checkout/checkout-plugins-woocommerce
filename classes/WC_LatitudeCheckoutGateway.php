@@ -19,7 +19,8 @@ use Environment_Settings as LatitudeConstants;
  */
 if (!class_exists('WC_LatitudeCheckoutGateway')) {
     class WC_LatitudeCheckoutGateway extends WC_Payment_Gateway
-    {
+    { 
+
         /**
          * Protected static variable
          *
@@ -29,6 +30,13 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
          */
 
         protected static $instance = null;
+
+       	/**
+		 * Reference to API class.
+		 *
+		 * @var Latitude_Chekout_API $api_service
+		 */        
+        public $api_service;
 
         /**
          * Protected static variable
@@ -53,8 +61,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
          */
         protected $merchant_id, $merchant_secret;
 
-        protected $api_service;
-
+     
 
         /**
          * Private variables.
@@ -176,6 +183,11 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         public function get_api_settings() 
         {
             return $this->get_test_mode() ? "test" : "prod"; 
+        }
+
+        public function get_payment_gateway_id() 
+        {
+            return $this->id;
         }
 
         /**
@@ -395,37 +407,12 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             if (!$order_id) {
                 $this->log_error( 'Order ID cannot be null when processing payment.' );
                 return;
-            }  
-
+            }   
             $response = $this->api_service->purchase_request($order_id);
             $this->log_info( __( "purchase_request result: "  . json_encode($response)));
             return $response;
         } 
-        
-
-         /**
-         *
-         * Hooked onto the "woocommerce_before_cart" action.
-         *
-         */
-
-        public function on_load_cart_page()
-        { 
-            $current_payment_method = WC()->session->get( 'chosen_payment_method'  );   
-            if ( $current_payment_method !=  $this->id ) {
-               return;
-            }   
-
-            if (array_key_exists('cancel_order', $_GET) && array_key_exists('order_id', $_GET) && 
-                    $_GET['cancel_order'] === 'true') {
-                $order_id = (int)$_GET['order_id']; 
-                $this->log_info(__("Order cancelled by customer:{$order_id}"));
-                $order = wc_get_order($order_id); 
-                $order->update_status('cancelled'); 
-            }
-
-        }
-
+         
         /**
          *
          * Hooked onto the "woocommerce_endpoint_order-pay_title" filter.
@@ -461,29 +448,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
                 );
             }
         }
- 
-         /**
-         *
-         * Hooked onto the "woocommerce_api_latitude_checkout" action.
-         *
-         */ 
-        public function on_latitude_checkout_callback()
-        {
-            $this->log_debug('on_latitude_checkout_callback');
-            $merchantReference = filter_input( INPUT_GET, 'merchantReference', FILTER_SANITIZE_STRING );    
-            $transactionReference = filter_input( INPUT_GET, 'transactionReference', FILTER_SANITIZE_STRING );  
-            $gatewayReference = filter_input( INPUT_GET, 'gatewayReference', FILTER_SANITIZE_STRING );  
-  
-            $response = $this->api_service->verify_purchase_request($merchantReference, $transactionReference, $gatewayReference);
-            $this->log_info( __( "purchase_request result: "  . json_encode($response)));
-            if (is_array($response) && ($response['redirectURL'] !== '')) { 
-                wp_redirect($response['redirectURL']);   
-            } else {
-                wp_redirect( wc_get_checkout_url()); 
-            } 
-            exit; 
-        }
-          
+   
         /**
          *
          * Checks the pending status of the order

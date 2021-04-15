@@ -60,9 +60,8 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
 				return;
 			}
-
-             
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes/Constants.php'; 
+ 
+            include_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes/Constants.php'; 
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/Latitude_Checkout_Service.php';
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/Latitude_Request_Purchase.php';
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/Latitude_Request_Verify_Purchase.php';            

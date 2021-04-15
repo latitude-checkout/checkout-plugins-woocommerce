@@ -117,7 +117,7 @@ class Latitude_Request_Purchase extends Latitude_Service_API
 
     private function return_purchase_request_error($order, $error_string, $notice_message) {
         $this->gateway::log_error($error_string);  
-        $order->update_status( LatitudeConstants::WC_ORDER_FAILED, __( $error_string, 'woo_latitudecheckout' ) );
+        $order->update_status( 'failed', __( $error_string, 'woo_latitudecheckout' ) );
         wc_add_notice(__( $notice_message, 'woo_latitudecheckout'), 'error');
         return array(
             'result' => 'failure',

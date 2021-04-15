@@ -90,10 +90,8 @@ class Latitude_Request_Verify_Purchase extends Latitude_Service_API
         }
 
         $order = wc_get_order($order_id);  
-        $rsp_body = $response['response'];
-        $this->gateway::log_debug($rsp_body);
-        $result = $rsp_body['result'];
-
+        $rsp_body = $response['response']; 
+        $result = $rsp_body['result']; 
         if ( $result !== 'completed') {  
             $message = $rsp_body['message'];
             if (!empty($message)) { 

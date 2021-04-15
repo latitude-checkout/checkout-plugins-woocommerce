@@ -63,8 +63,12 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
 
              
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes/Constants.php'; 
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/Latitude_Purchase_Request.php';
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/Latitude_Checkout_Service.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/Latitude_Checkout_Service.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/Latitude_Request_Purchase.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/Latitude_Request_Verify_Purchase.php';            
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/helpers/Latitude_Request_Purchase_Order.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/Latitude_Checkout_API_Callbacks.php';            
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/Latitude_Checkout_API.php'; 
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/WC_LatitudeCheckoutGateway.php'; 
         }
 

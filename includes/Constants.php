@@ -9,13 +9,7 @@ class Environment_Settings
 
     const WIDGETS_URL_PROD = 'https://checkout.latitudefinancial.com'; // to confirm if this url is the same for both test and prod env
     const WIDGETS_URL_TEST = 'https://checkout.latitudefinancial.com';
-
-    // wc order status
-    const WC_ORDER_FAILED = 'failed';
-    const WC_ORDER_CANCELLED = 'cancelled';
-    const WC_ORDER_PENDING = 'pending';
-    const WC_ORDER_ONHOLD = 'on-hold';  
-
+ 
     const ALLOWED_CURRENCY = ['AUD', 'NZD'];
     const location_settings = array(
         "AUD" => array

@@ -1,5 +1,5 @@
 <?php
-
+ 
 class Environment_Settings
 { 
     const CALLBACK_URL = '/wc-api/latitude_checkout';
@@ -33,4 +33,4 @@ class Environment_Settings
             )
     );
   
-}
+} 

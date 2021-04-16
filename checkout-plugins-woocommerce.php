@@ -4,8 +4,8 @@
  * Plugin URI: https://www.latitudefinancial.com.au/
  * Description: Enabling Latitude Interest Free Payment Gateway on a WooCommerce store.
  * Author: latitudefinancial
- * Author URI: https://www.latitudefinancial.com.au/
- * Version:0.0.71
+ * Author URI: https://www.latitudefinancial.com.au/ 
+ * Version:0.0.71 
  * Text Domain: checkout-plugins-woocommerce
  * WC tested up to: 5.6
  *
@@ -34,8 +34,8 @@ define('WP_DEBUG', false);
 define('WP_DEBUG_LOG', false);
 define('WP_DEBUG_DISPLAY', false);
 
-define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '5.6');
-define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '0.0.71'); 
+define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '5.6'); 
+define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '0.0.71');  
 define('WC_LATITUDE_GATEWAY__PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 if (!class_exists('LatitudeCheckoutPlugin')) {
@@ -56,7 +56,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
          * @access   public
          */
         public static function load_classes()
-        {
+        { 
             if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
 				return;
 			}
@@ -68,7 +68,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/helpers/Latitude_Request_Purchase_Order.php';
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/Latitude_Checkout_API_Callbacks.php';            
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/Latitude_Checkout_API.php'; 
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/WC_LatitudeCheckoutGateway.php'; 
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/WC_LatitudeCheckoutGateway.php';  
         }
 
         /**
@@ -84,7 +84,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             $gateway = WC_LatitudeCheckoutGateway::get_instance();
 
             /*
-            * Actions
+            * Actions 
             */ 
             add_action("woocommerce_update_options_payment_gateways_{$gateway->id}",[$gateway, 'process_admin_options'],10,0 ); 
             add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
@@ -116,8 +116,8 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
              */
 
             wp_enqueue_script(
-                'latitude_payment_fields_js',
-                '/wp-content/plugins/checkout-plugins-woocommerce/assets/js/latitude-payment-fields.js', 
+                'latitude_payment_fields_js', 
+                '/wp-content/plugins/checkout-plugins-woocommerce/assets/js/latitude-payment-fields.js',  
                 ['jquery']
             );
         }
@@ -166,8 +166,8 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
         }
 
         /**
-         * Callback for when the plugin is uninstalled. Remove all of its data.
-         * 
+         * Callback for when the plugin is uninstalled. Remove all of its data. 
+         *  
          */
         public static function uninstall_plugin()
         {
@@ -176,7 +176,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             }
             return;
         }
-
+ 
 
         /**
          * Adds the Latitude Checkout Payments Gateway to WooCommerce
@@ -192,7 +192,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
 
         /**
          * Note: Hooked onto the "plugin_action_links_checkout-plugins-woocommerce.php" Action.
-         * 
+         *  
          *
          */
         public function add_settings_links($links)
@@ -210,9 +210,9 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             return array_merge($settings_links, $links);
         }
     }
-
+ 
     register_activation_hook(__FILE__, [ 'LatitudeCheckoutPlugin', 'activate_plugin', ]);
     register_deactivation_hook(__FILE__, [ 'LatitudeCheckoutPlugin', 'deactivate_plugin', ]);
-    register_uninstall_hook(__FILE__, [ 'LatitudeCheckoutPlugin', 'uninstall_plugin', ]);
+    register_uninstall_hook(__FILE__, [ 'LatitudeCheckoutPlugin', 'uninstall_plugin', ]); 
     add_action('plugins_loaded', ['LatitudeCheckoutPlugin', 'init'], 10, 0);
 }

@@ -28,7 +28,7 @@ class Latitude_Request_Purchase extends Latitude_Service_API
     public function request($order_id) {
 
         $url = $this->get_purchase_url();  
-        $request_args = $this->get_request_args($order_id); 
+        $request_args = $this->get_request_args($order_id);  
         $response = wp_remote_post($url, $request_args);  
         $result =  $this->process_response($response); 
         $this->gateway::log_debug( __('purchase_request response: ' . json_encode($result)) );
@@ -117,8 +117,14 @@ class Latitude_Request_Purchase extends Latitude_Service_API
 
     private function return_purchase_request_error($order, $error_string, $notice_message) {
         $this->gateway::log_error($error_string);  
-        $order->update_status( 'failed', __( $error_string, 'woo_latitudecheckout' ) );
         wc_add_notice(__( $notice_message, 'woo_latitudecheckout'), 'error');
+        if (is_null($order)) {
+            return array(
+                'result' => 'failure',
+                'redirect' =>  wc_get_checkout_url()               
+            );  
+        }
+        $order->update_status( 'failed', __( $error_string, 'woo_latitudecheckout' ) ); 
         return array(
             'result' => 'failure',
             'redirect' => $order->get_checkout_payment_url(false)                

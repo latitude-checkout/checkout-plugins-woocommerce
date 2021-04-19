@@ -75,7 +75,8 @@ class Latitude_Request_Purchase_Order
         foreach ($order->get_items() as $key => $item):
             $product = $item->get_product(); 
             $shipping_class = $product->get_shipping_class();
-            $shipping_required = isset($shipping_class) ? true : false; 
+            $shipping_required = isset($shipping_class) ? true : false;  
+            $is_gift_card = 'coupon' === $item->get_type() ? true : false;
             $order_line = array(
                 'name' => $item->get_name(),
                 'productUrl' => $product->get_permalink(),
@@ -85,7 +86,7 @@ class Latitude_Request_Purchase_Order
                 'amount' => floatval($item->get_total()),
                 'tax' => floatval($item->get_total_tax()),
                 'requiresShipping' => $shipping_required,
-                'isGiftCard' => false, //TODO
+                'isGiftCard' => $is_gift_card, 
             );
             array_push($order_lines, $order_line);
         endforeach;

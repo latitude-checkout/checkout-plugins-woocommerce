@@ -5,7 +5,7 @@
  * Description: Enabling Latitude Interest Free Payment Gateway on a WooCommerce store.
  * Author: latitudefinancial
  * Author URI: https://www.latitudefinancial.com.au/ 
- * Version:0.0.71 
+ * Version:0.0.81 
  * Text Domain: checkout-plugins-woocommerce
  * WC tested up to: 5.6
  *
@@ -35,7 +35,7 @@ define('WP_DEBUG_LOG', false);
 define('WP_DEBUG_DISPLAY', false);
 
 define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '5.6'); 
-define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '0.0.71');  
+define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '0.0.81');  
 define('WC_LATITUDE_GATEWAY__PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 if (!class_exists('LatitudeCheckoutPlugin')) {
@@ -61,14 +61,14 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
 				return;
 			}
  
-            include_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes/Constants.php'; 
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/Latitude_Checkout_Service.php';
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/Latitude_Request_Purchase.php';
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/Latitude_Request_Verify_Purchase.php';            
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/helpers/Latitude_Request_Purchase_Order.php';
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/Latitude_Checkout_API_Callbacks.php';            
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/Latitude_Checkout_API.php'; 
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/WC_LatitudeCheckoutGateway.php';  
+            include_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes/environment-settings.php'; 
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/latitude-checkout-service.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/request-purchase.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/request-verify-purchase.php';            
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/helpers/request-purchase-order.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/latitude-checkout-callback-handler.php';            
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/latitude-checkout-handler.php'; 
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/wc-latitudecheckout-gateway.php';  
         }
 
         /**

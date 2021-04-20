@@ -113,7 +113,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
 
         public function init_form_fields()
         { 
-            include "{$this->include_path}/Admin_Form_Fields.php";
+            include "{$this->include_path}/admin-form.php";
             
         }
 

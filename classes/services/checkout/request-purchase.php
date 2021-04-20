@@ -87,6 +87,7 @@ class Latitude_Request_Purchase extends Latitude_Service_API
         $rsp_redirecturl = $rsp_body['redirectUrl']; 
         $rsp_error = $rsp_body['error'];
 
+        $this->gateway::log_debug(__('++++Result: ' . $result ));
         if ($result == 'pending') { 
             $result_data = $this->is_result_valid( $rsp_body, $order ) ;
             if ($result_data['valid'] === false) { 
@@ -106,15 +107,18 @@ class Latitude_Request_Purchase extends Latitude_Service_API
         } elseif ($result == 'failed') { 
 
             if(!empty($rsp_redirecturl) && !empty($rsp_error)) {
-                $error_string = __( "Purchase Request for order #{$order_id} returned with error : {$rsp_error}.");
-                $order->update_status( 'failed', __( $error_string, 'woo_latitudecheckout' ) ); 
+                $error_string = __( "Purchase Request returned with error : {$rsp_error}.");
+                $order->add_order_note(__( $error_string, 'woo_latitudecheckout' ) ); 
+                $order->update_status('failed'); 
+
+                $this->gateway::log_debug(__('++++Result: ' . $rsp_redirecturl ));
                 return array(
-                    'result' => 'failure',
+                    'result' => 'success',
                     'redirect' => $rsp_redirecturl                
                 );   
             }
 
-            $error_string = __( "Purchase Request failed for order #{$order_id}.");  
+            $error_string = __( "Purchase Request failed. ");  
         } else {
             // Purchase request returned unexpected result (neither pending nor failed) 
             $error_string =  __( 'Unexpected result received from purchase request: ' . json_encode($result) ); 
@@ -131,7 +135,8 @@ class Latitude_Request_Purchase extends Latitude_Service_API
                 'redirect' =>  wc_get_checkout_url()               
             );  
         }
-        $order->update_status( 'failed', __( $error_string, 'woo_latitudecheckout' ) ); 
+        $order->add_order_note(__( $error_string, 'woo_latitudecheckout' ) ); 
+        $order->update_status( 'failed'); 
         return array(
             'result' => 'failure',
             'redirect' => $order->get_checkout_payment_url(false)                

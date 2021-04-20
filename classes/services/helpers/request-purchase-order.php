@@ -51,7 +51,7 @@ class Latitude_Request_Purchase_Order
             'shippingAddress' => $this->get_shipping_address($order),
             'orderLines' => $order_lines,
             'merchantUrls' => [
-                'cancel' => $order->get_cancel_order_url_raw(), //$this->build_cancel_request_url($order_id),
+                'cancel' => wc_get_checkout_url(),  
                 'callback' => '',
                 'complete' => $this->get_complete_callback_url() 
             ],

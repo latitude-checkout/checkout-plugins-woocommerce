@@ -75,44 +75,55 @@ class Latitude_Request_Purchase extends Latitude_Service_API
             } 
             return $this->return_purchase_request_error($order, $error_string, $notice_message); 
         }
-
         $rsp_body = $response['response'];
-        $result = $rsp_body['result'];
+        return $this->parse_purchase_request($order, $rsp_body);
+    }
+
+
+    private function parse_purchase_request($order, $rsp_body)
+    {  
         $this->gateway::log_debug($rsp_body);
+        $result = $rsp_body['result']; 
+        $rsp_redirecturl = $rsp_body['redirectUrl']; 
+        $rsp_error = $rsp_body['error'];
+
+        $this->gateway::log_debug(__('++++Result: ' . $result ));
         if ($result == 'pending') { 
             $result_data = $this->is_result_valid( $rsp_body, $order ) ;
             if ($result_data['valid'] === false) { 
                 $notice_message = __( "{$result_data['error']} Please try again later or pay with other payment method. " );
                 $error_string = __( " Invalid order response. Error: {$result_data['error']}" );
                 return $this->return_purchase_request_error($order, $error_string, $notice_message);  
-            }
-
-            $redirect_url = $rsp_body['redirectUrl']; 
-            if (empty($redirect_url)) {  
+            } 
+            if (empty($rsp_redirecturl)) {  
                 $notice_message = 'Latitude Interest Free Service is not reachable. Please try again later or pay with other payment method. ';
                 return $this->return_purchase_request_error($order, 'Latitude Interest Free Gateway is not reachable.', $notice_message);  
             }  
             return array( 
                     'result' => 'success',
-                    'redirect' => $redirect_url,
+                    'redirect' => $rsp_redirecturl,
             ); 
 
-        } 
-        
-        if ($result == 'failed') {
-            
-            $notice_message = 'Purchase Request was not valid. Please contact Merchant.';
-            $error_string = __( "Purchase Request failed for order #{$order_id}.");
-            if (!empty($rsp_body['error'])) {
-                $notice_message = $rsp_body['error'];
-                $error_string = __( "Purchase Request for order #{$order_id} returned with error : {$notice_message}.");
-            } 
-            return $this->return_purchase_request_error($order, $error_string, $notice_message);   
-        }  
+        } elseif ($result == 'failed') { 
 
-        // Purchase request returned unexpected result (neither pending nor failed) 
-        $error_string =  __( 'Unexpected result received from purchase request: ' . json_encode($result) );
-        return $this->return_purchase_request_error($order, $error_string, $notice_message);    
+            if(!empty($rsp_redirecturl) && !empty($rsp_error)) {
+                $error_string = __( "Purchase Request returned with error : {$rsp_error}.");
+                $order->add_order_note(__( $error_string, 'woo_latitudecheckout' ) ); 
+                $order->update_status('failed'); 
+
+                $this->gateway::log_debug(__('++++Result: ' . $rsp_redirecturl ));
+                return array(
+                    'result' => 'success',
+                    'redirect' => $rsp_redirecturl                
+                );   
+            }
+
+            $error_string = __( "Purchase Request failed. ");  
+        } else {
+            // Purchase request returned unexpected result (neither pending nor failed) 
+            $error_string =  __( 'Unexpected result received from purchase request: ' . json_encode($result) ); 
+        }  
+        return $this->return_purchase_request_error($order, $error_string, $notice_message); 
     }
 
     private function return_purchase_request_error($order, $error_string, $notice_message) {
@@ -124,7 +135,8 @@ class Latitude_Request_Purchase extends Latitude_Service_API
                 'redirect' =>  wc_get_checkout_url()               
             );  
         }
-        $order->update_status( 'failed', __( $error_string, 'woo_latitudecheckout' ) ); 
+        $order->add_order_note(__( $error_string, 'woo_latitudecheckout' ) ); 
+        $order->update_status( 'failed'); 
         return array(
             'result' => 'failure',
             'redirect' => $order->get_checkout_payment_url(false)                

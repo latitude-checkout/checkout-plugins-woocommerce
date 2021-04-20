@@ -39,8 +39,7 @@ class Latitude_Checkout_API_Callbacks
 	 * Latitude_Checkout_API_Callbacks constructor.
 	 */
 	public function __construct() { 
-        add_action('woocommerce_api_lc-purchase-complete', [$this,'on_complete_purchase',]);
-        add_action( 'woocommerce_before_cart', [ $this, 'on_cancel_purchase']);
+        add_action('woocommerce_api_lc-purchase-complete', [$this,'on_complete_purchase',]); 
 	}
  
     /**
@@ -65,28 +64,6 @@ class Latitude_Checkout_API_Callbacks
         } 
         exit; 
     }
-
-    /**
-     *
-     * Hooked onto the "woocommerce_before_cart" action.
-     *
-     */ 
-    public function on_cancel_purchase()
-    { 
-        $lc_gateway = WC_LatitudeCheckoutGateway::get_instance();
-        $current_payment_method = WC()->session->get( 'chosen_payment_method'  );   
-        if ( $current_payment_method !=  $lc_gateway->get_payment_gateway_id() ) {
-            return;
-        }   
-
-        if (array_key_exists('cancel_order', $_GET) && array_key_exists('order_id', $_GET) && 
-                $_GET['cancel_order'] === 'true') {
-            $order_id = (int)$_GET['order_id']; 
-            $lc_gateway::log_info(__("Order cancelled by customer:{$order_id}"));
-            $order = wc_get_order($order_id); 
-            $order->update_status('cancelled'); 
-        }
-
-    }    
+ 
 }
 Latitude_Checkout_API_Callbacks::get_instance();

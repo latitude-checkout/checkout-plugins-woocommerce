@@ -202,7 +202,8 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             $category = get_the_terms($product->id, 'product_cat');
             wp_enqueue_script(
                 'latitude_widget_js',
-                '/wp-content/plugins/checkout-plugins-woocommerce/assets/js/woocommerce.js'
+                '/wp-content/plugins/checkout-plugins-woocommerce/assets/js/woocommerce.js',  
+                ['jquery']
             );
             wp_localize_script(
                 'latitude_widget_js',
@@ -334,6 +335,16 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             </p>
             </div>  
             <div id="latitude-payment--footer"></div> 
+            <script>
+                function reloadScript() {
+                        var curr = document.createElement("script");
+                        curr.type = "text/javascript";
+                        curr.async = true;
+                        curr.src = '<?php echo $this->get_payment_fields_src(); ?>';
+                        var scr = document.getElementsByTagName("script")[0];
+                        scr.parentNode.insertBefore(curr, scr);
+                    }
+            </script>
             <?php
            
             wp_enqueue_script(

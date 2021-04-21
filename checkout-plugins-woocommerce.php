@@ -67,7 +67,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/verify-purchase.php';            
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/models/purchase-request.php';
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/api-callback-handler.php';            
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/api-checkout-handler.php'; 
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/api-handler.php'; 
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/wc-latitudecheckout-gateway.php';  
         }
 

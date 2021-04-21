@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-class Latitude_Request_Purchase_Order
+class PurchaseRequest
 {
     /**
      * Protected variables.

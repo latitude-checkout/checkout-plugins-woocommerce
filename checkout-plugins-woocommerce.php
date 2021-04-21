@@ -5,7 +5,7 @@
  * Description: Enabling Latitude Interest Free Payment Gateway on a WooCommerce store.
  * Author: latitudefinancial
  * Author URI: https://www.latitudefinancial.com.au/ 
- * Version:0.0.82 
+ * Version:0.0.83 
  * Text Domain: checkout-plugins-woocommerce
  * WC tested up to: 5.6
  *
@@ -35,7 +35,7 @@ define('WP_DEBUG_LOG', false);
 define('WP_DEBUG_DISPLAY', false);
 
 define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '5.6'); 
-define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '0.0.82');  
+define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '0.0.83');  
 define('WC_LATITUDE_GATEWAY__PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 if (!class_exists('LatitudeCheckoutPlugin')) {
@@ -62,10 +62,10 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
 			}
  
             include_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes/environment-settings.php'; 
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/latitude-checkout-service.php';
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/request-purchase.php';
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/request-verify-purchase.php';            
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/helpers/request-purchase-order.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/service-api.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/purchase.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/verify-purchase.php';            
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/models/purchase-request.php';
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/latitude-checkout-callback-handler.php';            
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/latitude-checkout-handler.php'; 
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/wc-latitudecheckout-gateway.php';  

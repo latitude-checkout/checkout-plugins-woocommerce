@@ -23,7 +23,7 @@ class Environment_Settings
             (
                 "payment_fields_url" => "https://master.checkout.dev.merchant-services-np.lfscnp.com",
                 "widgets_url" => "https://checkout.latitudefinancial.com",
-                "checkout_service_url" => "https://api.dev.latitudefinancial.com/v1/applybuy-checkout-service"
+                "checkout_service_url" => "https://api.test.latitudefinancial.com/v1/applybuy-checkout-service"
             ),
         "prod" => array
             (

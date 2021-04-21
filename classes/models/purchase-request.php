@@ -51,7 +51,7 @@ class PurchaseRequest
             'shippingAddress' => $this->get_shipping_address($order),
             'orderLines' => $order_lines,
             'merchantUrls' => [
-                'cancel' => wc_get_checkout_url(),  
+                'cancel' => $order->get_cancel_order_url_raw(),  
                 'callback' => '',
                 'complete' => $this->get_complete_callback_url() 
             ],
@@ -93,6 +93,8 @@ class PurchaseRequest
 
         return $order_lines;
     }
+
+   
 
     /**
      * Builds the url callback after purchase request is confirmed

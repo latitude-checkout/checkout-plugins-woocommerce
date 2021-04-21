@@ -41,10 +41,11 @@ class Latitude_Service_API
     }
 
     protected function get_request_headers() 
-    {
+    { 
         return array(
             'Authorization' => $this->build_auth_header(),
-            'Content-Type' => 'application/json'
+            'Content-Type' => 'application/json',
+            'Referer' => get_site_url()
         ); 
     }
 

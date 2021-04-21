@@ -42,7 +42,7 @@ class Latitude_Request_Purchase extends Latitude_Service_API
      */
     private function get_request_args($order_id)
     {
-        $request_order = new Latitude_Request_Purchase_Order();
+        $request_order = new PurchaseRequest();
         $payload = $request_order->get_payload($order_id);  
         $this->gateway::log_debug( __('request payload: ' . json_encode($payload)) );
         return $this->get_post_request_args($payload);

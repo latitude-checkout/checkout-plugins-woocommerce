@@ -81,13 +81,11 @@ class Latitude_Request_Purchase extends Latitude_Service_API
 
 
     private function parse_purchase_request($order, $rsp_body)
-    {  
-        $this->gateway::log_debug($rsp_body);
+    {   
+        $this->gateway::log_debug( __('request response_body: ' . json_encode($rsp_body)) );
         $result = $rsp_body['result']; 
         $rsp_redirecturl = $rsp_body['redirectUrl']; 
-        $rsp_error = $rsp_body['error'];
-
-        $this->gateway::log_debug(__('++++Result: ' . $result ));
+        $rsp_error = $rsp_body['error']; 
         if ($result == 'pending') { 
             $result_data = $this->is_result_valid( $rsp_body, $order ) ;
             if ($result_data['valid'] === false) { 
@@ -110,8 +108,7 @@ class Latitude_Request_Purchase extends Latitude_Service_API
                 $error_string = __( "Purchase Request returned with error : {$rsp_error}.");
                 $order->add_order_note(__( $error_string, 'woo_latitudecheckout' ) ); 
                 $order->update_status('failed'); 
-
-                $this->gateway::log_debug(__('++++Result: ' . $rsp_redirecturl ));
+ 
                 return array(
                     'result' => 'success',
                     'redirect' => $rsp_redirecturl                

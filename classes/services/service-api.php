@@ -59,12 +59,13 @@ class Latitude_Service_API
 
     protected function process_response($response) 
     {  
-        $this->gateway::log_debug( __('process_response: ' . json_encode($response)) );
+        $this->gateway::log_debug( __('process_response: ' . json_encode($response)) ); 
         if (is_wp_error($response)) {
             $error_string = implode($response->get_error_messages(), ' '); 
             return array(
                 'result' => 'failure',
                 'error' => $error_string,
+                'override_notice' => ''
             );
         }
 
@@ -77,19 +78,17 @@ class Latitude_Service_API
             ) ;   
         }
   
-        $this->gateway::log_error(json_encode($response)); 
-        switch (true) { 
-            case (($rsp_code == 401) || ($rsp_code == 403)):
-                $notice_message = __('Merchant credentials doesnt look correct. Please notify this error to merchant.', 'woo_latitudecheckout');
-                $result_string = $response['response']['message'];
-                break;
-            default:  
-                $notice_message = '';
-                $result_string = $response['response']['message'];
-                if (empty($result_string)) {
-                    $result_string = 'Bad Request';
-                }  
-        }      
+        $this->gateway::log_error(json_encode($response));  
+        $result_string = $response['response']['message'];
+        if (empty($result_string)) {
+            $result_string = 'Bad Request';
+        }  
+
+        $notice_message = '';
+        if (($rsp_code == 401) || ($rsp_code == 403)) {
+            $notice_message = __('Merchant credentials doesnt look correct. Please notify this error to merchant.', 'woo_latitudecheckout');
+        }
+ 
         return array(
             'result' => 'failure',
             'error' => $result_string,

@@ -95,7 +95,7 @@ class Latitude_Request_Verify_Purchase extends Latitude_Service_API
         if ( $result !== 'completed') {  
             $message = $rsp_body['message'];
             if (!empty($message)) { 
-                $message = _( "Verify Purchase Request failed for WooCommerce Order #{$order_id}. API error message returned:{$message}.");  
+                $message = __( "Verify Purchase Request failed for WooCommerce Order #{$order_id}. API error message returned:{$message}.");  
             } else {
                 $message = __( "Verify Purchase Request failed for WooCommerce Order #{$order_id}."); 
             }    
@@ -129,10 +129,7 @@ class Latitude_Request_Verify_Purchase extends Latitude_Service_API
         $order->update_meta_data( 'transactionType', $transactionType );
         $order->save();
         wc_empty_cart();
-        return array(
-            'valid' => true, 
-            'redirectURL' => $order->get_checkout_order_received_url() 
-        );
+        return $this->return_verify_purchase_response(true, $order->get_checkout_order_received_url() );  
     } 
 
     private function get_payment_status_string($status, $transactionReference, $gatewayReference ) {
@@ -143,17 +140,23 @@ class Latitude_Request_Verify_Purchase extends Latitude_Service_API
     }
 
     private function return_request_error($order, $error_string, $notice_message) {
+        $error_string = __( $error_string . ' Please contact Latitude if problem persists. ', 'woo_latitudecheckout');
         $this->gateway::log_error($error_string);  
+         
+        $redirect_url = wc_get_checkout_url(); 
         if (!is_null($order)) {
             $order->add_order_note($error_string);  
             $order->update_status('failed');
         } 
-        wc_add_notice(__( $notice_message, 'woo_latitudecheckout'), 'error');
-        return array(
-            'valid' => false, 
-            'redirectURL' => wc_get_checkout_url() 
-        );
+        
+        wc_add_notice(__( $notice_message, 'woo_latitudecheckout'), 'error'); 
+        return $this->return_verify_purchase_response(false, $redirect_url ); 
     }
 
-   
+   private function return_verify_purchase_response($valid, $redirect_url) {
+       return array (
+           'valid' => $valid,
+           'redirectURL' =>  $redirect_url 
+       );
+   }
 }

@@ -45,7 +45,7 @@ class Latitude_Service_API
         return array(
             'Authorization' => $this->build_auth_header(),
             'Content-Type' => 'application/json',
-            'Referer' => get_site_url()
+            'Referer' => get_site_url() // For local test: 'https://woo.local.store/'
         ); 
     }
 
@@ -69,23 +69,31 @@ class Latitude_Service_API
         }
 
         $rsp_code = wp_remote_retrieve_response_code( $response );
-        if (  $rsp_code < 200 ||  $rsp_code > 299 ) { 
-            $this->gateway::log_error(json_encode($response)); 
-            // get error from somewhere else 
-            $error_string = $response['response']['message'];
-            if (empty($error_string)) {
-                $error_string = 'Bad request';
-            }
+        if (($rsp_code >= 200) && ($rsp_code <= 299)) {
+            $rsp_body = json_decode($response['body'], true); 
             return array(
-                'result' => 'failure',
-                'error' => $error_string,
-            );
-        }  
-
-        $rsp_body = json_decode($response['body'], true); 
+                'result' => 'success', 
+                'response' => $rsp_body 
+            ) ;   
+        }
+  
+        $this->gateway::log_error(json_encode($response)); 
+        switch (true) { 
+            case (($rsp_code == 401) || ($rsp_code == 403)):
+                $notice_message = __('Merchant credentials doesnt look correct. Please notify this error to merchant.', 'woo_latitudecheckout');
+                $result_string = $response['response']['message'];
+                break;
+            default:  
+                $notice_message = '';
+                $result_string = $response['response']['message'];
+                if (empty($result_string)) {
+                    $result_string = 'Bad Request';
+                }  
+        }      
         return array(
-            'result' => 'success', 
-            'response' => $rsp_body,
-        ) ;   
-    } 
+            'result' => 'failure',
+            'error' => $result_string,
+            'override_notice' => $notice_message 
+        ); 
+    }
 }

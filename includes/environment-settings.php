@@ -21,7 +21,7 @@ class Environment_Settings
     const api_settings = array (
         "test" => array
             (
-                "payment_fields_url" => "https://master.checkout.dev.merchant-services-np.lfscnp.com",
+                "payment_fields_url" => "https://develop.checkout.test.merchant-services-np.lfscnp.com",
                 "widgets_url" => "https://checkout.latitudefinancial.com",
                 "checkout_service_url" => "https://api.test.latitudefinancial.com/v1/applybuy-checkout-service"
             ),
@@ -29,7 +29,7 @@ class Environment_Settings
             (
                 "payment_fields_url" => "https://master.checkout.dev.merchant-services-np.lfscnp.com", 
                 "widgets_url" => "https://checkout.latitudefinancial.com",
-                "checkout_service_url" => "https://api.test.latitudefinancial.com/v1/applybuy-checkout-service"
+                "checkout_service_url" => "https://api.latitudefinancial.com/v1/applybuy-checkout-service"
             )
     );
   

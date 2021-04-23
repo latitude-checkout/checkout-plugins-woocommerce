@@ -22,12 +22,12 @@ class Environment_Settings
         "test" => array
             (
                 "payment_fields_url" => "https://develop.checkout.test.merchant-services-np.lfscnp.com",
-                "widgets_url" => "https://checkout.latitudefinancial.com",
+                "widgets_url" => "https://develop.checkout.test.merchant-services-np.lfscnp.com",
                 "checkout_service_url" => "https://api.test.latitudefinancial.com/v1/applybuy-checkout-service"
             ),
         "prod" => array
             (
-                "payment_fields_url" => "https://master.checkout.dev.merchant-services-np.lfscnp.com", 
+                "payment_fields_url" => "https://checkout.latitudefinancial.com", 
                 "widgets_url" => "https://checkout.latitudefinancial.com",
                 "checkout_service_url" => "https://api.latitudefinancial.com/v1/applybuy-checkout-service"
             )

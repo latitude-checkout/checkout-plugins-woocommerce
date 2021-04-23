@@ -21,8 +21,8 @@ $this->form_fields =  array(
         'type'        => 'checkbox',
         'description' => __('Enable Latitude Checkout Payment Gateway', 'woo_latitudecheckout'), 
         'default'     => 'yes',
-    ),
-    'testmode' => array(
+    ), 
+    'test_mode' => array( 
         'title'       => __('Test Mode', 'woo_latitudecheckout'),
         'label'       => __('Is Test Mode?', 'woo_latitudecheckout'),
         'type'        => 'checkbox',

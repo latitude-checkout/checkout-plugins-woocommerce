@@ -3,9 +3,8 @@
  * Plugin Name: Latitude Interest Free Gateway for WooCommerce
  * Plugin URI: https://www.latitudefinancial.com.au/
  * Description: Enabling Latitude Interest Free Payment Gateway on a WooCommerce store.
- * Author: latitudefinancial
- * Author URI: https://www.latitudefinancial.com.au/
- * Version:0.0.65
+ * Author: Latitude Financial Services 
+ * Version:1.0.0
  * Text Domain: checkout-plugins-woocommerce
  * WC tested up to: 5.6
  *
@@ -34,8 +33,8 @@ define('WP_DEBUG', false);
 define('WP_DEBUG_LOG', false);
 define('WP_DEBUG_DISPLAY', false);
 
-define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '5.6');
-define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '0.0.65'); 
+define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '5.6'); 
+define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '1.0.0');  
 define('WC_LATITUDE_GATEWAY__PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 if (!class_exists('LatitudeCheckoutPlugin')) {
@@ -56,17 +55,19 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
          * @access   public
          */
         public static function load_classes()
-        {
-            if (class_exists('WC_Payment_Gateway')) {
-                require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR .
-                    'includes/Constants.php';
-                require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR .
-                    'includes/Latitude_Purchase_Request.php';
-                require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR .
-                    'includes/Latitude_Checkout_Service.php';
-                require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR .
-                    'includes/WC_LatitudeCheckoutGateway.php';
-            }
+        { 
+            if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
+				return;
+			}
+ 
+            include_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes/environment-settings.php'; 
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/service-api.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/purchase.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/verify-purchase.php';            
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/models/purchase-request.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/api-callback-handler.php';            
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/api-handler.php'; 
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/wc-latitudecheckout-gateway.php';  
         }
 
         /**
@@ -82,96 +83,23 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             $gateway = WC_LatitudeCheckoutGateway::get_instance();
 
             /*
-            * Actions
-            */
-            add_action( 'init', array($gateway, 'register_post_types'), 10, 0 );
-            add_action(
-                "woocommerce_update_options_payment_gateways_{$gateway->id}",
-                [$gateway, 'process_admin_options'],
-                10,
-                0
-            );
-            add_action(
-                "woocommerce_update_options_payment_gateways_{$gateway->id}",
-                [$gateway, 'refresh_configuration'],
-                11,
-                0
-            );
+            * Actions 
+            */ 
+            add_action("woocommerce_update_options_payment_gateways_{$gateway->id}",[$gateway, 'process_admin_options'],10,0 ); 
             add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
-            add_action(
-                "woocommerce_receipt_{$gateway->id}",
-                [$gateway, 'receipt_page'],
-                10,
-                1
-            );
-            add_action('woocommerce_api_latitude_checkout', [
-                $gateway,
-                'on_latitude_checkout_callback',
-            ]);
-            add_action('woocommerce_admin_order_data_after_order_details', [
-                $gateway,
-                'display_order_data_in_admin',
-            ]);
-            add_action(
-                'woocommerce_before_checkout_form',
-                [$gateway, 'add_checkout_custom_style'],
-                10,
-                2
-            ); 
-            add_action(
-                'woocommerce_single_product_summary',
-                [$gateway, 'get_widget_data'],
-                10,
-                2
-            );
-            
-            add_action( 'woocommerce_after_checkout_validation', [
-                $gateway,
-                'validate_checkout_fields'],
-                10,
-                2
-            );
-           
-            add_action( 'woocommerce_before_cart', [
-                $gateway,
-                'on_load_cart_page']);
+            add_action("woocommerce_receipt_{$gateway->id}",[$gateway, 'receipt_page'],10,1); 
+            add_action('woocommerce_admin_order_data_after_order_details', [$gateway,'display_order_data_in_admin',]);
+            add_action('woocommerce_before_checkout_form',[$gateway, 'add_checkout_custom_style'],10,2); 
+            add_action('woocommerce_single_product_summary',[$gateway, 'get_widget_data'],10,2);
+            add_action( 'woocommerce_after_checkout_validation', [ $gateway, 'validate_checkout_fields'], 10, 2 );  
             /*
             * Filters
             */
-            add_filter(
-                'woocommerce_payment_gateways',
-                [$gateway, 'add_latitudecheckoutgateway'],
-                10,
-                1
-            );
-            add_filter(
-                'plugin_action_links_' . plugin_basename(__FILE__),
-                [$this, 'add_settings_links'],
-                10,
-                1
-            ); 
-            add_filter(
-                'woocommerce_gateway_icon',
-                [$gateway, 'filter_latitude_gateway_icon'],
-                10,
-                2
-            );
-            add_filter(
-                'woocommerce_order_button_text',
-                [$gateway, 'filter_place_order_button_text'],
-                10,
-                1
-            );
-            add_filter(
-                'woocommerce_endpoint_order-pay_title',
-                [$gateway, 'filter_order_pay_title'],
-                10,
-                2
-            ); 
-            // add_filter(
-            //     'woocommerce_order_cancelled_notice',
-            //     [$gateway, 'add_cancel_notice'],
-            // )
+            add_filter( 'woocommerce_payment_gateways', [$this, 'add_gateways'], 10, 1 );
+            add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), [$this, 'add_settings_links'], 10, 1 ); 
+            add_filter( 'woocommerce_gateway_icon', [$gateway, 'filter_latitude_gateway_icon'], 10, 2 );
+            add_filter( 'woocommerce_order_button_text', [$gateway, 'filter_place_order_button_text'], 10, 1 );
+            add_filter( 'woocommerce_endpoint_order-pay_title', [$gateway, 'filter_order_pay_title'], 10, 2 );  
  
         }
 
@@ -187,10 +115,11 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
              */
 
             wp_enqueue_script(
-                'latitude_payment_fields_js',
-                plugins_url('js/latitude-payment-fields.js', __FILE__),
+                'latitude_payment_fields_js', 
+                '/wp-content/plugins/checkout-plugins-woocommerce/assets/js/latitude-payment-fields.js',  
                 ['jquery']
-            );
+            ); 
+             
         }
 
         /**
@@ -237,9 +166,8 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
         }
 
         /**
-         * Callback for when the plugin is uninstalled. Remove all of its data.
-         *
-         * @since    1.0.0
+         * Callback for when the plugin is uninstalled. Remove all of its data. 
+         *  
          */
         public static function uninstall_plugin()
         {
@@ -248,11 +176,23 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             }
             return;
         }
+ 
+
+        /**
+         * Adds the Latitude Checkout Payments Gateway to WooCommerce
+         *
+         */
+
+        public function add_gateways($gateways)
+        {
+            $gateways[] = 'WC_LatitudeCheckoutGateway';
+            return $gateways;
+        }
+
 
         /**
          * Note: Hooked onto the "plugin_action_links_checkout-plugins-woocommerce.php" Action.
-         *
-         * @since	1.0.0
+         *  
          *
          */
         public function add_settings_links($links)
@@ -270,18 +210,9 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
             return array_merge($settings_links, $links);
         }
     }
-
-    register_activation_hook(__FILE__, [
-        'LatitudeCheckoutPlugin',
-        'activate_plugin',
-    ]);
-    register_deactivation_hook(__FILE__, [
-        'LatitudeCheckoutPlugin',
-        'deactivate_plugin',
-    ]);
-    register_uninstall_hook(__FILE__, [
-        'LatitudeCheckoutPlugin',
-        'uninstall_plugin',
-    ]);
+ 
+    register_activation_hook(__FILE__, [ 'LatitudeCheckoutPlugin', 'activate_plugin', ]);
+    register_deactivation_hook(__FILE__, [ 'LatitudeCheckoutPlugin', 'deactivate_plugin', ]);
+    register_uninstall_hook(__FILE__, [ 'LatitudeCheckoutPlugin', 'uninstall_plugin', ]); 
     add_action('plugins_loaded', ['LatitudeCheckoutPlugin', 'init'], 10, 0);
 }

@@ -2,10 +2,11 @@
 /**
  * Latitude Checkout Payment Request Handler Class
  */
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly.
+}
 
-use Constants as LatitudeConstants;
-
-class Latitude_Purchase_Request
+class PurchaseRequest
 {
     /**
      * Protected variables.
@@ -23,16 +24,16 @@ class Latitude_Purchase_Request
         $this->gateway = WC_LatitudeCheckoutGateway::get_instance();
     }
 
-/**
+    /**
      * Builds the purchase request payload
     *
     */
-    public function build_parameters($order_id)
+    public function get_payload($order_id)
     {
         $order = wc_get_order($order_id);
 
-        $order_lines = $this->build_order_lines($order); 
-        $payment_request = [
+        $order_lines = $this->get_order_lines($order); 
+        $payload = array(
             'merchantId' => $this->gateway->get_merchant_id(),
             'merchantName' => get_option('blogname'),
             'isTest' => $this->gateway->get_test_mode(),
@@ -50,41 +51,34 @@ class Latitude_Purchase_Request
             'shippingAddress' => $this->get_shipping_address($order),
             'orderLines' => $order_lines,
             'merchantUrls' => [
-                'cancel' => $order->get_cancel_order_url_raw(), //$this->build_cancel_request_url($order_id),
+                'cancel' => $order->get_cancel_order_url_raw(),  
                 'callback' => '',
-                'complete' => $this->build_complete_request_url() 
+                'complete' => $this->get_complete_callback_url() 
             ],
             'totalDiscountAmount' => floatval($order->get_total_discount()),
             'totalShippingAmount' => floatval($order->get_shipping_total()),
             'totalTaxAmount' => floatval($order->get_total_tax()),
-            'platformType' => LatitudeConstants::WC_LATITUDE_GATEWAY_PLATFORM,
+            'platformType' => 'woocommerce',
             'platformVersion' => WC()->version,
             'pluginVersion' => $this->gateway->get_plugin_version(),
-        ]; 
-        return $payment_request;
+        ); 
+        return $payload;
     }
   
     /**
      * Builds the order lines for the purchase request payload
     *
     */
-    private function build_order_lines($order)
+    private function get_order_lines($order)
     {
         $order_lines = [];
         foreach ($order->get_items() as $key => $item):
             $product = $item->get_product(); 
             $shipping_class = $product->get_shipping_class();
-            $shipping_required = isset($shipping_class) ? true : false;
-
-            $this->gateway::log_debug(sprintf(
-                __(
-                    'product: %s,  shipping_class: %s, shipping_required: %d',
-                    'woo_latitudecheckout'
-                ),
-                $item->get_name(), $product->get_shipping_class(), $shipping_required
-            ));
-
-            $order_line = [
+            $shipping_required = isset($shipping_class) ? true : false;  
+            
+            $is_gift_card = 'coupon' === $item->get_type() ? true : false;
+            $order_line = array(
                 'name' => $item->get_name(),
                 'productUrl' => $product->get_permalink(),
                 'sku' => $product->get_sku(),
@@ -93,25 +87,25 @@ class Latitude_Purchase_Request
                 'amount' => floatval($item->get_total()),
                 'tax' => floatval($item->get_total_tax()),
                 'requiresShipping' => $shipping_required,
-                'isGiftCard' => false, //TODO
-            ];
+                'isGiftCard' => $is_gift_card, 
+            );
             array_push($order_lines, $order_line);
         endforeach;
 
         return $order_lines;
     }
 
+   
+
     /**
      * Builds the url callback after purchase request is confirmed
      *
      */
-    private function build_complete_request_url() { 
+    private function get_complete_callback_url() {  
         $return_url = __(
-            get_home_url() . LatitudeConstants::CALLBACK_URL); 
+            get_home_url() . '/wc-api/lc-purchase-complete' ); 
         return $return_url;
     } 
-
-    
  
     /**
      * Formats floating value
@@ -127,8 +121,7 @@ class Latitude_Purchase_Request
      *
      */
     private function check_null($value,$default_value="")
-    {
-
+    { 
         return is_null($value)?$default_value:$value;
     }
 
@@ -157,8 +150,7 @@ class Latitude_Purchase_Request
      *
      */    
     private function get_shipping_address($order) 
-    { 
-      
+    {  
         if($order->get_shipping_first_name() == '' || $order->get_shipping_address_1() == '' ||  wc_ship_to_billing_address_only())
         { 
             $shipping_address = $this->get_billing_address($order);
@@ -175,9 +167,8 @@ class Latitude_Purchase_Request
             );           
         
            
-        }
-        $this->gateway::log_debug( wp_json_encode($shipping_address));  
+        } 
         return $shipping_address;
-    }
+    } 
 
 }

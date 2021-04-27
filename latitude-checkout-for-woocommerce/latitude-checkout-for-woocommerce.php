@@ -5,7 +5,7 @@
  * Description: Enabling Latitude Interest Free Payment Gateway on a WooCommerce store.
  * Author: Latitude Financial Services 
  * Version:1.0.0
- * Text Domain: checkout-plugins-woocommerce
+ * Text Domain: latitude-checkout-for-woocommerce
  * WC tested up to: 5.6
  *
  *
@@ -80,7 +80,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
          */
         public function __construct()
         {
-            $gateway = WC_LatitudeCheckoutGateway::get_instance();
+            $gateway = WC_LatitudeCheckout_Gateway::get_instance();
 
             /*
             * Actions 
@@ -116,7 +116,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
 
             wp_enqueue_script(
                 'latitude_payment_fields_js', 
-                '/wp-content/plugins/checkout-plugins-woocommerce/assets/js/latitude-payment-fields.js',  
+                '/wp-content/plugins/latitude-checkout-for-woocommerce/assets/js/latitude-payment-fields.js',  
                 ['jquery']
             ); 
              
@@ -130,7 +130,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
         public static function init()
         {
             self::load_classes();
-            if (!class_exists('WC_LatitudeCheckoutGateway')) {
+            if (!class_exists('WC_LatitudeCheckout_Gateway')) {
                 return false;
             }
             if (is_null(self::$instance)) {
@@ -185,7 +185,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
 
         public function add_gateways($gateways)
         {
-            $gateways[] = 'WC_LatitudeCheckoutGateway';
+            $gateways[] = 'WC_LatitudeCheckout_Gateway';
             return $gateways;
         }
 

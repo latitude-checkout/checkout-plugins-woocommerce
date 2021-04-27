@@ -1,2 +1,2 @@
-# checkout-plugins-woocommerce
+# latitude-checkout-for-woocommerce
 Latitude Checkout Plugins for WooCommerce

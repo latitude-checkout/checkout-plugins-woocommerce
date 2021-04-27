@@ -7,8 +7,8 @@
  *
  * @since      1.0.0
  *
- * @package    checkout-plugins-woocommerce
- * @subpackage checkout-plugins-woocommerce/includes
+ * @package    latitude-checkout-for-woocommerce
+ * @subpackage latitude-checkout-for-woocommerce/includes
  */
 
 use Environment_Settings as LatitudeConstants; 
@@ -17,15 +17,15 @@ use Environment_Settings as LatitudeConstants;
  *
  * This is the Latitude Checkout - WooCommerce Payment Gateway Class.
  */
-if (!class_exists('WC_LatitudeCheckoutGateway')) {
-    class WC_LatitudeCheckoutGateway extends WC_Payment_Gateway
+if (!class_exists('WC_LatitudeCheckout_Gateway')) {
+    class WC_LatitudeCheckout_Gateway extends WC_Payment_Gateway
     { 
 
         /**
          * Protected static variable
          *
          *
-         * @var     WC_LatitudeCheckoutGateway|null     $instance           Latitude Checkout Payment Gateway Object Instance. Defaults to null.
+         * @var     WC_LatitudeCheckout_Gateway|null     $instance           Latitude Checkout Payment Gateway Object Instance. Defaults to null.
          *
          */
 
@@ -202,7 +202,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
             $category = get_the_terms($product->id, 'product_cat');
             wp_enqueue_script(
                 'latitude_widget_js',
-                '/wp-content/plugins/checkout-plugins-woocommerce/assets/js/woocommerce.js',  
+                '/wp-content/plugins/latitude-checkout-for-woocommerce/assets/js/woocommerce.js',  
                 ['jquery']
             );
             wp_localize_script(
@@ -256,7 +256,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         {
             wp_enqueue_style( 
                 'latitude_checkout-styles', 
-                plugins_url( 'checkout-plugins-woocommerce/assets/css/latitude.css')
+                plugins_url( 'latitude-checkout-for-woocommerce/assets/css/latitude.css')
             );
         }
 
@@ -349,7 +349,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
            
             wp_enqueue_script(
                 'latitude_paymentfield_js',
-                '/wp-content/plugins/checkout-plugins-woocommerce/assets/js/woocommerce.js'
+                '/wp-content/plugins/latitude-checkout-for-woocommerce/assets/js/woocommerce.js'
             );
             wp_localize_script(
                 'latitude_paymentfield_js',
@@ -539,7 +539,7 @@ if (!class_exists('WC_LatitudeCheckoutGateway')) {
         {
             if (is_null(self::$log_enabled)) {
                 # Get the settings key for the plugin
-                $gateway = new WC_LatitudeCheckoutGateway();
+                $gateway = new WC_LatitudeCheckout_Gateway();
                 $settings_key = $gateway->get_option_key();
                 $settings = get_option($settings_key);
 

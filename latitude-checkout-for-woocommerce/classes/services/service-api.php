@@ -14,13 +14,13 @@ class Latitude_Service_API
    /**
      * Protected variables.
      *
-     * @var		WC_LatitudeCheckoutGateway	$gateway		A reference to the WooCommerce Latitude Checkout Payment Gateway.
+     * @var		WC_LatitudeCheckout_Gateway	$gateway		A reference to the WooCommerce Latitude Checkout Payment Gateway.
      */
     protected $gateway;
 
     public function __construct()
     {
-        $this->gateway = WC_LatitudeCheckoutGateway::get_instance();
+        $this->gateway = WC_LatitudeCheckout_Gateway::get_instance();
     }   
  
     /**

@@ -238,7 +238,8 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
 
             $currency = get_woocommerce_currency();
             if (!in_array($currency, LatitudeConstants::ALLOWED_CURRENCY)) {
-                return;
+                $this->log_warning( __( 'Currency configured: '.  $currency ) );
+                return $icon;
             }
 
             $icon_url = LatitudeConstants::location_settings[$currency]["icon_url"];

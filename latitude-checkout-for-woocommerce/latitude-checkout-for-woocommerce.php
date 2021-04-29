@@ -115,8 +115,8 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
              */
 
             wp_enqueue_script(
-                'latitude_payment_fields_js', 
-                '/wp-content/plugins/latitude-checkout-for-woocommerce/assets/js/latitude-payment-fields.js',  
+                'latitude_payment_fields_js',  
+                plugin_dir_url( __DIR__ ). 'assets/js/latitude-payment-fields.js',
                 ['jquery']
             ); 
              

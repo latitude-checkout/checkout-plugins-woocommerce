@@ -26,8 +26,8 @@ $this->form_fields =  array(
         'title'       => __('Test Mode', 'woo_latitudecheckout'),
         'label'       => __('Is Test Mode?', 'woo_latitudecheckout'),
         'type'        => 'checkbox',
-        'description' => __('Place the payment gateway in test mode', 'woo_latitudecheckout'),
-        'default'     => 'no', 
+        'description' => __('Place the payment gateway in test mode', 'woo_latitudecheckout'), 
+        'default'     => 'no',  
     ),
     'widget_content' => array(
         'title'       => __('Widget', 'woo_latitudecheckout'),

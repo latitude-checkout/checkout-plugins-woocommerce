@@ -201,8 +201,8 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
             $product = wc_get_product();
             $category = get_the_terms($product->id, 'product_cat');
             wp_enqueue_script(
-                'latitude_widget_js',
-                '/wp-content/plugins/latitude-checkout-for-woocommerce/assets/js/woocommerce.js',  
+                'latitude_widget_js', 
+                plugin_dir_url( __DIR__ ) . 'assets/js/woocommerce.js',
                 ['jquery']
             );
             wp_localize_script(
@@ -256,8 +256,8 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
         public function add_checkout_custom_style()
         {
             wp_enqueue_style( 
-                'latitude_checkout-styles', 
-                plugins_url( 'latitude-checkout-for-woocommerce/assets/css/latitude.css')
+                'latitude_checkout-styles',  
+                plugin_dir_url( __DIR__ ). 'assets/css/latitude.css'
             );
         }
 
@@ -349,8 +349,9 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
             <?php
            
             wp_enqueue_script(
-                'latitude_paymentfield_js',
-                '/wp-content/plugins/latitude-checkout-for-woocommerce/assets/js/woocommerce.js'
+                'latitude_paymentfield_js', 
+                plugin_dir_url( __DIR__ ). 'assets/js/woocommerce.js'
+                
             );
             wp_localize_script(
                 'latitude_paymentfield_js',

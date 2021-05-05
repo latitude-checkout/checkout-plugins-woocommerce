@@ -341,6 +341,7 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
                         var curr = document.createElement("script");
                         curr.type = "text/javascript";
                         curr.async = true;
+                        curr.id = "latitude-payment-script";
                         curr.src = '<?php echo $this->get_payment_fields_src(); ?>';
                         var scr = document.getElementsByTagName("script")[0];
                         scr.parentNode.insertBefore(curr, scr);

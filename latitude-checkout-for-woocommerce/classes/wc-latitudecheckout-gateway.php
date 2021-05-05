@@ -202,7 +202,7 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
             $category = get_the_terms($product->id, 'product_cat');
             wp_enqueue_script(
                 'latitude_widget_js', 
-                plugin_dir_url( __DIR__ ) . 'assets/js/woocommerce.js',
+                plugin_dir_url(__FILE__) . '../assets/js/woocommerce.js',  
                 ['jquery']
             );
             wp_localize_script(
@@ -341,20 +341,22 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
                         var curr = document.createElement("script");
                         curr.type = "text/javascript";
                         curr.async = true;
+                        curr.id = "latitude-payment-script";
                         curr.src = '<?php echo $this->get_payment_fields_src(); ?>';
                         var scr = document.getElementsByTagName("script")[0];
                         scr.parentNode.insertBefore(curr, scr);
                     }
             </script>
             <?php
-           
+            
             wp_enqueue_script(
-                'latitude_paymentfield_js', 
-                plugin_dir_url( __DIR__ ). 'assets/js/woocommerce.js'
-                
+                'latitude_paymentfield_banner_js', 
+                plugin_dir_url(__FILE__) . '../assets/js/woocommerce.js' ,  
+                ['jquery']
             );
+
             wp_localize_script(
-                'latitude_paymentfield_js',
+                'latitude_paymentfield_banner_js',
                 'latitude_widget_js_vars',
                 [
                     'page' => 'checkout',

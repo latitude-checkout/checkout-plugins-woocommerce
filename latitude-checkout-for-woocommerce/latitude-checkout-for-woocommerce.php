@@ -112,12 +112,10 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
         {
             /**
              * Enqueue JS for updating  place order button text on payment method change
-             */
-            // $script_path = plugin_dir_path(__FILE__) . 'assets/js/latitude-payment-fields.js';
-            // echo $script_path;
+             */ 
             wp_enqueue_script(
                 'latitude_payment_fields_js',  
-                '/wp-content/plugins/latitude-checkout-for-woocommerce/assets/js/latitude-payment-fields.js',
+                __(plugin_dir_url( __DIR__ ) . 'assets/js/latitude-payment-fields.js' )
                 ['jquery']
             );   
         }

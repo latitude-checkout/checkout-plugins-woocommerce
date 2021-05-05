@@ -200,17 +200,17 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
             $obj = json_decode($widgetData, true);
             $product = wc_get_product();
             $category = get_the_terms($product->id, 'product_cat');
-            wp_enqueue_script(
+ 
+            wp_enqueue_script( 
                 'latitude_widget_js', 
-                '/wp-content/plugins/latitude-checkout-for-woocommerce/assets/js/woocommerce.js',
-                ['jquery']
-            );
+                __( plugin_dir_url( __DIR__ ) .   'assets/js/latitude-widget.js' ) , 
+                ['jquery'] 
+            ); 
+
             wp_localize_script(
                 'latitude_widget_js',
                 'latitude_widget_js_vars',
-                [
-                    'page' => 'product',
-                    'container' => 'latitude-banner-container',
+                [  
                     'widgetSettings' => $obj,
                     'merchantId' => $this->merchant_id,
                     'currency' => get_woocommerce_currency(),
@@ -347,25 +347,24 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
                     }
             </script>
             <?php
-           
-            wp_enqueue_script(
-                'latitude_paymentfield_banner_js', 
-                '/wp-content/plugins/latitude-checkout-for-woocommerce/assets/js/woocommerce.js'
-                
-            );
+
+            wp_enqueue_script( 
+                'latitude_banner_js', 
+                __( plugin_dir_url( __DIR__ ) .   'assets/js/latitude-banner.js' ) , 
+                ['jquery'] 
+            ); 
+
             wp_localize_script(
-                'latitude_paymentfield_banner_js',
-                'latitude_widget_js_vars',
-                [
-                    'page' => 'checkout',
+                'latitude_banner_js',
+                'latitude_banner_js_vars',
+                [ 
                     'container' => [
                         'footer' => 'latitude-payment--footer',
                         'main' => 'latitude-payment--main',
                     ], 
                     'merchantId' => $this->merchant_id,
                     'currency' => get_woocommerce_currency(), 
-                    'assetUrl' => $this->get_payment_fields_src(),
-                    'widgetSettings' => '',
+                    'assetUrl' => $this->get_payment_fields_src(), 
                 ]
             );
 

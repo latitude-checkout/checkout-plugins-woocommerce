@@ -34,7 +34,7 @@ define('WP_DEBUG_LOG', false);
 define('WP_DEBUG_DISPLAY', false);
 
 define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '5.6'); 
-define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '1.0.2');  
+define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '1.0.2');   
 define('WC_LATITUDE_GATEWAY__PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 if (!class_exists('LatitudeCheckoutPlugin')) {
@@ -116,7 +116,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
 
             wp_enqueue_script(
                 'latitude_payment_fields_js',  
-                '/wp-content/plugins/latitude-checkout-for-woocommerce/assets/js/latitude-payment-fields.js',
+                plugin_dir_url( __FILE__) . 'assets/js/latitude-payment-fields.js', 
                 ['jquery']
             ); 
              

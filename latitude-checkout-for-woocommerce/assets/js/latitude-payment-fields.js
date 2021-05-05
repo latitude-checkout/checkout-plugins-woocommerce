@@ -12,6 +12,7 @@ jQuery(function ($) {
     });
     $("form.checkout").change(function () {
       if ($("input#payment_method_latitudecheckout").is(":checked") && !$("#latitude-payment--main img").length) {
+        $("#latitude-payment-script").remove();
         reloadScript();
       }
     });

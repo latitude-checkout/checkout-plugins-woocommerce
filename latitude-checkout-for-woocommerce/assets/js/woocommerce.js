@@ -23,6 +23,7 @@ window.LatitudeCheckoutOverride = latitude_widget_js_vars.widgetSettings;
     var curr = document.createElement("script");
     curr.type = "text/javascript";
     curr.async = true;
+    curr.id = "latitude-payment-script";
     curr.src = latitude_widget_js_vars.assetUrl;
 
     var scr = document.getElementsByTagName("script")[0];

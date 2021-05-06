@@ -8,13 +8,13 @@ class Environment_Settings
     const location_settings = array(
         "AUD" => array
             (
-                "icon_url" => "https://assets.latitudefinancial.com/merchant-services/latitude/icon/latitude-interest-free.svg",
-                "icon_alt_text" => "Latitude Interest Fee",
+                "icon_url" => "https://assets.latitudefinancial.com/merchant-services/latitude/icon/latitude-interest-free.svg", 
+                "gateway_title" => "Latitude Interest Fee",
             ),
         "NZD" => array
             (
-                "icon_url" => "https://assets.latitudefinancial.com/merchant-services/latitude/icon/gem-interest-free.svg",
-                "icon_alt_text" => "GEM Interest Fee",
+                "icon_url" => "https://assets.latitudefinancial.com/merchant-services/latitude/icon/gem-interest-free.svg", 
+                "gateway_title" => "GEM Interest Fee",
             )
     );
 

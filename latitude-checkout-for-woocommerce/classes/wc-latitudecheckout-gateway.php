@@ -80,7 +80,7 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
             $this->include_path = WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes';
 
             $this->id = 'latitudecheckout';
-            $this->title = 'Latitude Interest Free';
+            $this->title = LatitudeConstants::location_settings[get_woocommerce_currency()]["gateway_title"]; 
             $this->method_title = $this->title;
             $this->method_name =$this->title; 
             $this->method_description = sprintf(  __( 'Use %s as payment method for WooCommerce orders.', 'woo_latitudecheckout' ), $this->title );
@@ -243,7 +243,7 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
             }
 
             $icon_url = LatitudeConstants::location_settings[$currency]["icon_url"];
-            $icon_alt_text = LatitudeConstants::location_settings[$currency]["icon_alt_text"]; 
+            $icon_alt_text = LatitudeConstants::location_settings[$currency]["gateway_title"]; 
 
             ob_start();
             ?><img src="<?php echo $icon_url; ?>" alt="<?php echo $icon_alt_text; ?>" class="checkout-logo__latitude" /><?php return ob_get_clean();

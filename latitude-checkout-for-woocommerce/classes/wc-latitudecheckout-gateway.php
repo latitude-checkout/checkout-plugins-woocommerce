@@ -335,7 +335,7 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
 
         protected function get_payment_fields_src()
         {
-            $env = LatitudeConstants::api_settings[$this->get_api_settings()]["payment_fields_url"];
+            $env = LatitudeConstants::api_settings[$this->get_api_settings()]["checkout_spa_url"];
             $url = __(
                    $env . '/assets/content.js?platform=woocommerce&merchantId=' .  $this->get_merchant_id()
                     );
@@ -348,7 +348,7 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
          */
         protected function get_widget_asset_src()
         {
-            $env = LatitudeConstants::api_settings[$this->get_api_settings()]["widgets_url"];
+            $env = LatitudeConstants::api_settings[$this->get_api_settings()]["checkout_spa_url"];
             $url = __(
                 $env . '/assets/content.js?platform=woocommerce&merchantId=' .  $this->get_merchant_id()
                 );

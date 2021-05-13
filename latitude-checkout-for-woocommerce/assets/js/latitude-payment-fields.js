@@ -11,10 +11,11 @@ jQuery(function ($) {
       $('button#place_order').show();
     });
     $("form.checkout").change(function () {
-      if ($("input#payment_method_latitudecheckout").is(":checked") && !$("#latitude-payment--main img").length) {
-        $("#latitude-payment-script").remove();
-        reloadScript();
-      }
+      setTimeout(function () {
+        if (!$("#latitude-payment--main img").length) {
+          window.LatitudeCheckout.renderCheckoutContent();
+        }
+      }, 1500)
     });
   });
 });

@@ -30,7 +30,7 @@ class PurchaseRequest
     */
     public function get_payload($order_id)
     {
-        $order = wc_get_order($order_id);
+         $order = wc_get_order($order_id);
 
         $order_lines = $this->get_order_lines($order); 
         $payload = array(
@@ -38,7 +38,7 @@ class PurchaseRequest
             'merchantName' => get_option('blogname'),
             'isTest' => $this->gateway->get_test_mode(),
             'merchantReference' => strval($order_id),
-            'amount' => floatval($order->get_total()),
+            'amount' => $this->floatval($order->get_total()),
             'currency' => $order->get_currency(),
             'promotionReference' => '',
             'customer' => [
@@ -55,9 +55,9 @@ class PurchaseRequest
                 'callback' => '',
                 'complete' => $this->get_complete_callback_url() 
             ],
-            'totalDiscountAmount' => floatval($order->get_total_discount()),
-            'totalShippingAmount' => floatval($order->get_shipping_total()),
-            'totalTaxAmount' => floatval($order->get_total_tax()),
+            'totalDiscountAmount' => $this->floatval($order->get_total_discount()),
+            'totalShippingAmount' => $this->floatval($order->get_shipping_total()),
+            'totalTaxAmount' => $this->floatval($order->get_total_tax()),
             'platformType' => 'woocommerce',
             'platformVersion' => WC()->version,
             'pluginVersion' => $this->gateway->get_plugin_version(),
@@ -83,9 +83,9 @@ class PurchaseRequest
                 'productUrl' => $product->get_permalink(),
                 'sku' => $product->get_sku(),
                 'quantity' => $item->get_quantity(),
-                'unitPrice' => floatval($product->get_price()),
-                'amount' => floatval($item->get_total()),
-                'tax' => floatval($item->get_total_tax()),
+                'unitPrice' => $this->floatval($product->get_price()),
+                'amount' => $this->floatval($item->get_total()),
+                'tax' => $this->floatval($item->get_total_tax()),
                 'requiresShipping' => $shipping_required,
                 'isGiftCard' => $is_gift_card, 
             );

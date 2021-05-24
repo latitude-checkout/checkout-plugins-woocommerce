@@ -116,14 +116,6 @@ class PurchaseRequest
         return number_format((!empty($number)?$number:0), 2, '.', ''); 
     }
 
-    /**
-     * Check null value for data
-     *
-     */
-    private function check_null($value,$default_value="")
-    { 
-        return is_null($value)?$default_value:$value;
-    }
 
     /**
      * Returns billing details

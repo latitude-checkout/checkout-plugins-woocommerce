@@ -56,8 +56,7 @@ class PurchaseRequest
                 'complete' => $this->get_complete_callback_url() 
             ],
             'totalDiscountAmount' => $this->floatval($order->get_total_discount()),
-            'totalShippingAmount' => $this->floatval($order->get_shipping_total()),
-            'totalTaxAmount' => $this->floatval($order->get_total_tax()),
+            'totalShippingAmount' => $this->get_order_shipping_amount($order), 
             'platformType' => 'woocommerce',
             'platformVersion' => WC()->version,
             'pluginVersion' => $this->gateway->get_plugin_version(),
@@ -71,6 +70,9 @@ class PurchaseRequest
     */
     private function get_order_lines($order)
     {
+        $inc_tax = true; 
+        $round   = false; 
+
         $order_lines = [];
         foreach ($order->get_items() as $key => $item):
             $product = $item->get_product(); 
@@ -79,13 +81,10 @@ class PurchaseRequest
             
             $is_gift_card = 'coupon' === $item->get_type() ? true : false;
             $order_line = array(
-                'name' => $item->get_name(),
-                'productUrl' => $product->get_permalink(),
-                'sku' => $product->get_sku(),
+                'name' => $item->get_name(), 
                 'quantity' => $item->get_quantity(),
-                'unitPrice' => $this->floatval($product->get_price()),
-                'amount' => $this->floatval($item->get_total()),
-                'tax' => $this->floatval($item->get_total_tax()),
+                'unitPrice' => $this->get_item_unit_price($item),
+                'amount' => $this->get_item_total_amount($item), 
                 'requiresShipping' => $shipping_required,
                 'isGiftCard' => $is_gift_card, 
             );
@@ -96,6 +95,37 @@ class PurchaseRequest
     }
 
    
+    /**
+     * Compute total line item amount
+     *
+     */
+    private function get_item_total_amount($order_item) {
+ 
+        $order_item_total_amount = ($this->floatval($order_item->get_total()) + $this->floatval($order_item->get_total_tax())) * 100 ;
+     	return $this->floatval( $order_item_total_amount / 100 );
+    } 
+  
+    /**
+     * Get item unit price  
+     *
+     */
+    private function get_item_unit_price($order_item) {
+ 
+        $item_subtotal = (($this->floatval($order_item->get_total()) + $this->floatval($order_item->get_total_tax())) / $order_item->get_quantity() ) * 100;
+        return $this->floatval( $item_subtotal / 100);
+    } 
+    
+    
+    /**
+     * Compute total shipping amount
+     *
+     */
+    private function get_order_shipping_amount($order) {
+ 
+        $total_shipping_amount = $order->get_shipping_total() + $order->get_shipping_tax(); 
+		return $this->floatval($total_shipping_amount);
+    } 
+
 
     /**
      * Builds the url callback after purchase request is confirmed

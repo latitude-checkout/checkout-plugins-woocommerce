@@ -101,7 +101,7 @@ class PurchaseRequest
      */
     private function get_item_total_amount($order_item) {
  
-        $order_item_total_amount = ($this->floatval($order_item->get_total()) + $this->floatval($order_item->get_total_tax())) * 100 ;
+        $order_item_total_amount = ($this->floatval($order_item->get_subtotal()) + $this->floatval($order_item->get_subtotal_tax())) * 100 ;
      	return $this->floatval( $order_item_total_amount / 100 );
     } 
   
@@ -111,7 +111,7 @@ class PurchaseRequest
      */
     private function get_item_unit_price($order_item) {
  
-        $item_subtotal = (($this->floatval($order_item->get_total()) + $this->floatval($order_item->get_total_tax())) / $order_item->get_quantity() ) * 100;
+        $item_subtotal = (($this->floatval($order_item->get_subtotal()) + $this->floatval($order_item->get_subtotal_tax())) / $order_item->get_quantity() ) * 100;
         return $this->floatval( $item_subtotal / 100);
     } 
     

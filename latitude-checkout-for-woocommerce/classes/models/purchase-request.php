@@ -80,13 +80,15 @@ class PurchaseRequest
             $shipping_required = isset($shipping_class) ? true : false;  
             
             $is_gift_card = 'coupon' === $item->get_type() ? true : false;
+
+            $unit_price = wc_get_price_including_tax($product); 
             $order_line = array(
                 'name' => $item->get_name(), 
                 'productUrl' => $product->get_permalink(),
                 'sku' => $product->get_sku(),                
                 'quantity' => $item->get_quantity(),
-                'unitPrice' => wc_get_price_including_tax($product),
-                'amount' => $this->get_item_total_amount($item), 
+                'unitPrice' => $unit_price,
+                'amount' => $this->floatval($unit_price * $item->get_quantity()), 
                 'requiresShipping' => $shipping_required,
                 'isGiftCard' => $is_gift_card, 
             );
@@ -95,17 +97,7 @@ class PurchaseRequest
 
         return $order_lines;
     }
-
-   
-    /**
-     * Compute total line item amount
-     *
-     */
-    private function get_item_total_amount($order_item) { 
-     	return $this->floatval($order_item->get_subtotal() + $order_item->get_subtotal_tax());
-    } 
   
-   
     /**
      * Compute total shipping amount
      *

@@ -55,8 +55,8 @@ class PurchaseRequest
                 'callback' => '',
                 'complete' => $this->get_complete_callback_url() 
             ],
-            'totalDiscountAmount' => $this->floatval($order->get_total_discount()),
-            'totalShippingAmount' => $this->get_order_shipping_amount($order), 
+            'totalDiscountAmount' => $this->get_order_total_discount_amount($order),
+            'totalShippingAmount' => $this->get_order_total_shipping_amount($order), 
             'platformType' => 'woocommerce',
             'platformVersion' => WC()->version,
             'pluginVersion' => $this->gateway->get_plugin_version(),
@@ -110,10 +110,19 @@ class PurchaseRequest
      * Compute total shipping amount
      *
      */
-    private function get_order_shipping_amount($order) { 
+    private function get_order_total_shipping_amount($order) { 
 		return $this->floatval($order->get_shipping_total() + $order->get_shipping_tax());
     } 
 
+       
+    /**
+     * Compute total discount amount
+     *
+     */
+    private function get_order_total_discount_amount($order) { 
+		return $this->floatval($order->get_discount_total() + $order->get_discount_tax());
+    } 
+ 
 
     /**
      * Builds the url callback after purchase request is confirmed

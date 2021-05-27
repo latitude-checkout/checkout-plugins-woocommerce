@@ -82,8 +82,10 @@ class PurchaseRequest
             $is_gift_card = 'coupon' === $item->get_type() ? true : false;
             $order_line = array(
                 'name' => $item->get_name(), 
+                'productUrl' => $product->get_permalink(),
+                'sku' => $product->get_sku(),                
                 'quantity' => $item->get_quantity(),
-                'unitPrice' => $this->get_item_unit_price($item),
+                'unitPrice' => wc_get_price_including_tax($product),
                 'amount' => $this->get_item_total_amount($item), 
                 'requiresShipping' => $shipping_required,
                 'isGiftCard' => $is_gift_card, 
@@ -99,31 +101,17 @@ class PurchaseRequest
      * Compute total line item amount
      *
      */
-    private function get_item_total_amount($order_item) {
- 
-        $order_item_total_amount = ($this->floatval($order_item->get_subtotal()) + $this->floatval($order_item->get_subtotal_tax())) * 100 ;
-     	return $this->floatval( $order_item_total_amount / 100 );
+    private function get_item_total_amount($order_item) { 
+     	return $this->floatval($order_item->get_subtotal() + $order_item->get_subtotal_tax());
     } 
   
-    /**
-     * Get item unit price  
-     *
-     */
-    private function get_item_unit_price($order_item) {
- 
-        $item_subtotal = (($this->floatval($order_item->get_subtotal()) + $this->floatval($order_item->get_subtotal_tax())) / $order_item->get_quantity() ) * 100;
-        return $this->floatval( $item_subtotal / 100);
-    } 
-    
-    
+   
     /**
      * Compute total shipping amount
      *
      */
-    private function get_order_shipping_amount($order) {
- 
-        $total_shipping_amount = $order->get_shipping_total() + $order->get_shipping_tax(); 
-		return $this->floatval($total_shipping_amount);
+    private function get_order_shipping_amount($order) { 
+		return $this->floatval($order->get_shipping_total() + $order->get_shipping_tax());
     } 
 
 

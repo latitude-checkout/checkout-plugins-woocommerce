@@ -55,8 +55,8 @@ class Latitude_Checkout_Purchase_Data_Factory
                 'callback' => '',
                 'complete' => $this->get_complete_callback_url() 
             ],
-            'totalDiscountAmount' => $this->floatval($order->get_total_discount()),
-            'totalShippingAmount' => $this->get_order_shipping_amount($order), 
+            'totalDiscountAmount' => $this->get_order_total_discount_amount($order),
+            'totalShippingAmount' => $this->get_order_total_shipping_amount($order), 
             'platformType' => 'woocommerce',
             'platformVersion' => WC()->version,
             'pluginVersion' => $this->gateway->get_plugin_version(),
@@ -80,11 +80,15 @@ class Latitude_Checkout_Purchase_Data_Factory
             $shipping_required = isset($shipping_class) ? true : false;  
             
             $is_gift_card = 'coupon' === $item->get_type() ? true : false;
+
+            $unit_price = wc_get_price_including_tax($product); 
             $order_line = array(
                 'name' => $item->get_name(), 
+                'productUrl' => $product->get_permalink(),
+                'sku' => $product->get_sku(),                
                 'quantity' => $item->get_quantity(),
-                'unitPrice' => $this->get_item_unit_price($item),
-                'amount' => $this->get_item_total_amount($item), 
+                'unitPrice' => $unit_price,
+                'amount' => $this->floatval($unit_price * $item->get_quantity()), 
                 'requiresShipping' => $shipping_required,
                 'isGiftCard' => $is_gift_card, 
             );
@@ -93,39 +97,24 @@ class Latitude_Checkout_Purchase_Data_Factory
 
         return $order_lines;
     }
-
-   
-    /**
-     * Compute total line item amount
-     *
-     */
-    private function get_item_total_amount($order_item) {
- 
-        $order_item_total_amount = ($this->floatval($order_item->get_total()) + $this->floatval($order_item->get_total_tax())) * 100 ;
-     	return $this->floatval( $order_item_total_amount / 100 );
-    } 
   
-    /**
-     * Get item unit price  
-     *
-     */
-    private function get_item_unit_price($order_item) {
- 
-        $item_subtotal = (($this->floatval($order_item->get_total()) + $this->floatval($order_item->get_total_tax())) / $order_item->get_quantity() ) * 100;
-        return $this->floatval( $item_subtotal / 100);
-    } 
-    
-    
     /**
      * Compute total shipping amount
      *
      */
-    private function get_order_shipping_amount($order) {
- 
-        $total_shipping_amount = $order->get_shipping_total() + $order->get_shipping_tax(); 
-		return $this->floatval($total_shipping_amount);
+    private function get_order_total_shipping_amount($order) { 
+		return $this->floatval($order->get_shipping_total() + $order->get_shipping_tax());
     } 
 
+       
+    /**
+     * Compute total discount amount
+     *
+     */
+    private function get_order_total_discount_amount($order) { 
+		return $this->floatval($order->get_discount_total() + $order->get_discount_tax());
+    } 
+ 
 
     /**
      * Builds the url callback after purchase request is confirmed

@@ -1,12 +1,12 @@
 <?php
 /**
- * Latitude Checkout Service API Handler Class
+ * Latitude Checkout Service Purchase Request API Handler Class
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-class Latitude_Request_Purchase extends Latitude_Service_API
+class Latitude_Checkout_Purchase_Request_Service extends Latitude_Checkout_Service_API
 {
    
     /**
@@ -42,8 +42,8 @@ class Latitude_Request_Purchase extends Latitude_Service_API
      */
     private function get_request_args($order_id)
     {
-        $request_order = new PurchaseRequest();
-        $payload = $request_order->get_payload($order_id);  
+        $purchase_request_factory = new Latitude_Checkout_Purchase_Data_Factory();
+        $payload = $purchase_request_factory->get_payload($order_id);  
         $this->gateway::log_debug( __('request payload: ' . json_encode($payload)) );
         return $this->get_post_request_args($payload);
     } 

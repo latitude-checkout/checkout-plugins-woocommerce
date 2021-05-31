@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-class Latitude_Request_Verify_Purchase extends Latitude_Service_API
+class Latitude_Checkout_Verify_Purchase_Service extends Latitude_Checkout_Service_API
 {
    
    /**

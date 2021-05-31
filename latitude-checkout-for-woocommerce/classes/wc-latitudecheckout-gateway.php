@@ -92,7 +92,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             $this->init_form_fields();
             $this->init_settings(); 
 
-            $this->api_service = new Latitude_Chekout_API();
+            $this->api_service = new Latitude_Checkout_API();
         }
 
         /**

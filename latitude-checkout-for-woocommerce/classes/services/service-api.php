@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use Latitude_Checkout_Environment_Settings; 
 
-class Latitude_Service_API 
+class Latitude_Checkout_Service_API 
 {
    
    /**

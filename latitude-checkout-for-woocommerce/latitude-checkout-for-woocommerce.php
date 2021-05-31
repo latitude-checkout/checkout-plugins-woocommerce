@@ -94,7 +94,7 @@ if (!class_exists('WC_Latitude_Checkout_Plugin')) {
             */
             add_filter( 'woocommerce_payment_gateways', [$this, 'add_gateways'], 10, 1 );
             add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), [$this, 'add_settings_links'], 10, 1 ); 
-            add_filter( 'woocommerce_gateway_icon', [$gateway, 'filter_latitude_gateway_icon'], 10, 2 );
+            add_filter( 'woocommerce_gateway_icon', [$gateway, 'filter_gateway_icon'], 10, 2 );
             add_filter( 'woocommerce_order_button_text', [$gateway, 'filter_place_order_button_text'], 10, 1 );
             add_filter( 'woocommerce_endpoint_order-pay_title', [$gateway, 'filter_order_pay_title'], 10, 2 );  
  

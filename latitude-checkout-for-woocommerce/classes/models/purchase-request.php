@@ -1,12 +1,12 @@
 <?php
 /**
- * Latitude Checkout Payment Request Handler Class
+ * Latitude Checkout Purchase Request Data Factory Class
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-class PurchaseRequest
+class Latitude_Checkout_Purchase_Data_Factory
 {
     /**
      * Protected variables.

@@ -83,15 +83,11 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             $this->title = Latitude_Checkout_Environment_Settings::get_gateway_title(); 
             $this->method_title = $this->title;
             $this->method_name =$this->title; 
-            $this->method_description = sprintf(  __( 'Use %s as payment method for WooCommerce orders.', 'woo_latitudecheckout' ), $this->title );
-
+            $this->method_description = sprintf(  __( 'Use %s as payment method for WooCommerce orders.', 'woo_latitudecheckout' ), $this->title ); 
             $this->icon = apply_filters('woocommerce_gateway_icon', 10, 2);
-            $this->has_fields = true; // needed to be true for customizing payment fields
-            
-          
+            $this->has_fields = true; // needed to be true for customizing payment fields 
             $this->init_form_fields();
             $this->init_settings(); 
-
             $this->api_service = new Latitude_Checkout_API();
         }
 
@@ -208,13 +204,13 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                     'container' => 'latitude-banner-container',
                     'widgetSettings' => $obj,
                     'merchantId' => $this->get_merchant_id(),
-                    'currency' => get_woocommerce_currency(),
+                    'currency' => Latitude_Checkout_Environment_Settings::get_base_currency(),
                     'id' => $product->id,
                     'name' => $product->name,
                     'category' => $category[0]->name,
                     'price' => $product->price,
                     'sku' => $product->sku,
-                    'assetUrl' => $this->get_widget_asset_src(),
+                    'assetUrl' => $this->get_content_src(),
                 ]
             );
         }
@@ -308,35 +304,19 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                         'main' => 'latitude-payment--main',
                     ], 
                     'merchantId' => $this->get_merchant_id(),
-                    'currency' => get_woocommerce_currency(), 
-                    'assetUrl' => $this->get_payment_fields_src(),
+                    'currency' => Latitude_Checkout_Environment_Settings::get_base_currency(), 
+                    'assetUrl' => $this->get_content_src(),
                     'widgetSettings' => '',
                 ]
-            );
-
+            ); 
 
         }
-
-        /**
-         * Returns the asset url source to display in the payment fields at the checkout page.
-         *
-         */
-
-        protected function get_payment_fields_src()
-        {
-            
-            $env = Latitude_Checkout_Environment_Settings::get_content_url($this->is_test_mode());
-            $url = __(
-                   $env . '/assets/content.js?platform=woocommerce&merchantId=' .  $this->get_merchant_id()
-                    );
-            return $url;
-        }
-
+ 
         /**
          * Returns the asset url to display widget at product page.
          *
          */
-        protected function get_widget_asset_src()
+        protected function get_content_src()
         { 
             $env = Latitude_Checkout_Environment_Settings::get_content_url($this->is_test_mode());
             $url = __(

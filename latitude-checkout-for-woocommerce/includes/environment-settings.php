@@ -57,7 +57,7 @@ class Latitude_Checkout_Environment_Settings
         return self::api_settings["prod"]["checkout_service_url"];  
     } 
 
-    private static function get_base_currency() 
+    public static function get_base_currency() 
     {
         $currency = get_woocommerce_currency();
         if (!in_array($currency, self::ALLOWED_CURRENCY)) { 

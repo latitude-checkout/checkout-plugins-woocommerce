@@ -1,10 +1,12 @@
 === Latitude Interest Free Gateway for WooCommerce ===
 Contributors: latitudefinancial
 Tags: woocommerce, latitude
-Requires at least: 5.6
-Tested up to: 5.6
-Stable tag: 5.6
-Requires PHP: 7.0
+Requires at least: 4.0
+Tested up to: 5.7.0 
+Requires PHP: 5.6
+WC requires at least: 3.4.0
+WC tested up to: 5.2.2
+Stable tag: trunk
 License: GNU Public License
 License URI: https://www.gnu.org/licenses/
 

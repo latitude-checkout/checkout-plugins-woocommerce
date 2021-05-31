@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-use Environment_Settings as EnvSettings; 
+use Latitude_Checkout_Environment_Settings; 
 
 class Latitude_Service_API 
 {
@@ -14,13 +14,13 @@ class Latitude_Service_API
    /**
      * Protected variables.
      *
-     * @var		WC_LatitudeCheckout_Gateway	$gateway		A reference to the WooCommerce Latitude Checkout Payment Gateway.
+     * @var		WC_Latitude_Checkout_Gateway	$gateway		A reference to the WooCommerce Latitude Checkout Payment Gateway.
      */
     protected $gateway;
 
     public function __construct()
     {
-        $this->gateway = WC_LatitudeCheckout_Gateway::get_instance();
+        $this->gateway = WC_Latitude_Checkout_Gateway::get_instance();
     }   
  
     /**
@@ -36,8 +36,8 @@ class Latitude_Service_API
 
     protected function get_api_url()
     {
-        $env = $this->gateway->get_api_settings();
-        return EnvSettings::api_settings[$env]["checkout_service_url" ];
+        $is_test_mode = $this->gateway->is_test_mode();
+        return Latitude_Checkout_Environment_Settings::get_service_url(is_test_mode);
     }
 
     protected function get_request_headers() 
@@ -45,7 +45,7 @@ class Latitude_Service_API
         return array(
             'Authorization' => $this->build_auth_header(),
             'Content-Type' => 'application/json',
-            'Referer' => get_site_url() // For local test: 'https://woo.local.store/'
+            'Referer' => get_site_url() 
         ); 
     }
 

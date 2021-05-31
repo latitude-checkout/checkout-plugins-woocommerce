@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-use Environment_Settings as Environment; 
+use Latitude_Checkout_Environment_Settings as Environment; 
 
 /**
  * Latitude_Chekout_API class.

@@ -11,21 +11,21 @@
  * @subpackage latitude-checkout-for-woocommerce/includes
  */
 
-use Environment_Settings as LatitudeConstants; 
+use Latitude_Checkout_Environment_Settings; 
 /**
- * The core plugin class
+ * The core payment gateway class
  *
  * This is the Latitude Checkout - WooCommerce Payment Gateway Class.
  */
-if (!class_exists('WC_LatitudeCheckout_Gateway')) {
-    class WC_LatitudeCheckout_Gateway extends WC_Payment_Gateway
+if (!class_exists('WC_Latitude_Checkout_Gateway')) {
+    class WC_Latitude_Checkout_Gateway extends WC_Payment_Gateway
     { 
 
         /**
          * Protected static variable
          *
          *
-         * @var     WC_LatitudeCheckout_Gateway|null     $instance           Latitude Checkout Payment Gateway Object Instance. Defaults to null.
+         * @var     WC_Latitude_Checkout_Gateway|null     $instance           Latitude Checkout Payment Gateway Object Instance. Defaults to null.
          *
          */
 
@@ -34,7 +34,7 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
        	/**
 		 * Reference to API class.
 		 *
-		 * @var Latitude_Chekout_API $api_service
+		 * @var Latitude_Checkout_API $api_service
 		 */        
         public $api_service;
 
@@ -80,7 +80,7 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
             $this->include_path = WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes';
 
             $this->id = 'latitudecheckout';
-            $this->title = LatitudeConstants::location_settings[get_woocommerce_currency()]["gateway_title"]; 
+            $this->title = Latitude_Checkout_Environment_Settings::get_gateway_title(); 
             $this->method_title = $this->title;
             $this->method_name =$this->title; 
             $this->method_description = sprintf(  __( 'Use %s as payment method for WooCommerce orders.', 'woo_latitudecheckout' ), $this->title );
@@ -169,9 +169,9 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
         }
 
         /**
-         * Get the Test Mode Enabled from our user settings.
+         * Returns true if the Test Mode Enabled from our user settings, otherwise returns false.
          */
-        public function get_test_mode()
+        public function is_test_mode()
         {
             $test_mode = true;
             if (array_key_exists('test_mode', $this->settings)) {
@@ -179,12 +179,7 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
             }
             return $test_mode;
         }
-
-        public function get_api_settings() 
-        {
-            return $this->get_test_mode() ? "test" : "prod"; 
-        }
-
+  
         public function get_payment_gateway_id() 
         {
             return $this->id;
@@ -230,20 +225,14 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
          * Hooked onto the "woocommerce_gateway_icon" filter.
          *
          */
-        function filter_latitude_gateway_icon($icon, $gateway_id)
+        function filter_gateway_icon($icon, $gateway_id)
         {
             if ($gateway_id != $this->id) {
                 return $icon;
             }
-
-            $currency = get_woocommerce_currency();
-            if (!in_array($currency, LatitudeConstants::ALLOWED_CURRENCY)) {
-                $this->log_warning( __( 'Currency configured: '.  $currency ) );
-                return $icon;
-            }
-
-            $icon_url = LatitudeConstants::location_settings[$currency]["icon_url"];
-            $icon_alt_text = LatitudeConstants::location_settings[$currency]["gateway_title"]; 
+  
+            $icon_url = Latitude_Checkout_Environment_Settings::get_icon_url();
+            $icon_alt_text = Latitude_Checkout_Environment_Settings::get_gateway_title(); 
 
             ob_start();
             ?><img src="<?php echo $icon_url; ?>" alt="<?php echo $icon_alt_text; ?>" class="checkout-logo__latitude" /><?php return ob_get_clean();
@@ -335,7 +324,8 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
 
         protected function get_payment_fields_src()
         {
-            $env = LatitudeConstants::api_settings[$this->get_api_settings()]["checkout_spa_url"];
+            
+            $env = Latitude_Checkout_Environment_Settings::get_content_url($this->is_test_mode());
             $url = __(
                    $env . '/assets/content.js?platform=woocommerce&merchantId=' .  $this->get_merchant_id()
                     );
@@ -347,8 +337,8 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
          *
          */
         protected function get_widget_asset_src()
-        {
-            $env = LatitudeConstants::api_settings[$this->get_api_settings()]["checkout_spa_url"];
+        { 
+            $env = Latitude_Checkout_Environment_Settings::get_content_url($this->is_test_mode());
             $url = __(
                 $env . '/assets/content.js?platform=woocommerce&merchantId=' .  $this->get_merchant_id()
                 );
@@ -497,7 +487,7 @@ if (!class_exists('WC_LatitudeCheckout_Gateway')) {
         {
             if (is_null(self::$log_enabled)) {
                 # Get the settings key for the plugin
-                $gateway = new WC_LatitudeCheckout_Gateway();
+                $gateway = new WC_Latitude_Checkout_Gateway();
                 $settings_key = $gateway->get_option_key();
                 $settings = get_option($settings_key);
 

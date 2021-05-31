@@ -6,8 +6,9 @@
  * Author: Latitude Financial Services 
  * Version:1.0.4
  * Text Domain: latitude-checkout-for-woocommerce
- * WC tested up to: 5.6
- *
+ * 
+ * WC requires at least: 3.2.0
+ * WC tested up to: 5.2.2
  *
  * Copyright (C) 2021  Latitude Checkout
  *
@@ -29,22 +30,18 @@ if (!defined('ABSPATH')) {
     exit();
 }
 
-define('WP_DEBUG', false);
-define('WP_DEBUG_LOG', false);
-define('WP_DEBUG_DISPLAY', false);
-
-define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '5.6'); 
+define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '4.0'); 
 define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '1.0.4');   
 define('WC_LATITUDE_GATEWAY__PLUGIN_DIR', plugin_dir_path(__FILE__));
 
-if (!class_exists('LatitudeCheckoutPlugin')) {
-    class LatitudeCheckoutPlugin
+if (!class_exists('WC_Latitude_Checkout_Plugin')) {
+    class WC_Latitude_Checkout_Plugin
     {
         /**
          *
          * The plugin instance.
          *
-         * @var		LatitudeCheckoutPlugin		$instance	A static reference to an instance of this class.
+         * @var		WC_Latitude_Checkout_Plugin		$instance	A static reference to an instance of this class.
          */
         protected static $instance;
 
@@ -80,7 +77,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
          */
         public function __construct()
         {
-            $gateway = WC_LatitudeCheckout_Gateway::get_instance();
+            $gateway = WC_Latitude_Checkout_Gateway::get_instance();
 
             /*
             * Actions 
@@ -130,7 +127,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
         public static function init()
         {
             self::load_classes();
-            if (!class_exists('WC_LatitudeCheckout_Gateway')) {
+            if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                 return false;
             }
             if (is_null(self::$instance)) {
@@ -185,7 +182,7 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
 
         public function add_gateways($gateways)
         {
-            $gateways[] = 'WC_LatitudeCheckout_Gateway';
+            $gateways[] = 'WC_Latitude_Checkout_Gateway';
             return $gateways;
         }
 
@@ -211,8 +208,8 @@ if (!class_exists('LatitudeCheckoutPlugin')) {
         }
     }
  
-    register_activation_hook(__FILE__, [ 'LatitudeCheckoutPlugin', 'activate_plugin', ]);
-    register_deactivation_hook(__FILE__, [ 'LatitudeCheckoutPlugin', 'deactivate_plugin', ]);
-    register_uninstall_hook(__FILE__, [ 'LatitudeCheckoutPlugin', 'uninstall_plugin', ]); 
-    add_action('plugins_loaded', ['LatitudeCheckoutPlugin', 'init'], 10, 0);
+    register_activation_hook(__FILE__, [ 'WC_Latitude_Checkout_Plugin', 'activate_plugin', ]);
+    register_deactivation_hook(__FILE__, [ 'WC_Latitude_Checkout_Plugin', 'deactivate_plugin', ]);
+    register_uninstall_hook(__FILE__, [ 'WC_Latitude_Checkout_Plugin', 'uninstall_plugin', ]); 
+    add_action('plugins_loaded', ['WC_Latitude_Checkout_Plugin', 'init'], 10, 0);
 }

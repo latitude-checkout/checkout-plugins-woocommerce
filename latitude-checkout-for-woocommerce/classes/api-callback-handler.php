@@ -50,7 +50,7 @@ class Latitude_Checkout_API_Callbacks
      */ 
     public function on_complete_purchase()
     {
-        $lc_gateway = WC_LatitudeCheckout_Gateway::get_instance();
+        $lc_gateway = WC_Latitude_Checkout_Gateway::get_instance();
         $lc_gateway::log_debug('on_complete_purchase');
         $merchantReference = filter_input( INPUT_GET, 'merchantReference', FILTER_SANITIZE_STRING );    
         $transactionReference = filter_input( INPUT_GET, 'transactionReference', FILTER_SANITIZE_STRING );  
@@ -73,7 +73,7 @@ class Latitude_Checkout_API_Callbacks
       */ 
       public function on_cancel_purchase()
       { 
-          $lc_gateway = WC_LatitudeCheckout_Gateway::get_instance();
+          $lc_gateway = WC_Latitude_Checkout_Gateway::get_instance();
           $current_payment_method = WC()->session->get( 'chosen_payment_method'  );   
           if ( $current_payment_method !=  $lc_gateway->get_payment_gateway_id() ) {
               return;

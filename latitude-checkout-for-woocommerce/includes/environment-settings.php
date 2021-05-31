@@ -1,9 +1,9 @@
 <?php
  
-class Environment_Settings
+class Latitude_Checkout_Environment_Settings
 { 
     const CALLBACK_URL = '/wc-api/latitude_checkout';
- 
+    const DEFAULT_CURRENCY = 'AUD';
     const ALLOWED_CURRENCY = ['AUD', 'NZD'];
     const location_settings = array(
         "AUD" => array
@@ -21,14 +21,49 @@ class Environment_Settings
     const api_settings = array (
         "test" => array
             ( 
-                "checkout_spa_url" => "https://develop.checkout.test.merchant-services-np.lfscnp.com",
+                "content_url" => "https://develop.checkout.test.merchant-services-np.lfscnp.com",
                 "checkout_service_url" => "https://api.test.latitudefinancial.com/v1/applybuy-checkout-service"
             ),
         "prod" => array
             ( 
-                "checkout_spa_url" => "https://checkout.latitudefinancial.com",
+                "content_url" => "https://checkout.latitudefinancial.com",
                 "checkout_service_url" => "https://api.latitudefinancial.com/v1/applybuy-checkout-service"
             )
     );
+
+    public static function get_icon_url()
+    {
+        $currency = self::get_base_currency(); 
+        return self::location_settings[$currency]["icon_url"]; 
+    }
+
+    public static function get_gateway_title()
+    {
+        $currency = self::get_base_currency(); 
+        return self::location_settings[$currency]["gateway_title"]; 
+    }
+
+    public static function get_content_url($is_test_mode) {
+        if($is_test_mode) {
+            return self::api_settings["test"]["content_url"];
+        }
+        return self::api_settings["prod"]["content_url"];  
+    }
+
+    public static function get_service_url($is_test_mode) {
+        if($is_test_mode) {
+            return self::api_settings["test"]["checkout_service_url"];
+        }
+        return self::api_settings["prod"]["checkout_service_url"];  
+    } 
+
+    private static function get_base_currency() 
+    {
+        $currency = get_woocommerce_currency();
+        if (!in_array($currency, self::ALLOWED_CURRENCY)) { 
+            return self::DEFAULT_CURRENCY;
+        }    
+        return $currency;   
+    }
   
 } 

@@ -11,7 +11,7 @@ class PurchaseRequest
     /**
      * Protected variables.
      *
-     * @var		WC_LatitudeCheckout_Gateway	$gateway		A reference to the WooCommerce Latitude Checkout Payment Gateway.
+     * @var		WC_Latitude_Checkout_Gateway	$gateway		A reference to the WooCommerce Latitude Checkout Payment Gateway.
      */
     protected $gateway;
 
@@ -21,7 +21,7 @@ class PurchaseRequest
      */
     public function __construct()
     {
-        $this->gateway = WC_LatitudeCheckout_Gateway::get_instance();
+        $this->gateway = WC_Latitude_Checkout_Gateway::get_instance();
     }
 
     /**
@@ -36,7 +36,7 @@ class PurchaseRequest
         $payload = array(
             'merchantId' => $this->gateway->get_merchant_id(),
             'merchantName' => get_option('blogname'),
-            'isTest' => $this->gateway->get_test_mode(),
+            'isTest' => $this->gateway->is_test_mode(),
             'merchantReference' => strval($order_id),
             'amount' => $this->floatval($order->get_total()),
             'currency' => $order->get_currency(),

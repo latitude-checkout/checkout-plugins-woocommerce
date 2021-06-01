@@ -42,7 +42,7 @@ class Latitude_Checkout_Purchase_Data_Factory
             'merchantName' => $this->get_shop_name(),
             'isTest' => $this->gateway->is_test_mode(),
             'merchantReference' => strval($order_id),
-            'amount' => $this->floatval($order->get_total()),
+            'amount' => $this->get_float_value($order->get_total()),
             'currency' => $order->get_currency(),
             'customer' => [
                 'firstName' => $order->get_billing_first_name(),
@@ -93,7 +93,7 @@ class Latitude_Checkout_Purchase_Data_Factory
                 'sku' => $product->get_sku(),
                 'quantity' => $item->get_quantity(),
                 'unitPrice' => $unit_price,
-                'amount' => $this->floatval($unit_price * $item->get_quantity()),
+                'amount' => $this->get_float_value($unit_price * $item->get_quantity()),
                 'requiresShipping' => $this->is_shipping_required($product),
                 'isGiftCard' => $this->is_gift_card($item),
             );
@@ -120,7 +120,7 @@ class Latitude_Checkout_Purchase_Data_Factory
      */
     private function get_total_shipping_amount($order)
     {
-        return $this->floatval($order->get_shipping_total() + $order->get_shipping_tax());
+        return $this->get_float_value($order->get_shipping_total() + $order->get_shipping_tax());
     }
 
 
@@ -130,7 +130,7 @@ class Latitude_Checkout_Purchase_Data_Factory
      */
     private function get_total_discount_amount($order)
     {
-        return $this->floatval($order->get_discount_total() + $order->get_discount_tax());
+        return $this->get_float_value($order->get_discount_total() + $order->get_discount_tax());
     }
 
 
@@ -150,9 +150,9 @@ class Latitude_Checkout_Purchase_Data_Factory
      * Formats floating value
      *
      */
-    private function floatval($number)
+    private function get_float_value($number)
     {
-        return number_format((!empty($number) ? $number : 0), 2, '.', '');
+        return floatval(number_format((!empty($number) ? $number : 0), 2, '.', ''));
     }
 
 

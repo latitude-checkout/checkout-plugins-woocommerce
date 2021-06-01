@@ -7,6 +7,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
  
 
+use Latitude_Checkout_Constants; 
+
 /**
  * Latitude_Checkout_API_Callbacks class.
  *
@@ -52,9 +54,18 @@ class Latitude_Checkout_API_Callbacks
     {
         $lc_gateway = WC_Latitude_Checkout_Gateway::get_instance();
         $lc_gateway::log_debug('on_complete_purchase');
-        $merchantReference = filter_input( INPUT_GET, 'merchantReference', FILTER_SANITIZE_STRING );    
-        $transactionReference = filter_input( INPUT_GET, 'transactionReference', FILTER_SANITIZE_STRING );  
-        $gatewayReference = filter_input( INPUT_GET, 'gatewayReference', FILTER_SANITIZE_STRING );  
+
+        $merchantReference = filter_input( INPUT_GET, 
+                                            Latitude_Checkout_Constants::MERCHANT_REFERENCE, 
+                                            FILTER_SANITIZE_STRING );    
+
+        $transactionReference = filter_input( INPUT_GET, 
+                                            Latitude_Checkout_Constants::TRANSACTION_REFERENCE, 
+                                            FILTER_SANITIZE_STRING ); 
+                                             
+        $gatewayReference = filter_input( INPUT_GET, 
+                                            Latitude_Checkout_Constants::GATEWAY_REFERENCE, 
+                                            FILTER_SANITIZE_STRING );  
 
         $response = $lc_gateway->api_service->verify_purchase_request($merchantReference, $transactionReference, $gatewayReference);
         $lc_gateway::log_info( __( "purchase_request result: "  . json_encode($response)));

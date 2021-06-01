@@ -331,8 +331,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                 $errors->add( 'validation', 'Your first or last name contains a number.' );
                 return;
             } 
-            //TODO : Add additional field validations here
-            
+            //Add additional field validations here when needed
         }
 
         /**
@@ -420,10 +419,10 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                 return;
             } 
             
-            $gatewayRef =  $order->get_meta('gatewayReference');
-            $transactionRef = $order->get_meta('transactionReference');
-            $promotionRef = $order->get_meta('promotionReference');
-            $transType = $order->get_meta('transactionType');
+            $gatewayRef =  $order->get_meta(Latitude_Checkout_Constants::GATEWAY_REFERENCE);
+            $transactionRef = $order->get_meta(Latitude_Checkout_Constants::TRANSACTION_REFERENCE);
+            $promotionRef = $order->get_meta(Latitude_Checkout_Constants::PROMOTION_REFERENCE);
+            $transType = $order->get_meta(Latitude_Checkout_Constants::TRANSACTION_TYPE);
             if ( empty($gatewayRef) && empty($transactionRef) && empty($promotionRef) && empty($transType)) {
                 return;
             }
@@ -454,7 +453,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                     echo '<p><strong>' .
                         __('Transaction Type') .
                         ': </strong><br>' .
-                        $order->get_meta('transactionType') .
+                        $order->get_meta(Latitude_Checkout_Constants::TRANSACTION_TYPE) .
                         '<br></p>';?>
                 </div></p>
             <?php

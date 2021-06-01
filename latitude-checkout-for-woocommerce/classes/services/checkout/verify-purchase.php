@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-class Latitude_Checkout_Verify_Purchase_Service extends Latitude_Checkout_Service_API
+class Latitude_Checkout_Service_API_Verify_Purchase extends Latitude_Checkout_Service_API
 {
    
    /**
@@ -29,11 +29,16 @@ class Latitude_Checkout_Verify_Purchase_Service extends Latitude_Checkout_Servic
 
         if ($this->is_valid_params($merchantReference, $transactionReference, $gatewayReference) === false) {
             return $this->return_request_error(null, 'Purchase request callback parameters were not valid', 'Failed to verify this payment. Please contact merchant.');
-        }
-
+        } 
         $this->gateway::log_debug(
             "merchantReference: {$merchantReference}, transactionReference: {$transactionReference}, gatewayReference: {$gatewayReference}"
         );
+ 
+        $is_merchant_ref_valid = wc_get_order($merchantReference);  
+        if ($is_merchant_ref_valid == false) {
+            return $this->return_request_error(null, 'Merchant reference not a valid order.', 'Order does not exist or order is not valid. Please contact merchant.');
+        }  
+
         $url = $this->get_verify_purchase_url();   
         $request_args = $this->get_request_args($merchantReference, $transactionReference, $gatewayReference); 
         $response = wp_remote_post($url, $request_args);  
@@ -46,7 +51,7 @@ class Latitude_Checkout_Verify_Purchase_Service extends Latitude_Checkout_Servic
     {
         if (is_null($merchantReference) || ($merchantReference == false) || is_null($transactionReference) || is_null($gatewayReference)) {
             return false;
-        } 
+        }  
         return true;
     }
 
@@ -57,9 +62,9 @@ class Latitude_Checkout_Verify_Purchase_Service extends Latitude_Checkout_Servic
     private function get_request_args($merchantReference, $transactionReference, $gatewayReference)
     { 
         $payload = array( 
-            'gatewayReference' => $gatewayReference,
-            'transactionReference' => $transactionReference,
-            'merchantReference' => $merchantReference,
+            Latitude_Checkout_Constants::GATEWAY_REFERENCE => $gatewayReference,
+            Latitude_Checkout_Constants::TRANSACTION_REFERENCE => $transactionReference,
+            Latitude_Checkout_Constants::PROMOTION_REFERENCE => $merchantReference,
         ); 
         $this->gateway::log_debug( __('verify_purchase_request payload: ' . json_encode($payload)) );
         return $this->get_post_request_args($payload);
@@ -105,28 +110,23 @@ class Latitude_Checkout_Verify_Purchase_Service extends Latitude_Checkout_Servic
         }
 
         // for completed
-        $transactionType = $rsp_body['transactionType'];
-        $promotionReference = $rsp_body['promotionReference'];
+        $transactionType = $rsp_body[Latitude_Checkout_Constants::TRANSACTION_TYPE];
+        $promotionReference = $rsp_body[Latitude_Checkout_Constants::PROMOTION_REFERENCE];
         if ($transactionType == 'sale') {
             $status_string = $this->get_payment_status_string('Payment approved', $transactionReference, $gatewayReference);
             $this->gateway::log_info( "WooCommerce Order #{$order_id} transaction is \"completed\".  {$status_string}" );
             $order->add_order_note($status_string); 
-            $order->payment_complete();
-        } elseif ($transactionType == 'authorisation') {
-            $status_string = $this->get_payment_status_string('Payment under authorisation', $transactionReference, $gatewayReference);
-            $this->gateway::log_info( "WooCommerce Order #{$order_id} has {$status_string}" );
-            $order->add_order_note($status_string);  
-            $order->update_status( 'on-hold', __( $status_string, 'woo_latitudecheckout' ) );
+            $order->payment_complete(); 
         } else {
             $payment_status = __("Payment transaction type: {$transactionType}");
             $status_string = $this->get_payment_status_string($payment_status, $transactionReference, $gatewayReference);
             $this->gateway::log_info( "WooCommerce Order #{$order_id} has {$status_string}" );
             $order->add_order_note($status_string);            
         } 
-        $order->update_meta_data( 'gatewayReference', $gatewayReference  );
-        $order->update_meta_data( 'transactionReference', $transactionReference );
-        $order->update_meta_data( 'promotionReference', $promotionReference );
-        $order->update_meta_data( 'transactionType', $transactionType );
+        $order->update_meta_data( Latitude_Checkout_Constants::GATEWAY_REFERENCE, $gatewayReference  );
+        $order->update_meta_data( Latitude_Checkout_Constants::TRANSACTION_REFERENCE, $transactionReference );
+        $order->update_meta_data( Latitude_Checkout_Constants::PROMOTION_REFERENCE, $promotionReference );
+        $order->update_meta_data( Latitude_Checkout_Constants::TRANSACTION_TYPE, $transactionType );
         $order->save();
         wc_empty_cart();
         return $this->return_verify_purchase_response(true, $order->get_checkout_order_received_url() );  

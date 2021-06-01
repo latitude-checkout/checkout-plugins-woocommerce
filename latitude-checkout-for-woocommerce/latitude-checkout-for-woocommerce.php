@@ -57,7 +57,8 @@ if (!class_exists('WC_Latitude_Checkout_Plugin')) {
 				return;
 			}
  
-            include_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes/environment-settings.php'; 
+            include_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes/environment-settings.php';
+            include_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes/constants.php';  
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/service-api.php';
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/purchase.php';
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/verify-purchase.php';            

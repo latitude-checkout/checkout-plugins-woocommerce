@@ -1,5 +1,10 @@
 <?php
- 
+/**
+ * Latitude Checkout Plugin Environment settings
+ * 
+ */
+
+
 class Latitude_Checkout_Environment_Settings
 { 
     const CALLBACK_URL = '/wc-api/latitude_checkout';

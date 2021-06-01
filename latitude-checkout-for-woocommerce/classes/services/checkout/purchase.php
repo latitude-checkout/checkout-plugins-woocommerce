@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-class Latitude_Checkout_Purchase_Request_Service extends Latitude_Checkout_Service_API
+class Latitude_Checkout_Service_API_Purchase extends Latitude_Checkout_Service_API
 {
    
     /**
@@ -85,6 +85,7 @@ class Latitude_Checkout_Purchase_Request_Service extends Latitude_Checkout_Servi
 
     private function parse_purchase_request($order, $rsp_body)
     {   
+        $notice_message = 'Purchase Request was not valid. Please try again later or pay with other payment method.';
         $this->gateway::log_debug( __('request response_body: ' . json_encode($rsp_body)) );
         $result = $rsp_body['result']; 
         $rsp_redirecturl = $rsp_body['redirectUrl']; 
@@ -97,8 +98,8 @@ class Latitude_Checkout_Purchase_Request_Service extends Latitude_Checkout_Servi
                 return $this->return_purchase_request_error($order, $error_string, $notice_message);  
             } 
             if (empty($rsp_redirecturl)) {  
-                $notice_message = 'Latitude Interest Free Service is not reachable. Please try again later or pay with other payment method. ';
-                return $this->return_purchase_request_error($order, 'Latitude Interest Free Gateway is not reachable.', $notice_message);  
+                $notice_message = 'Unexpected response from the payment gateway. Please try again later or pay with other payment method. ';
+                return $this->return_purchase_request_error($order, 'Unexpected Response. Redirect URL is empty.', $notice_message);  
             }  
             return $this->return_purchase_response('success', $rsp_redirecturl ); 
 

@@ -29,18 +29,20 @@ class Latitude_Checkout_Purchase_Data_Factory
     *
     */
     public function get_payload($order_id)
-    {
-         $order = wc_get_order($order_id);
+    { 
+        $order = $this->gateway->get_valid_order($order_id);
+        if ($order == null) {
+            return array();
+        }
 
         $order_lines = $this->get_order_lines($order); 
         $payload = array(
             'merchantId' => $this->gateway->get_merchant_id(),
-            'merchantName' => get_option('blogname'),
+            'merchantName' => $this->get_shop_name(),
             'isTest' => $this->gateway->is_test_mode(),
             'merchantReference' => strval($order_id),
             'amount' => $this->floatval($order->get_total()),
             'currency' => $order->get_currency(),
-            'promotionReference' => '',
             'customer' => [
                 'firstName' => $order->get_billing_first_name(),
                 'lastName' => $order->get_billing_last_name(),
@@ -52,18 +54,28 @@ class Latitude_Checkout_Purchase_Data_Factory
             'orderLines' => $order_lines,
             'merchantUrls' => [
                 'cancel' => $order->get_cancel_order_url_raw(),  
-                'callback' => '',
                 'complete' => $this->get_complete_callback_url() 
             ],
-            'totalDiscountAmount' => $this->get_order_total_discount_amount($order),
-            'totalShippingAmount' => $this->get_order_total_shipping_amount($order), 
-            'platformType' => 'woocommerce',
+            'totalDiscountAmount' => $this->get_total_discount_amount($order),
+            'totalShippingAmount' => $this->get_total_shipping_amount($order), 
+            'platformType' => Latitude_Checkout_Constants::PLATFORM_NAME,
             'platformVersion' => WC()->version,
             'pluginVersion' => $this->gateway->get_plugin_version(),
         ); 
         return $payload;
     }
   
+
+    private function get_shop_name() 
+    {
+        $name = get_option('blogname');
+        if (!is_null($name) && !empty($name)) {
+            return $name;
+        }
+
+        return get_option('home');
+    }
+
     /**
      * Builds the order lines for the purchase request payload
     *
@@ -75,12 +87,7 @@ class Latitude_Checkout_Purchase_Data_Factory
 
         $order_lines = [];
         foreach ($order->get_items() as $key => $item):
-            $product = $item->get_product(); 
-            $shipping_class = $product->get_shipping_class();
-            $shipping_required = isset($shipping_class) ? true : false;  
-            
-            $is_gift_card = 'coupon' === $item->get_type() ? true : false;
-
+            $product = $item->get_product();  
             $unit_price = wc_get_price_including_tax($product); 
             $order_line = array(
                 'name' => $item->get_name(), 
@@ -89,20 +96,31 @@ class Latitude_Checkout_Purchase_Data_Factory
                 'quantity' => $item->get_quantity(),
                 'unitPrice' => $unit_price,
                 'amount' => $this->floatval($unit_price * $item->get_quantity()), 
-                'requiresShipping' => $shipping_required,
-                'isGiftCard' => $is_gift_card, 
+                'requiresShipping' => $this->is_shipping_required($product),
+                'isGiftCard' => $this->is_gift_card($item), 
             );
             array_push($order_lines, $order_line);
         endforeach;
 
         return $order_lines;
     }
+
+    private function is_gift_card($item) 
+    {
+         return in_array(Latitude_Checkout_Constants::WC_GIFT_CARD_ITEM_TYPES, $item->get_type());
+    }
+
+    private function is_shipping_required($product) 
+    {
+        $shipping_class = $product->get_shipping_class();
+        return isset($shipping_class);    
+    }
   
     /**
      * Compute total shipping amount
      *
      */
-    private function get_order_total_shipping_amount($order) { 
+    private function get_total_shipping_amount($order) { 
 		return $this->floatval($order->get_shipping_total() + $order->get_shipping_tax());
     } 
 
@@ -111,7 +129,7 @@ class Latitude_Checkout_Purchase_Data_Factory
      * Compute total discount amount
      *
      */
-    private function get_order_total_discount_amount($order) { 
+    private function get_total_discount_amount($order) { 
 		return $this->floatval($order->get_discount_total() + $order->get_discount_tax());
     } 
  
@@ -164,21 +182,19 @@ class Latitude_Checkout_Purchase_Data_Factory
     {  
         if($order->get_shipping_first_name() == '' || $order->get_shipping_address_1() == '' ||  wc_ship_to_billing_address_only())
         { 
-            $shipping_address = $this->get_billing_address($order);
-        } else { 
-            $shipping_address =   array(
-                'name' => $order->get_formatted_shipping_full_name(),
-                'line1' => $order->get_shipping_address_1(),
-                'line2' => $order->get_shipping_address_2(),
-                'city' => $order->get_shipping_city(),
-                'postcode' => $order->get_shipping_postcode(),
-                'state' => $order->get_shipping_state(),
-                'countryCode' => $order->get_shipping_country(),
-                'phone' => $order->get_billing_phone(),
-            );           
-        
-           
-        } 
+            return $this->get_billing_address($order);
+        }  
+
+        $shipping_address = array(
+            'name' => $order->get_formatted_shipping_full_name(),
+            'line1' => $order->get_shipping_address_1(),
+            'line2' => $order->get_shipping_address_2(),
+            'city' => $order->get_shipping_city(),
+            'postcode' => $order->get_shipping_postcode(),
+            'state' => $order->get_shipping_state(),
+            'countryCode' => $order->get_shipping_country(),
+            'phone' => $order->get_billing_phone(),
+        );   
         return $shipping_address;
     } 
 

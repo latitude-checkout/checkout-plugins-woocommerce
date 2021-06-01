@@ -34,8 +34,8 @@ class Latitude_Checkout_Service_API_Verify_Purchase extends Latitude_Checkout_Se
             "merchantReference: {$merchantReference}, transactionReference: {$transactionReference}, gatewayReference: {$gatewayReference}"
         );
  
-        $is_merchant_ref_valid = wc_get_order($merchantReference);  
-        if ($is_merchant_ref_valid == false) {
+        $order = $this->gateway->get_valid_order($merchantReference);  
+        if ($order == false) {
             return $this->return_request_error(null, 'Merchant reference not a valid order.', 'Order does not exist or order is not valid. Please contact merchant.');
         }  
 
@@ -44,7 +44,7 @@ class Latitude_Checkout_Service_API_Verify_Purchase extends Latitude_Checkout_Se
         $response = wp_remote_post($url, $request_args);  
         $result =  $this->process_response($response); 
         $this->gateway::log_debug( __('verify_purchase_request response: ' . json_encode($result)) );
-        return $this->parse_results($merchantReference, $transactionReference, $gatewayReference, $result);
+        return $this->parse_results( $order, $merchantReference, $transactionReference, $gatewayReference, $result);
     } 
 
     private function is_valid_params($merchantReference, $transactionReference, $gatewayReference)
@@ -86,23 +86,22 @@ class Latitude_Checkout_Service_API_Verify_Purchase extends Latitude_Checkout_Se
      * parse result from verify purchase request
      *
      */
-    private function parse_results($order_id, $transactionReference, $gatewayReference, $response) 
+    private function parse_results( $order, $merchantReference, $transactionReference, $gatewayReference, $response) 
     {    
         $notice_message = 'Payment declined for this order. Please try again or select other payment method.';
         $error_string = $this->get_payment_status_string('Payment declined', $transactionReference, $gatewayReference);  
         if (is_null($response) || $response == false || !is_array($response)) { 
             return $this->return_request_error($order, $error_string, $notice_message);
         }
-
-        $order = wc_get_order($order_id);  
+ 
         $rsp_body = $response['response']; 
         $result = $rsp_body['result']; 
-        if ( $result !== 'completed') {  
+        if ( $result !== Latitude_Checkout_Constants::RESULT_COMPLETED) {  
             $message = $rsp_body['message'];
             if (!empty($message)) { 
-                $message = __( "Verify Purchase Request failed for WooCommerce Order #{$order_id}. API error message returned:{$message}.");  
+                $message = __( "Verify Purchase Request failed for WooCommerce Order #{$merchantReference}. API error message returned:{$message}.");  
             } else {
-                $message = __( "Verify Purchase Request failed for WooCommerce Order #{$order_id}."); 
+                $message = __( "Verify Purchase Request failed for WooCommerce Order #{$merchantReference}."); 
             }    
             $this->gateway::log_error($message); 
             $order->add_order_note( __( $message, 'woo_latitudecheckout' )  ); 
@@ -112,15 +111,15 @@ class Latitude_Checkout_Service_API_Verify_Purchase extends Latitude_Checkout_Se
         // for completed
         $transactionType = $rsp_body[Latitude_Checkout_Constants::TRANSACTION_TYPE];
         $promotionReference = $rsp_body[Latitude_Checkout_Constants::PROMOTION_REFERENCE];
-        if ($transactionType == 'sale') {
+        if ($transactionType == Latitude_Checkout_Constants::TRANSACTION_TYPE_SALE) {
             $status_string = $this->get_payment_status_string('Payment approved', $transactionReference, $gatewayReference);
-            $this->gateway::log_info( "WooCommerce Order #{$order_id} transaction is \"completed\".  {$status_string}" );
+            $this->gateway::log_info( "WooCommerce Order #{$merchantReference} transaction is \"completed\".  {$status_string}" );
             $order->add_order_note($status_string); 
             $order->payment_complete(); 
         } else {
             $payment_status = __("Payment transaction type: {$transactionType}");
             $status_string = $this->get_payment_status_string($payment_status, $transactionReference, $gatewayReference);
-            $this->gateway::log_info( "WooCommerce Order #{$order_id} has {$status_string}" );
+            $this->gateway::log_info( "WooCommerce Order #{$merchantReference} has {$status_string}" );
             $order->add_order_note($status_string);            
         } 
         $order->update_meta_data( Latitude_Checkout_Constants::GATEWAY_REFERENCE, $gatewayReference  );
@@ -143,17 +142,18 @@ class Latitude_Checkout_Service_API_Verify_Purchase extends Latitude_Checkout_Se
         $error_string = __( $error_string . ' Please contact Latitude if problem persists. ', 'woo_latitudecheckout');
         $this->gateway::log_error($error_string);  
          
-        $redirect_url = wc_get_checkout_url(); 
+        
         if (!is_null($order)) {
             $order->add_order_note($error_string);  
-            $order->update_status('failed');
+            $order->update_status(Latitude_Checkout_Constants::WC_STATUS_FAILED);
         } 
-        
+
+        $redirect_url = wc_get_checkout_url(); 
         wc_add_notice(__( $notice_message, 'woo_latitudecheckout'), 'error'); 
         return $this->return_verify_purchase_response(false, $redirect_url ); 
     }
 
-   private function return_verify_purchase_response($valid, $redirect_url) {
+   private function return_verify_purchase_response($valid, $redirect_url) { 
        return array (
            'valid' => $valid,
            'redirectURL' =>  $redirect_url 

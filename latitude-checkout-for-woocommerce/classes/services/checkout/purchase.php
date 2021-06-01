@@ -60,11 +60,11 @@ class Latitude_Checkout_Service_API_Purchase extends Latitude_Checkout_Service_A
     }
 
     private function parse_results($order_id, $response) {
-
-        $order = wc_get_order($order_id);  
-        
+ 
         $notice_message = 'Purchase Request was not valid. Please contact Merchant.';
-        if (is_null($response) || $response == false) { 
+
+        $order = $this->gateway->get_valid_order($order_id);   
+        if ( is_null($order) || is_null($response) || $response == false ) { 
             return $this->return_purchase_request_error($order, 'Failed to validate Purchase Request API response.', $notice_message);
         }
 
@@ -90,7 +90,7 @@ class Latitude_Checkout_Service_API_Purchase extends Latitude_Checkout_Service_A
         $result = $rsp_body['result']; 
         $rsp_redirecturl = $rsp_body['redirectUrl']; 
         $rsp_error = $rsp_body['error']; 
-        if ($result == 'pending') { 
+        if ($result == Latitude_Checkout_Constants::RESULT_PENDING) { 
             $result_data = $this->is_result_valid( $rsp_body, $order ) ;
             if ($result_data['valid'] === false) { 
                 $notice_message = __( "{$result_data['error']} Please try again later or pay with other payment method. " );
@@ -103,12 +103,12 @@ class Latitude_Checkout_Service_API_Purchase extends Latitude_Checkout_Service_A
             }  
             return $this->return_purchase_response('success', $rsp_redirecturl ); 
 
-        } elseif ($result == 'failed') { 
+        } elseif ($result == Latitude_Checkout_Constants::RESULT_FAILED) { 
 
             if(!empty($rsp_redirecturl) && !empty($rsp_error)) {
                 $error_string = __( "Purchase Request returned with error : {$rsp_error}.");
                 $order->add_order_note(__( $error_string, 'woo_latitudecheckout' ) ); 
-                $order->update_status('failed'); 
+                $order->update_status(Latitude_Checkout_Constants::WC_STATUS_FAILED); 
                 return $this->return_purchase_response('success', $rsp_redirecturl ); 
             }
 
@@ -124,13 +124,14 @@ class Latitude_Checkout_Service_API_Purchase extends Latitude_Checkout_Service_A
         $error_string = __( $error_string . ' Please contact Latitude if problem persists. ', 'woo_latitudecheckout');
         $this->gateway::log_error($error_string);  
         
-        $redirect_url = wc_get_checkout_url();
+        
         if (!is_null($order)) { 
             $order->add_order_note($error_string);   
             $order->update_status( 'failed'); 
             $redirect_url = $order->get_checkout_payment_url(false);
         }
   
+        $redirect_url = wc_get_checkout_url();
         wc_add_notice(__( $notice_message, 'woo_latitudecheckout'), 'error');
         return $this->return_purchase_response('failure', $redirect_url ); 
     }

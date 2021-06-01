@@ -372,7 +372,11 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function receipt_page($order_id)
         {
-            $order = wc_get_order($order_id);
+            $order = $this->get_valid_order($order_id);
+            if ($order == null) {
+                return;
+            }
+
             $is_pending = $this->is_order_pending($order);
             $this->log_debug(
                 __('(on receipt_page) is_pending: ' . $is_pending)
@@ -386,6 +390,18 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                 );
             }
         }
+
+        public function get_valid_order($order_id) 
+        {
+            $order = wc_get_order($order_id); 
+            if ($order == null || $order == false) {
+                $this->log_error(
+                    __('Invalid or non-existent order id:  ' . $order_id)
+                );
+                return null;
+            }
+            return $order;
+        }
    
         /**
          *
@@ -397,10 +413,10 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         {
             $is_pending = false;
             if (method_exists($order, 'has_status')) {
-                $is_pending = $order->has_status('pending');
+                $is_pending = $order->has_status(Latitude_Checkout_Constants::WC_STATUS_PENDING);
             } else {
                 $this->log_debug("order status: {$order->status}");
-                if ($order->status == 'pending') {
+                if ($order->status == Latitude_Checkout_Constants::WC_STATUS_PENDING) {
                     $is_pending = true;
                 }
             }

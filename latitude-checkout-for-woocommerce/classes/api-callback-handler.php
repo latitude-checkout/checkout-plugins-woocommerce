@@ -62,7 +62,7 @@ class Latitude_Checkout_API_Callbacks
         $transactionReference = filter_input( INPUT_GET, 
                                             Latitude_Checkout_Constants::TRANSACTION_REFERENCE, 
                                             FILTER_SANITIZE_STRING ); 
-                                             
+
         $gatewayReference = filter_input( INPUT_GET, 
                                             Latitude_Checkout_Constants::GATEWAY_REFERENCE, 
                                             FILTER_SANITIZE_STRING );  
@@ -90,15 +90,16 @@ class Latitude_Checkout_API_Callbacks
               return;
           }   
  
-          if (array_key_exists('cancel_order', $_GET) && array_key_exists('order_id', $_GET) && 
-                  $_GET['cancel_order'] === 'true') {
-              $order_id = (int)$_GET['order_id']; 
-              $lc_gateway::log_info(__("Order cancelled by customer:{$order_id}"));
-              $order = wc_get_order($order_id); 
-              $order->update_status('cancelled'); 
-          }
- 
-      }    
- 
+          if (array_key_exists('cancel_order', $_GET) && array_key_exists('order_id', $_GET) && $_GET['cancel_order'] === 'true') {
+                $order_id = (int)$_GET['order_id']; 
+                $lc_gateway::log_info(__("Order cancelled by customer:{$order_id}"));
+
+                $order = $lc_gateway->get_valid_order($order_id);
+                
+                if ($order != null) {
+                    $order->update_status('cancelled'); 
+                } 
+          } 
+      }     
 }
 Latitude_Checkout_API_Callbacks::get_instance();

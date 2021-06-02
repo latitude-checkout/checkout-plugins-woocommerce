@@ -75,7 +75,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          *
          *
          */
-        protected function __construct()
+        public function __construct()
         {
             $this->include_path = WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes'; 
             $this->id = 'latitudecheckout';

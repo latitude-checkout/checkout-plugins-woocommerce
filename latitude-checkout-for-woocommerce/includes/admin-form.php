@@ -29,10 +29,10 @@ $this->form_fields =  array(
         'description' => __('Place the payment gateway in test mode', 'woo_latitudecheckout'), 
         'default'     => 'no',  
     ),
-    'widget_content' => array(
-        'title'       => __('Widget', 'woo_latitudecheckout'),
+    'advanced_config' => array(
+        'title'       => __('Advanced Config', 'woo_latitudecheckout'),
         'type'        => 'textarea',
-        'description' => __('Copy values from <a href="https://develop.checkout.test.merchant-services-np.lfscnp.com/playground/widget/">Widget Playground</a>', 'woo_latitudecheckout'),
+        'description' => __('Please refer to Integration guide or contact Relationship Manager for further clarification.', 'woo_latitudecheckout'),
         'default'     =>    '{"productWidget": {
                                     "layout": "inversed",
                                     "paymentFrequency": "monthly",

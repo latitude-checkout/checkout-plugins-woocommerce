@@ -14,11 +14,11 @@ class Latitude_Checkout_Environment_Settings
     const location_settings = array(
         "AUD" => array(
             "icon_url" => "https://assets.latitudefinancial.com/merchant-services/latitude/icon/latitude-interest-free.svg",
-            "gateway_title" => "Latitude Interest Fee",
+            "gateway_title" => "Latitude Interest Free",
         ),
         "NZD" => array(
             "icon_url" => "https://assets.latitudefinancial.com/merchant-services/latitude/icon/gem-interest-free.svg",
-            "gateway_title" => "GEM Interest Fee",
+            "gateway_title" => "GEM Interest Free",
         )
     );
 

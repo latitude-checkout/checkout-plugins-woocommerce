@@ -138,11 +138,11 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
 		public function process_admin_options() {
 			parent::process_admin_options(); 
 
-            if (array_key_exists('widget_content', $this->settings)) { 
-                $result = ( json_decode( $this->settings['widget_content'], true ) == NULL ) ? false : true ;
+            if (array_key_exists('advanced_config', $this->settings)) { 
+                $result = ( json_decode( $this->settings['advanced_config'], true ) == NULL ) ? false : true ;
                 if ( $result  === false )
                 {
-                    WC_Admin_Settings::add_error('Error: Invalid widget content.');  
+                    WC_Admin_Settings::add_error('Error: Please enter valid JSON for Advanced Config.');  
                 }
             } 
             if (array_key_exists('merchant_secret', $this->settings) && 
@@ -221,7 +221,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         public function get_widget_data()
         {
             echo '<div id="latitude-banner-container"></div>';
-            $widgetData = $this->settings['widget_content'];
+            $widgetData = $this->settings['advanced_config'];
             $obj = json_decode($widgetData, true);
             $product = wc_get_product();
             $category = get_the_terms($product->id, 'product_cat');
@@ -242,7 +242,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                     'id' => $product->id,
                     'name' => $product->name,
                     'category' => $category[0]->name,
-                    'price' => $product->price,
+                    'price' => floatval(wc_get_price_including_tax($product)),
                     'sku' => $product->sku,
                     'assetUrl' => $this->get_content_src(),
                 ]

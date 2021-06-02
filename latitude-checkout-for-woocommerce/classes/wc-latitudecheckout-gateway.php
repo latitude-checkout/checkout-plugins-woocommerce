@@ -77,8 +77,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function __construct()
         {
-            $this->include_path = WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes';
-
+            $this->include_path = WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes'; 
             $this->id = 'latitudecheckout';
             $this->title = Latitude_Checkout_Environment_Settings::get_gateway_title(); 
             $this->method_title = $this->title;
@@ -89,6 +88,24 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             $this->init_form_fields();
             $this->init_settings(); 
             $this->api_service = new Latitude_Checkout_API();
+
+
+            /*
+            * Actions 
+            */ 
+            add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
+            add_action("woocommerce_update_options_payment_gateways_{$this->id}",[$this, 'process_admin_options'],10,0 ); 
+            add_action("woocommerce_receipt_{$this->id}",[$this, 'receipt_page'],10,1); 
+            add_action('woocommerce_admin_order_data_after_order_details', [$this,'display_order_data_in_admin',]);
+            add_action('woocommerce_before_checkout_form',[$this, 'add_checkout_custom_style'],10,2); 
+            add_action('woocommerce_single_product_summary',[$this, 'get_widget_data'],10,2);
+            add_action( 'woocommerce_after_checkout_validation', [ $this, 'validate_checkout_fields'], 10, 2 );  
+            /*
+            * Filters
+            */ 
+            add_filter( 'woocommerce_gateway_icon', [$this, 'filter_gateway_icon'], 10, 2 );
+            add_filter( 'woocommerce_order_button_text', [$this, 'filter_place_order_button_text'], 10, 1 );
+            add_filter( 'woocommerce_endpoint_order-pay_title', [$this, 'filter_order_pay_title'], 10, 2 );  
         }
 
         /**
@@ -181,6 +198,24 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             return $this->id;
         }
 
+        /**
+         * Note: Hooked onto the "wp_enqueue_scripts" Action
+         * 
+         */
+        public function enqueue_scripts()
+        {
+            /**
+             * Enqueue JS for updating  place order button text on payment method change
+             */
+
+            wp_enqueue_script(
+                'latitude_payment_fields_js',  
+                plugin_dir_url( __DIR__) . 'assets/js/latitude-payment-fields.js', 
+                ['jquery']
+            ); 
+             
+        }
+ 
         /**
          * Get the Widget settings from our user settings.
          */

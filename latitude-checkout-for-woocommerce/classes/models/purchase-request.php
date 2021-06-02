@@ -66,7 +66,10 @@ class Latitude_Checkout_Purchase_Data_Factory
         return $payload;
     }
 
-
+    /**
+     * returns shop name
+     *
+     */
     private function get_shop_name()
     {
         $name = get_option('blogname');
@@ -103,11 +106,19 @@ class Latitude_Checkout_Purchase_Data_Factory
         return $order_lines;
     }
 
+    /**
+     * Returns true if one of the item types is a gift card item type (e.g. coupon)
+     *
+     */
     private function is_gift_card($item)
     {
         return in_array(Latitude_Checkout_Constants::WC_GIFT_CARD_ITEM_TYPES, $item->get_type());
     }
 
+    /**
+     * Returns true if shipping is required for this product
+     *
+     */
     private function is_shipping_required($product)
     {
         $shipping_class = $product->get_shipping_class();
@@ -147,7 +158,7 @@ class Latitude_Checkout_Purchase_Data_Factory
     }
 
     /**
-     * Formats floating value
+     * Returns the float value of the formatted number
      *
      */
     private function get_float_value($number)

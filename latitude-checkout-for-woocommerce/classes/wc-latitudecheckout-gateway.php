@@ -75,7 +75,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          *
          *
          */
-        public function __construct()
+        protected function __construct()
         {
             $this->include_path = WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes'; 
             $this->id = 'latitudecheckout';
@@ -99,13 +99,13 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             add_action('woocommerce_admin_order_data_after_order_details', [$this,'display_order_data_in_admin',]);
             add_action('woocommerce_before_checkout_form',[$this, 'add_checkout_custom_style'],10,2); 
             add_action('woocommerce_single_product_summary',[$this, 'get_widget_data'],10,2);
-            add_action( 'woocommerce_after_checkout_validation', [ $this, 'validate_checkout_fields'], 10, 2 );  
+            add_action('woocommerce_after_checkout_validation', [ $this, 'validate_checkout_fields'], 10, 2 );  
             /*
             * Filters
             */ 
-            add_filter( 'woocommerce_gateway_icon', [$this, 'filter_gateway_icon'], 10, 2 );
-            add_filter( 'woocommerce_order_button_text', [$this, 'filter_place_order_button_text'], 10, 1 );
-            add_filter( 'woocommerce_endpoint_order-pay_title', [$this, 'filter_order_pay_title'], 10, 2 );  
+            add_filter('woocommerce_gateway_icon', [$this, 'filter_gateway_icon'], 10, 2 );
+            add_filter('woocommerce_order_button_text', [$this, 'filter_place_order_button_text'], 10, 1 );
+            add_filter('woocommerce_endpoint_order-pay_title', [$this, 'filter_order_pay_title'], 10, 2 );  
         }
 
         /**
@@ -122,8 +122,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
 
         /**
          *  Default values for the plugin's Admin Form Fields
-         */
-
+         */ 
         public function init_form_fields()
         { 
             include "{$this->include_path}/admin-form.php";
@@ -256,7 +255,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          * Hooked onto the "woocommerce_gateway_icon" filter.
          *
          */
-        function filter_gateway_icon($icon, $gateway_id)
+        public function filter_gateway_icon($icon, $gateway_id)
         {
             if ($gateway_id != $this->id) {
                 return $icon;
@@ -300,13 +299,10 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         /**
          * Display as a payment option on the checkout page.
          *
-         */
-
+         */ 
         public function payment_fields()
-        {
-            // TODO: additional field validations here when needed
-            # Give other plugins a chance to manipulate or replace the HTML echoed by this funtion.
-           
+        { 
+
             ?>   
             <div id="latitude-payment--main"> 
             <div style="display: flex !important;">
@@ -360,6 +356,11 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             return $url;
         }
 
+        /**
+         *
+         * Hooked onto the "woocommerce_after_checkout_validation" filter.
+         *
+         */        
         public function validate_checkout_fields( $fields, $errors ){
  
             if ( preg_match( '/\\d/', $fields[ 'billing_first_name' ] ) || preg_match( '/\\d/', $fields[ 'billing_last_name' ] )  ){
@@ -372,8 +373,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         /**
          * Default process payment
          *
-         */
-
+         */ 
         public function process_payment($order_id)
         {
             $this->log_info( __( "Processing payment using {$this->id} payment method." ) );
@@ -408,7 +408,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         public function receipt_page($order_id)
         {
             $order = $this->get_valid_order($order_id);
-            if ($order == null) {
+            if (is_null($order)) {
                 return;
             }
 
@@ -426,10 +426,15 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             }
         }
 
+        /**
+         *
+         * Validates the $order_id and returns the valid order or null
+         *
+         */ 
         public function get_valid_order($order_id) 
         {
             $order = wc_get_order($order_id); 
-            if ($order == null || $order == false) {
+            if (is_null($order) || !$order ) {
                 $this->log_error(
                     __('Invalid or non-existent order id:  ' . $order_id)
                 );
@@ -442,8 +447,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          *
          * Checks the pending status of the order
          *
-         */
-
+         */ 
         private function is_order_pending($order)
         {
             $is_pending = false;

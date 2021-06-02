@@ -35,7 +35,7 @@ class Latitude_Checkout_Service_API_Verify_Purchase extends Latitude_Checkout_Se
         );
  
         $order = $this->gateway->get_valid_order($merchantReference);  
-        if ($order == false) {
+        if (is_null($order)) {
             return $this->return_request_error(null, 'Merchant reference not a valid order.', 'Order does not exist or order is not valid. Please contact merchant.');
         }  
 

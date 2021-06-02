@@ -32,7 +32,8 @@ class Latitude_Checkout_Purchase_Data_Factory
     public function get_payload($order_id)
     {
         $order = $this->gateway->get_valid_order($order_id);
-        if ($order == null) {
+        
+        if (is_null($order)) {
             return array();
         }
 

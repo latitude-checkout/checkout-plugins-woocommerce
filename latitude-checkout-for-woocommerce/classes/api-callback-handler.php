@@ -91,14 +91,16 @@ class Latitude_Checkout_API_Callbacks
           }   
  
           if (array_key_exists('cancel_order', $_GET) && array_key_exists('order_id', $_GET) && $_GET['cancel_order'] === 'true') {
+              
                 $order_id = (int)$_GET['order_id']; 
                 $lc_gateway::log_info(__("Order cancelled by customer:{$order_id}"));
 
                 $order = $lc_gateway->get_valid_order($order_id);
                 
-                if ($order != null) {
-                    $order->update_status('cancelled'); 
+                if (is_null($order)) {
+                    return;
                 } 
+                $order->update_status('cancelled'); 
           } 
       }     
 }

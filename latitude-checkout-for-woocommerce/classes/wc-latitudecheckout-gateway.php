@@ -318,6 +318,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             </div>  
             <div id="latitude-payment--footer"></div> 
             <?php
+
+           
             
             wp_enqueue_script(
                 'latitude_paymentfield_banner_js',  
@@ -325,6 +327,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                 ['jquery']
             );
 
+            $order_data = $this->get_session_order_data();
             wp_localize_script(
                 'latitude_paymentfield_banner_js',
                 'latitude_widget_js_vars',
@@ -338,11 +341,37 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                     'currency' => Latitude_Checkout_Environment_Settings::get_base_currency(), 
                     'assetUrl' => $this->get_content_src(),
                     'widgetSettings' => '',
+                    'checkout' => [
+                            'discount' => $order_data['discount'],
+                            'shippingAmount' => $order_data['shippingAmount'],
+                            'subTotal' => $order_data['subTotal'],
+                            'taxAmount' => $order_data['taxAmount'],
+                            'total' => $order_data['total'],
+                    ],
                 ]
             ); 
 
         }
  
+        /**
+         * Retrieves cart session totals
+         *
+         */        
+        private function get_session_order_data() { 
+
+            $cart = WC()->cart;  
+            $total_tax = max(0, $cart->get_total_tax()); 
+            $total_shipping = max(0, $cart->shipping_total + $cart->shipping_tax_total);  
+            return array(
+                "total" =>  floatval($cart->total),   
+                "discount" =>  0, 
+                "shippingAmount" => floatval(number_format($total_shipping, 2, '.', '')),  
+                "taxAmount" => floatval(number_format($total_tax, 2, '.', '')), 
+                "subTotal" => 0, 
+            );  
+        }
+
+
         /**
          * Returns the asset url to display widget at product page.
          *

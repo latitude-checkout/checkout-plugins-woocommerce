@@ -1,2 +1,3 @@
 # latitude-checkout-for-woocommerce
-Latitude Checkout Plugins for WooCommerce
+
+Latitude Interest Free Plugins for WooCommerce

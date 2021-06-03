@@ -20,6 +20,11 @@ use Latitude_Checkout_Environment_Settings;
 if (!class_exists('WC_Latitude_Checkout_Gateway')) {
     class WC_Latitude_Checkout_Gateway extends WC_Payment_Gateway
     { 
+        const MERCHANT_ID = 'merchant_id';
+        const MERCHANT_SECRET = 'merchant_secret';
+        const ENABLED = 'enabled';
+        const TEST_MODE = 'test_mode';
+        const ADVANCED_CONFIG = 'advanced_config';
 
         /**
          * Protected static variable
@@ -138,17 +143,17 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
 		public function process_admin_options() {
 			parent::process_admin_options(); 
 
-            if (array_key_exists('advanced_config', $this->settings)) { 
-                $result = ( json_decode( $this->settings['advanced_config'], true ) == NULL ) ? false : true ;
-                if ( $result  === false )
+            if (array_key_exists(self::ADVANCED_CONFIG, $this->settings)) { 
+                $is_valid_json = json_decode( $this->settings[self::ADVANCED_CONFIG], true ) == NULL ;
+                if ( !$is_valid_json )
                 {
                     WC_Admin_Settings::add_error('Error: Please enter valid JSON for Advanced Config.');  
                 }
             } 
-            if (array_key_exists('merchant_secret', $this->settings) && 
-                array_key_exists('merchant_id', $this->settings)) 
+            if (array_key_exists(self::MERCHANT_SECRET, $this->settings) && 
+                array_key_exists(self::MERCHANT_ID, $this->settings)) 
             {
-               if(empty($this->settings['merchant_secret']) || empty($this->settings['merchant_id']))
+               if(empty($this->settings[self::MERCHANT_SECRET]) || empty($this->settings[self::MERCHANT_ID]))
                {
                     WC_Admin_Settings::add_error('Error: Merchant details cannot be empty.');  
                } 
@@ -169,7 +174,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function get_merchant_id()
         {
-            return $this->get_option('merchant_id');  
+            return $this->get_option(self::MERCHANT_ID);  
         }
 
         /**
@@ -177,7 +182,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function get_secret_key()
         {
-            return $this->get_option('merchant_secret');  
+            return $this->get_option(self::MERCHANT_SECRET);  
         }
 
         /**
@@ -185,7 +190,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function is_test_mode()
         {
-             return $test_mode = ( 'yes' === $this->get_option('test_mode') );  
+             return $test_mode = ( 'yes' === $this->get_option( self::TEST_MODE) );  
         }
   
         public function get_payment_gateway_id() 
@@ -217,7 +222,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         public function get_widget_data()
         {
             echo '<div id="latitude-banner-container"></div>';
-            $widgetData = $this->get_option('advanced_config');
+            $widgetData = $this->get_option(self::ADVANCED_CONFIG);
             $obj = json_decode($widgetData, true);
             $product = wc_get_product();
             $category = get_the_terms($product->id, 'product_cat');
@@ -337,10 +342,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                     'currency' => Latitude_Checkout_Environment_Settings::get_base_currency(), 
                     'assetUrl' => $this->get_content_src(),
                     'widgetSettings' => '',
-                    'checkout' => [
-                            'discount' => $order_data['discount'],
-                            'shippingAmount' => $order_data['shippingAmount'],
-                            'subTotal' => $order_data['subTotal'],
+                    'checkout' => [ 
+                            'shippingAmount' => $order_data['shippingAmount'], 
                             'taxAmount' => $order_data['taxAmount'],
                             'total' => $order_data['total'],
                     ],
@@ -359,11 +362,9 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             $total_tax = max(0, $cart->get_total_tax()); 
             $total_shipping = max(0, $cart->shipping_total + $cart->shipping_tax_total);  
             return array(
-                "total" =>  floatval($cart->total),   
-                "discount" =>  0, 
+                "total" =>  floatval($cart->total),    
                 "shippingAmount" => floatval(number_format($total_shipping, 2, '.', '')),  
-                "taxAmount" => floatval(number_format($total_tax, 2, '.', '')), 
-                "subTotal" => 0, 
+                "taxAmount" => floatval(number_format($total_tax, 2, '.', '')),  
             );  
         }
 
@@ -550,8 +551,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                 $settings_key = $gateway->get_option_key();
                 $settings = get_option($settings_key);
 
-                if (array_key_exists('test_mode', $settings)) {
-                    self::$log_enabled = $settings['test_mode'] == 'yes';
+                if (array_key_exists(self::TEST_MODE, $settings)) {
+                    self::$log_enabled = $settings[self::TEST_MODE] == 'yes';
                 } else {
                     self::$log_enabled = false;
                 }

@@ -169,7 +169,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function get_merchant_id()
         {
-            return $this->settings['merchant_id'];
+            return $this->get_option('merchant_id');  
         }
 
         /**
@@ -177,7 +177,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function get_secret_key()
         {
-            return $this->settings['merchant_secret'];
+            return $this->get_option('merchant_secret');  
         }
 
         /**
@@ -185,11 +185,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function is_test_mode()
         {
-            $test_mode = true;
-            if (array_key_exists('test_mode', $this->settings)) {
-                $test_mode = 'yes' === $this->settings['test_mode'];
-            }
-            return $test_mode;
+             return $test_mode = ( 'yes' === $this->get_option('test_mode') );  
         }
   
         public function get_payment_gateway_id() 
@@ -221,7 +217,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         public function get_widget_data()
         {
             echo '<div id="latitude-banner-container"></div>';
-            $widgetData = $this->settings['advanced_config'];
+            $widgetData = $this->get_option('advanced_config');
             $obj = json_decode($widgetData, true);
             $product = wc_get_product();
             $category = get_the_terms($product->id, 'product_cat');

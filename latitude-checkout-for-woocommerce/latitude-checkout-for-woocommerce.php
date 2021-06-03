@@ -4,7 +4,7 @@
  * Plugin URI: https://www.latitudefinancial.com.au/
  * Description: Enabling Latitude Interest Free Payment Gateway on a WooCommerce store.
  * Author: Latitude Financial Services 
- * Version:1.0.42
+ * Version:1.0.4
  * Text Domain: latitude-checkout-for-woocommerce
  * 
  * WC requires at least: 3.2.0
@@ -34,7 +34,7 @@ if (!defined('ABSPATH')) {
  * Required minimums and constants
  */
 define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '4.0'); 
-define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '1.0.42');   
+define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '1.0.4');   
 define('WC_LATITUDE_GATEWAY__PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 if (!class_exists('WC_Latitude_Checkout_Plugin')) {

@@ -144,7 +144,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
 			parent::process_admin_options(); 
 
             if (array_key_exists(self::ADVANCED_CONFIG, $this->settings)) { 
-                $is_valid_json = json_decode( $this->settings[self::ADVANCED_CONFIG], true ) == NULL ;
+                $is_valid_json = json_decode( $this->settings[self::ADVANCED_CONFIG], true ) != NULL ;
                 if ( !$is_valid_json )
                 {
                     WC_Admin_Settings::add_error('Error: Please enter valid JSON for Advanced Config.');  

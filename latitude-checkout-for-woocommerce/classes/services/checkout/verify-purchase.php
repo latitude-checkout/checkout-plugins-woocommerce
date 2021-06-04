@@ -64,7 +64,7 @@ class Latitude_Checkout_Service_API_Verify_Purchase extends Latitude_Checkout_Se
         $payload = array( 
             Latitude_Checkout_Constants::GATEWAY_REFERENCE => $gatewayReference,
             Latitude_Checkout_Constants::TRANSACTION_REFERENCE => $transactionReference,
-            Latitude_Checkout_Constants::PROMOTION_REFERENCE => $merchantReference,
+            Latitude_Checkout_Constants::MERCHANT_REFERENCE => $merchantReference,
         ); 
         $this->gateway::log_debug( __('verify_purchase_request payload: ' . json_encode($payload)) );
         return $this->get_post_request_args($payload);

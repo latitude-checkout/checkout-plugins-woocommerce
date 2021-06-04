@@ -3,10 +3,10 @@
  * Plugin Name: Latitude Interest Free Gateway for WooCommerce
  * Plugin URI: https://www.latitudefinancial.com.au/
  * Description: Enabling Latitude Interest Free Payment Gateway on a WooCommerce store.
- * Author: Latitude Financial Services 
+ * Author: Latitude Financial Services
  * Version:1.0.4
  * Text Domain: latitude-checkout-for-woocommerce
- * 
+ *
  * WC requires at least: 3.2.0
  * WC tested up to: 5.2.2
  *
@@ -33,15 +33,15 @@ if (!defined('ABSPATH')) {
 /**
  * Required minimums and constants
  */
-define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '4.0'); 
-define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '1.0.4');   
+define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '4.0');
+define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '1.0.4');
 define('WC_LATITUDE_GATEWAY__PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 if (!class_exists('WC_Latitude_Checkout_Plugin')) {
 
     /**
-	 * Class WC_Latitude_Checkout_Plugin
-	 */
+     * Class WC_Latitude_Checkout_Plugin
+     */
     class WC_Latitude_Checkout_Plugin
     {
         /**
@@ -55,28 +55,28 @@ if (!class_exists('WC_Latitude_Checkout_Plugin')) {
 
         /**
          * Import required classes.
-         * 
+         *
          */
         public static function load_classes()
-        { 
-            if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
-				return;
-			}
+        {
+            if (! class_exists('WC_Payment_Gateway')) {
+                return;
+            }
  
             include_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes/environment-settings.php';
-            include_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes/constants.php';  
+            include_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes/constants.php';
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/service-api.php';
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/purchase.php';
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/verify-purchase.php';            
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/services/checkout/verify-purchase.php';
             require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/models/purchase-request.php';
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/api-callback-handler.php';            
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/api-handler.php'; 
-            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/wc-latitudecheckout-gateway.php';  
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/api-callback-handler.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/api-handler.php';
+            require_once WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'classes/wc-latitudecheckout-gateway.php';
         }
 
         /**
          * Initialise the plugin class and return an instance.
-         * 
+         *
          */
         public static function init()
         {
@@ -91,41 +91,43 @@ if (!class_exists('WC_Latitude_Checkout_Plugin')) {
         }
 
         /**
-		 * Private clone method to prevent cloning of the instance of the
-		 * *Singleton* instance.
-		 * 
-		 */
-		private function __clone() {
-			wc_doing_it_wrong( __FUNCTION__, __( 'Nope' ), '1.0' );
-		}
+         * Private clone method to prevent cloning of the instance of the
+         * *Singleton* instance.
+         *
+         */
+        private function __clone()
+        {
+            wc_doing_it_wrong(__FUNCTION__, __('Nope'), '1.0');
+        }
 
-		/**
-		 * Private unserialize method to prevent unserializing of the *Singleton*
-		 * instance.
-		 * 
-		 */
-		public function __wakeup() {
-			wc_doing_it_wrong( __FUNCTION__, __( 'Nope' ), '1.0' );
-		}
+        /**
+         * Private unserialize method to prevent unserializing of the *Singleton*
+         * instance.
+         *
+         */
+        public function __wakeup()
+        {
+            wc_doing_it_wrong(__FUNCTION__, __('Nope'), '1.0');
+        }
 
         /**
          * Plugin constructor.
          *
          * Instantiates the payment gateway and set plugin hooks.
-         * 
+         *
          *
          */
         protected function __construct()
         {
             $gateway = WC_Latitude_Checkout_Gateway::get_instance();
  
-            add_filter( 'woocommerce_payment_gateways', [$this, 'add_gateways'], 10, 1 );
-            add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), [$this, 'add_settings_links'], 10, 1 );   
+            add_filter('woocommerce_payment_gateways', [$this, 'add_gateways'], 10, 1);
+            add_filter('plugin_action_links_' . plugin_basename(__FILE__), [$this, 'add_settings_links'], 10, 1);
         }
  
         /**
          * Callback for when this plugin is activated.
-         * 
+         *
          */
         public static function activate_plugin()
         {
@@ -137,7 +139,7 @@ if (!class_exists('WC_Latitude_Checkout_Plugin')) {
 
         /**
          * Callback for when this plugin is deactivated.
-         * 
+         *
          */
         public static function deactivate_plugin()
         {
@@ -148,8 +150,8 @@ if (!class_exists('WC_Latitude_Checkout_Plugin')) {
         }
 
         /**
-         * Callback for when the plugin is uninstalled. Remove all of its data. 
-         *  
+         * Callback for when the plugin is uninstalled. Remove all of its data.
+         *
          */
         public static function uninstall_plugin()
         {
@@ -163,7 +165,7 @@ if (!class_exists('WC_Latitude_Checkout_Plugin')) {
         /**
          * Adds the Latitude Checkout Payments Gateway to WooCommerce
          *
-         */ 
+         */
         public function add_gateways($gateways)
         {
             $gateways[] = 'WC_Latitude_Checkout_Gateway';
@@ -173,7 +175,7 @@ if (!class_exists('WC_Latitude_Checkout_Plugin')) {
 
         /**
          * Note: Hooked onto the "plugin_action_links_latitude-checkout-for-woocommerce.php" Action.
-         *  
+         *
          *
          */
         public function add_settings_links($links)
@@ -194,6 +196,6 @@ if (!class_exists('WC_Latitude_Checkout_Plugin')) {
  
     register_activation_hook(__FILE__, [ 'WC_Latitude_Checkout_Plugin', 'activate_plugin', ]);
     register_deactivation_hook(__FILE__, [ 'WC_Latitude_Checkout_Plugin', 'deactivate_plugin', ]);
-    register_uninstall_hook(__FILE__, [ 'WC_Latitude_Checkout_Plugin', 'uninstall_plugin', ]); 
+    register_uninstall_hook(__FILE__, [ 'WC_Latitude_Checkout_Plugin', 'uninstall_plugin', ]);
     add_action('plugins_loaded', ['WC_Latitude_Checkout_Plugin', 'init'], 10, 0);
 }

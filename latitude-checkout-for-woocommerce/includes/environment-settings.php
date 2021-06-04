@@ -2,7 +2,7 @@
 
 /**
  * Latitude Checkout Plugin Environment settings
- * 
+ *
  */
 
 

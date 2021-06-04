@@ -11,7 +11,8 @@
  * @subpackage latitude-checkout-for-woocommerce/includes
  */
 
-use Latitude_Checkout_Environment_Settings; 
+use Latitude_Checkout_Environment_Settings;
+
 /**
  * The core payment gateway class
  *
@@ -19,7 +20,7 @@ use Latitude_Checkout_Environment_Settings;
  */
 if (!class_exists('WC_Latitude_Checkout_Gateway')) {
     class WC_Latitude_Checkout_Gateway extends WC_Payment_Gateway
-    { 
+    {
         const MERCHANT_ID = 'merchant_id';
         const MERCHANT_SECRET = 'merchant_secret';
         const ENABLED = 'enabled';
@@ -36,11 +37,11 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
 
         protected static $instance = null;
 
-       	/**
-		 * Reference to API class.
-		 *
-		 * @var Latitude_Checkout_API $api_service
-		 */        
+        /**
+         * Reference to API class.
+         *
+         * @var Latitude_Checkout_API $api_service
+         */
         public $api_service;
 
         /**
@@ -52,7 +53,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          *
          */
 
-        protected static $log = null, $log_enabled = null;
+        protected static $log = null;
+        protected static $log_enabled = null;
 
  
 
@@ -61,10 +63,11 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          *
          *
          * @var     string     $merchant_id         Merchant Unique ID configuration. Set at the admin page.
-         * @var     string     $merchant_secret     Merchant Secret Key configuration. Set at the admin page. 
+         * @var     string     $merchant_secret     Merchant Secret Key configuration. Set at the admin page.
          *
          */
-        protected $merchant_id, $merchant_secret;
+        protected $merchant_id;
+        protected $merchant_secret;
 
      
 
@@ -82,35 +85,35 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function __construct()
         {
-            $this->include_path = WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes'; 
+            $this->include_path = WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes';
             $this->id = 'latitudecheckout';
-            $this->title = Latitude_Checkout_Environment_Settings::get_gateway_title(); 
+            $this->title = Latitude_Checkout_Environment_Settings::get_gateway_title();
             $this->method_title = $this->title;
-            $this->method_name =$this->title; 
-            $this->method_description = sprintf(  __( 'Use %s as payment method for WooCommerce orders.', 'woo_latitudecheckout' ), $this->title ); 
+            $this->method_name =$this->title;
+            $this->method_description = sprintf(__('Use %s as payment method for WooCommerce orders.', 'woo_latitudecheckout'), $this->title);
             $this->icon = apply_filters('woocommerce_gateway_icon', 10, 2);
-            $this->has_fields = true; // needed to be true for customizing payment fields 
+            $this->has_fields = true; // needed to be true for customizing payment fields
             $this->init_form_fields();
-            $this->init_settings(); 
+            $this->init_settings();
             $this->api_service = new Latitude_Checkout_API();
 
 
             /*
-            * Actions 
-            */ 
+            * Actions
+            */
             add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
-            add_action("woocommerce_update_options_payment_gateways_{$this->id}",[$this, 'process_admin_options'],10,0 ); 
-            add_action("woocommerce_receipt_{$this->id}",[$this, 'receipt_page'],10,1); 
+            add_action("woocommerce_update_options_payment_gateways_{$this->id}", [$this, 'process_admin_options'], 10, 0);
+            add_action("woocommerce_receipt_{$this->id}", [$this, 'receipt_page'], 10, 1);
             add_action('woocommerce_admin_order_data_after_order_details', [$this,'display_order_data_in_admin',]);
-            add_action('woocommerce_before_checkout_form',[$this, 'add_checkout_custom_style'],10,2); 
-            add_action('woocommerce_single_product_summary',[$this, 'get_widget_data'],10,2);
-            add_action('woocommerce_after_checkout_validation', [ $this, 'validate_checkout_fields'], 10, 2 );  
+            add_action('woocommerce_before_checkout_form', [$this, 'add_checkout_custom_style'], 10, 2);
+            add_action('woocommerce_single_product_summary', [$this, 'get_widget_data'], 10, 2);
+            add_action('woocommerce_after_checkout_validation', [ $this, 'validate_checkout_fields'], 10, 2);
             /*
             * Filters
-            */ 
-            add_filter('woocommerce_gateway_icon', [$this, 'filter_gateway_icon'], 10, 2 );
-            add_filter('woocommerce_order_button_text', [$this, 'filter_place_order_button_text'], 10, 1 );
-            add_filter('woocommerce_endpoint_order-pay_title', [$this, 'filter_order_pay_title'], 10, 2 );  
+            */
+            add_filter('woocommerce_gateway_icon', [$this, 'filter_gateway_icon'], 10, 2);
+            add_filter('woocommerce_order_button_text', [$this, 'filter_place_order_button_text'], 10, 1);
+            add_filter('woocommerce_endpoint_order-pay_title', [$this, 'filter_order_pay_title'], 10, 2);
         }
 
         /**
@@ -127,44 +130,41 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
 
         /**
          *  Default values for the plugin's Admin Form Fields
-         */ 
+         */
         public function init_form_fields()
-        { 
+        {
             include "{$this->include_path}/admin-form.php";
-            
         }
 
         /**
-		 * Adds/Updates admin settings - needed to overload explicitly to update admin settings in some shops
-		 *
-		 * Note:	Hooked onto the "woocommerce_update_options_payment_gateways_" Action.
-		 * 
-		 */
-		public function process_admin_options() {
-			parent::process_admin_options(); 
+         * Adds/Updates admin settings - needed to overload explicitly to update admin settings in some shops
+         *
+         * Note:	Hooked onto the "woocommerce_update_options_payment_gateways_" Action.
+         *
+         */
+        public function process_admin_options()
+        {
+            parent::process_admin_options();
 
-            if (array_key_exists(self::ADVANCED_CONFIG, $this->settings)) { 
-                $is_valid_json = json_decode( $this->settings[self::ADVANCED_CONFIG], true ) != NULL ;
-                if ( !$is_valid_json )
-                {
-                    WC_Admin_Settings::add_error('Error: Please enter valid JSON for Advanced Config.');  
+            if (array_key_exists(self::ADVANCED_CONFIG, $this->settings)) {
+                $is_valid_json = json_decode($this->settings[self::ADVANCED_CONFIG], true) != null ;
+                if (!$is_valid_json) {
+                    WC_Admin_Settings::add_error('Error: Please enter valid JSON for Advanced Config.');
                 }
-            } 
-            if (array_key_exists(self::MERCHANT_SECRET, $this->settings) && 
-                array_key_exists(self::MERCHANT_ID, $this->settings)) 
-            {
-               if(empty($this->settings[self::MERCHANT_SECRET]) || empty($this->settings[self::MERCHANT_ID]))
-               {
-                    WC_Admin_Settings::add_error('Error: Merchant details cannot be empty.');  
-               } 
             }
-		}
+            if (array_key_exists(self::MERCHANT_SECRET, $this->settings) &&
+                array_key_exists(self::MERCHANT_ID, $this->settings)) {
+                if (empty($this->settings[self::MERCHANT_SECRET]) || empty($this->settings[self::MERCHANT_ID])) {
+                    WC_Admin_Settings::add_error('Error: Merchant details cannot be empty.');
+                }
+            }
+        }
   
 
         /**
          * Get plugin version constant
          */
-        public function get_plugin_version() 
+        public function get_plugin_version()
         {
             return WC_LATITUDE_GATEWAY__PLUGIN_VERSION;
         }
@@ -174,7 +174,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function get_merchant_id()
         {
-            return $this->get_option(self::MERCHANT_ID);  
+            return $this->get_option(self::MERCHANT_ID);
         }
 
         /**
@@ -182,7 +182,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function get_secret_key()
         {
-            return $this->get_option(self::MERCHANT_SECRET);  
+            return $this->get_option(self::MERCHANT_SECRET);
         }
 
         /**
@@ -190,17 +190,17 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function is_test_mode()
         {
-             return $test_mode = ( 'yes' === $this->get_option( self::TEST_MODE) );  
+            return $test_mode = ('yes' === $this->get_option(self::TEST_MODE));
         }
   
-        public function get_payment_gateway_id() 
+        public function get_payment_gateway_id()
         {
             return $this->id;
         }
 
         /**
          * Note: Hooked onto the "wp_enqueue_scripts" Action
-         * 
+         *
          */
         public function enqueue_scripts()
         {
@@ -209,11 +209,10 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
              */
 
             wp_enqueue_script(
-                'latitude_payment_fields_js',  
-                plugin_dir_url( __DIR__) . 'assets/js/latitude-payment-fields.js', 
+                'latitude_payment_fields_js',
+                plugin_dir_url(__DIR__) . 'assets/js/latitude-payment-fields.js',
                 ['jquery']
-            ); 
-             
+            );
         }
  
         /**
@@ -227,8 +226,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             $product = wc_get_product();
             $category = get_the_terms($product->id, 'product_cat');
             wp_enqueue_script(
-                'latitude_widget_js',  
-                plugin_dir_url( __DIR__ ). 'assets/js/woocommerce.js',   
+                'latitude_widget_js',
+                plugin_dir_url(__DIR__). 'assets/js/woocommerce.js',
                 ['jquery']
             );
             wp_localize_script(
@@ -263,10 +262,9 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             }
   
             $icon_url = Latitude_Checkout_Environment_Settings::get_icon_url();
-            $icon_alt_text = Latitude_Checkout_Environment_Settings::get_gateway_title(); 
+            $icon_alt_text = Latitude_Checkout_Environment_Settings::get_gateway_title();
 
-            ob_start();
-            ?><img src="<?php echo $icon_url; ?>" alt="<?php echo $icon_alt_text; ?>" class="checkout-logo__latitude" /><?php return ob_get_clean();
+            ob_start(); ?><img src="<?php echo $icon_url; ?>" alt="<?php echo $icon_alt_text; ?>" class="checkout-logo__latitude" /><?php return ob_get_clean();
         }
 
         /**
@@ -275,9 +273,9 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function add_checkout_custom_style()
         {
-            wp_enqueue_style( 
-                'latitude_checkout-styles',  
-                plugin_dir_url( __DIR__ ). 'assets/css/latitude.css'
+            wp_enqueue_style(
+                'latitude_checkout-styles',
+                plugin_dir_url(__DIR__). 'assets/css/latitude.css'
             );
         }
 
@@ -290,8 +288,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         {
             $current_payment_method = WC()->session->get(
                 'chosen_payment_method'
-            );  
-            if ( $current_payment_method == $this->id ) {
+            );
+            if ($current_payment_method == $this->id) {
                 $button = 'Choose a plan';
             }
             return $button;
@@ -300,10 +298,9 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         /**
          * Display as a payment option on the checkout page.
          *
-         */ 
+         */
         public function payment_fields()
-        { 
-
+        {
             ?>   
             <div id="latitude-payment--main"> 
             <div style="display: flex !important;">
@@ -323,8 +320,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
            
             
             wp_enqueue_script(
-                'latitude_paymentfield_banner_js',  
-                plugin_dir_url( __DIR__ ). 'assets/js/woocommerce.js' ,   
+                'latitude_paymentfield_banner_js',
+                plugin_dir_url(__DIR__). 'assets/js/woocommerce.js',
                 ['jquery']
             );
 
@@ -337,35 +334,34 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                     'container' => [
                         'footer' => 'latitude-payment--footer',
                         'main' => 'latitude-payment--main',
-                    ], 
+                    ],
                     'merchantId' => $this->get_merchant_id(),
-                    'currency' => Latitude_Checkout_Environment_Settings::get_base_currency(), 
+                    'currency' => Latitude_Checkout_Environment_Settings::get_base_currency(),
                     'assetUrl' => $this->get_content_src(),
                     'widgetSettings' => '',
-                    'checkout' => [ 
-                            'shippingAmount' => $order_data['shippingAmount'], 
+                    'checkout' => [
+                            'shippingAmount' => $order_data['shippingAmount'],
                             'taxAmount' => $order_data['taxAmount'],
                             'total' => $order_data['total'],
                     ],
                 ]
-            ); 
-
+            );
         }
  
         /**
          * Retrieves cart session totals
          *
-         */        
-        private function get_session_order_data() { 
-
-            $cart = WC()->cart;  
-            $total_tax = max(0, $cart->get_total_tax()); 
-            $total_shipping = max(0, $cart->shipping_total + $cart->shipping_tax_total);  
+         */
+        private function get_session_order_data()
+        {
+            $cart = WC()->cart;
+            $total_tax = max(0, $cart->get_total_tax());
+            $total_shipping = max(0, $cart->shipping_total + $cart->shipping_tax_total);
             return array(
-                "total" =>  floatval($cart->total),    
-                "shippingAmount" => floatval(number_format($total_shipping, 2, '.', '')),  
-                "taxAmount" => floatval(number_format($total_tax, 2, '.', '')),  
-            );  
+                "total" =>  floatval($cart->total),
+                "shippingAmount" => floatval(number_format($total_shipping, 2, '.', '')),
+                "taxAmount" => floatval(number_format($total_tax, 2, '.', '')),
+            );
         }
 
 
@@ -374,11 +370,11 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          *
          */
         protected function get_content_src()
-        { 
+        {
             $env = Latitude_Checkout_Environment_Settings::get_content_url($this->is_test_mode());
             $url = __(
                 $env . '/assets/content.js?platform=woocommerce&merchantId=' .  $this->get_merchant_id()
-                );
+            );
             return $url;
         }
 
@@ -386,31 +382,31 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          *
          * Hooked onto the "woocommerce_after_checkout_validation" filter.
          *
-         */        
-        public function validate_checkout_fields( $fields, $errors ){
- 
-            if ( preg_match( '/\\d/', $fields[ 'billing_first_name' ] ) || preg_match( '/\\d/', $fields[ 'billing_last_name' ] )  ){
-                $errors->add( 'validation', 'Your first or last name contains a number.' );
+         */
+        public function validate_checkout_fields($fields, $errors)
+        {
+            if (preg_match('/\\d/', $fields[ 'billing_first_name' ]) || preg_match('/\\d/', $fields[ 'billing_last_name' ])) {
+                $errors->add('validation', 'Your first or last name contains a number.');
                 return;
-            } 
+            }
             //Add additional field validations here when needed
         }
 
         /**
          * Default process payment
          *
-         */ 
+         */
         public function process_payment($order_id)
         {
-            $this->log_info( __( "Processing payment using {$this->id} payment method." ) );
+            $this->log_info(__("Processing payment using {$this->id} payment method."));
             if (!$order_id) {
-                $this->log_error( 'Order ID cannot be null when processing payment.' );
+                $this->log_error('Order ID cannot be null when processing payment.');
                 return;
-            }   
+            }
             $response = $this->api_service->purchase_request($order_id);
-            $this->log_info( __( "purchase_request result: "  . json_encode($response)));
+            $this->log_info(__("purchase_request result: "  . json_encode($response)));
             return $response;
-        } 
+        }
          
         /**
          *
@@ -456,11 +452,11 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          *
          * Validates the $order_id and returns the valid order or null
          *
-         */ 
-        public function get_valid_order($order_id) 
+         */
+        public function get_valid_order($order_id)
         {
-            $order = wc_get_order($order_id); 
-            if (is_null($order) || !$order ) {
+            $order = wc_get_order($order_id);
+            if (is_null($order) || !$order) {
                 $this->log_error(
                     __('Invalid or non-existent order id:  ' . $order_id)
                 );
@@ -473,7 +469,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          *
          * Checks the pending status of the order
          *
-         */ 
+         */
         private function is_order_pending($order)
         {
             $is_pending = false;
@@ -498,44 +494,42 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         {
             if ($order->get_payment_method() != $this->id) {
                 return;
-            } 
+            }
             
             $gatewayRef =  $order->get_meta(Latitude_Checkout_Constants::GATEWAY_REFERENCE);
             $transactionRef = $order->get_meta(Latitude_Checkout_Constants::TRANSACTION_REFERENCE);
             $promotionRef = $order->get_meta(Latitude_Checkout_Constants::PROMOTION_REFERENCE);
             $transType = $order->get_meta(Latitude_Checkout_Constants::TRANSACTION_TYPE);
-            if ( empty($gatewayRef) && empty($transactionRef) && empty($promotionRef) && empty($transType)) {
+            if (empty($gatewayRef) && empty($transactionRef) && empty($promotionRef) && empty($transType)) {
                 return;
-            }
-            
-            ?> 
+            } ?> 
              <p class="form-field form-field-wide"> <br>
                 <div class="latitude_payment_details">
                 <h3><?php esc_html_e(
-                    'Latitude Interest Free Payment Details',
-                    'woo_latitudecheckout'
-                ); ?></h3>
-                    <?php 
+                'Latitude Interest Free Payment Details',
+                'woo_latitudecheckout'
+            ); ?></h3>
+                    <?php
                     echo '<p><strong>' .
                         __('Gateway Reference') .
                         ': </strong><br>' .
                         $gatewayRef .
                         '<br></p>';
-                    echo '<p><strong>' .
+            echo '<p><strong>' .
                         __('Transaction Reference') .
                         ': </strong><br>' .
                         $transactionRef .
                         '<br></p>';
-                    echo '<p><strong>' .
+            echo '<p><strong>' .
                         __('Promotion Reference') .
                         ': </strong><br>' .
                         $promotionRef .
                         '<br></p>';
-                    echo '<p><strong>' .
+            echo '<p><strong>' .
                         __('Transaction Type') .
                         ': </strong><br>' .
                         $order->get_meta(Latitude_Checkout_Constants::TRANSACTION_TYPE) .
-                        '<br></p>';?>
+                        '<br></p>'; ?>
                 </div></p>
             <?php
         }

@@ -1,7 +1,7 @@
 <?php
 /**
 * Latitude Checkout Plugin Admin Form Fields
-*/
+*/ 
 
 
 $this->form_fields =  array(           

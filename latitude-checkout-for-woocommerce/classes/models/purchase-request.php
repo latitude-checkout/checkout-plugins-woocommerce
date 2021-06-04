@@ -86,12 +86,12 @@ class Latitude_Checkout_Purchase_Data_Factory
      *
      */
     private function get_order_lines($order)
-    {  
+    {
         $order_lines = [];
         foreach ($order->get_items() as $key => $item) :
             $product = $item->get_product();
-            $unit_price = wc_get_price_including_tax($product);
-            $order_line = array(
+        $unit_price = wc_get_price_including_tax($product);
+        $order_line = array(
                 'name' => $item->get_name(),
                 'productUrl' => $product->get_permalink(),
                 'sku' => $product->get_sku(),
@@ -101,7 +101,7 @@ class Latitude_Checkout_Purchase_Data_Factory
                 'requiresShipping' => $this->is_shipping_required($product),
                 'isGiftCard' => $this->is_gift_card($item),
             );
-            array_push($order_lines, $order_line);
+        array_push($order_lines, $order_line);
         endforeach;
 
         return $order_lines;

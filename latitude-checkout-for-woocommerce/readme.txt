@@ -20,11 +20,12 @@ This plugin provides a simple and secure integration for WooCommerce Merchant pa
 
 This section outlines the steps to install the Latitude Interest Free plugin.
 
-1. Upload `plugin-name.php` to the `/wp-content/plugins/` directory
+1. Upload plugin folder to the `/wp-content/plugins/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress 
-
+3. Go WooCommerce Settings –> Payment Gateways and configure your Latitude Interest Free plugin. 
+ 
 
 == Changelog ==
 
-= 0.1 =
-* First Release 
+= 1.0.4 =
+* Initial release for purchase and widgets

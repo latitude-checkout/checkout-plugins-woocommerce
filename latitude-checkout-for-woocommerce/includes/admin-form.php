@@ -1,7 +1,7 @@
 <?php
 /**
 * Latitude Checkout Plugin Admin Form Fields
-*/
+*/ 
 
 
 $this->form_fields =  array(           
@@ -19,7 +19,7 @@ $this->form_fields =  array(
         'title'       => __('Enable/Disable', 'woo_latitudecheckout'),
         'label'       => __('Is Enabled?', 'woo_latitudecheckout'),
         'type'        => 'checkbox',
-        'description' => __('Enable Latitude Checkout Payment Gateway', 'woo_latitudecheckout'), 
+        'description' => __('Enable the payment gateway', 'woo_latitudecheckout'), 
         'default'     => 'yes',
     ), 
     'test_mode' => array( 
@@ -29,10 +29,10 @@ $this->form_fields =  array(
         'description' => __('Place the payment gateway in test mode', 'woo_latitudecheckout'), 
         'default'     => 'no',  
     ),
-    'widget_content' => array(
-        'title'       => __('Widget', 'woo_latitudecheckout'),
+    'advanced_config' => array(
+        'title'       => __('Advanced Config', 'woo_latitudecheckout'),
         'type'        => 'textarea',
-        'description' => __('Copy values from <a href="https://develop.checkout.test.merchant-services-np.lfscnp.com/playground/widget/">Widget Playground</a>', 'woo_latitudecheckout'),
+        'description' => __('Please refer to Integration guide or contact Relationship Manager for further clarification. More information at <a href="https://checkout.latitudefinancial.com/playground/widget/">Widget Playground</a>.', 'woo_latitudecheckout'),
         'default'     =>    '{"productWidget": {
                                     "layout": "inversed",
                                     "paymentFrequency": "monthly",

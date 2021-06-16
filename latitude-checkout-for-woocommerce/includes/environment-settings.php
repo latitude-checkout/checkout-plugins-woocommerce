@@ -11,7 +11,7 @@ class Latitude_Checkout_Environment_Settings
     const CALLBACK_URL = '/wc-api/latitude_checkout';
     const DEFAULT_CURRENCY = 'AUD';
     const ALLOWED_CURRENCY = ['AUD', 'NZD'];
-    const location_settings = array(
+    const location_settings = array( 
         "AUD" => array(
             "icon_url" => "https://assets.latitudefinancial.com/merchant-services/latitude/icon/latitude-interest-free.svg",
             "gateway_title" => "Latitude Interest Free",
@@ -30,7 +30,7 @@ class Latitude_Checkout_Environment_Settings
         "prod" => array(
             "content_url" => "https://checkout.latitudefinancial.com",
             "checkout_service_url" => "https://api.latitudefinancial.com/v1/applybuy-checkout-service"
-        )
+        ) 
     );
 
     public static function get_icon_url()

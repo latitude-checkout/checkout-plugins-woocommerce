@@ -14,6 +14,7 @@ window.LatitudeCheckout = {
     price: latitude_widget_js_vars.price,
     sku: latitude_widget_js_vars.sku,
   },
+  checkout: latitude_widget_js_vars.checkout,
 };
 
 window.LatitudeCheckoutOverride = latitude_widget_js_vars.widgetSettings;

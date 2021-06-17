@@ -94,9 +94,9 @@ class Latitude_Checkout_Purchase_Data_Factory
         $order_line = array(
                 'name' => $item->get_name(),
                 'productUrl' => $product->get_permalink(),
-                'sku' => $product->get_sku(),
-                'quantity' => $item->get_quantity(), 
-                'unitPrice' => $unit_price,
+                'sku' => $product->get_sku(), 
+                'quantity' => $item->get_quantity(),
+                'unitPrice' => $this->get_float_value($unit_price), 
                 'amount' => $this->get_float_value($unit_price * $item->get_quantity()),
                 'requiresShipping' => $this->is_shipping_required($product),
                 'isGiftCard' => $this->is_gift_card($item), 

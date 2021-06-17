@@ -21,8 +21,8 @@ jQuery(function ($) {
       setTimeout(function () {
         if (!$("#latitude-payment--main img").length) {
           window.LatitudeCheckout.renderCheckoutContent();
-        }
-      }, 1500);
+        } 
+      }, 1500); 
     });
   });
 });

@@ -30,20 +30,20 @@ class Latitude_Checkout_Purchase_Data_Factory
      *
      */
     public function get_payload($order_id)
-    { 
+    {
         $order = $this->gateway->get_valid_order($order_id);
         
         if (is_null($order)) {
             return array();
-        } 
+        }
 
         $order_lines = $this->get_order_lines($order);
         $payload = array(
             'merchantId' => $this->gateway->get_merchant_id(),
             'merchantName' => $this->get_shop_name(),
             'isTest' => $this->gateway->is_test_mode(),
-            'merchantReference' => strval($order_id), 
-            'amount' => $this->get_float_value($order->get_total()), 
+            'merchantReference' => strval($order_id),
+            'amount' => $this->get_float_value($order->get_total()),
             'currency' => $order->get_currency(),
             'customer' => [
                 'firstName' => $order->get_billing_first_name(),
@@ -57,10 +57,10 @@ class Latitude_Checkout_Purchase_Data_Factory
             'merchantUrls' => [
                 'cancel' => $order->get_cancel_order_url_raw(),
                 'complete' => $this->get_complete_callback_url()
-            ], 
+            ],
             'totalDiscountAmount' => $this->get_total_discount_amount($order),
             'totalShippingAmount' => $this->get_total_shipping_amount($order),
-            'platformType' => Latitude_Checkout_Constants::PLATFORM_NAME, 
+            'platformType' => Latitude_Checkout_Constants::PLATFORM_NAME,
             'platformVersion' => WC()->version,
             'pluginVersion' => $this->gateway->get_plugin_version(),
         );
@@ -90,16 +90,16 @@ class Latitude_Checkout_Purchase_Data_Factory
         $order_lines = [];
         foreach ($order->get_items() as $key => $item) :
             $product = $item->get_product();
-        $unit_price = wc_get_price_including_tax($product);
+        $unit_price = $this->get_item_unit_price($item);
         $order_line = array(
                 'name' => $item->get_name(),
-                'productUrl' => $product->get_permalink(), 
-                'sku' => $product->get_sku(), 
+                'productUrl' => $product->get_permalink(),
+                'sku' => $product->get_sku(),
                 'quantity' => $item->get_quantity(),
-                'unitPrice' => $this->get_float_value($unit_price),  
-                'amount' => $this->get_float_value($unit_price * $item->get_quantity()),
+                'unitPrice' => $unit_price,
+                'amount' => $unit_price * $item->get_quantity(),
                 'requiresShipping' => $this->is_shipping_required($product),
-                'isGiftCard' => $this->is_gift_card($item), 
+                'isGiftCard' => $this->is_gift_card($item),
             );
         array_push($order_lines, $order_line);
         endforeach;
@@ -127,6 +127,15 @@ class Latitude_Checkout_Purchase_Data_Factory
     }
 
     /**
+     * Compute order item unit price amount
+     *
+     */
+    private function get_item_unit_price($order_item)
+    {
+        return $this->get_float_value($order_item->get_total() + $order_item->get_total_tax());
+    }
+
+    /**
      * Compute total shipping amount
      *
      */
@@ -143,7 +152,7 @@ class Latitude_Checkout_Purchase_Data_Factory
     private function get_total_discount_amount($order)
     {
         return $this->get_float_value($order->get_discount_total() + $order->get_discount_tax());
-    } 
+    }
 
 
     /**

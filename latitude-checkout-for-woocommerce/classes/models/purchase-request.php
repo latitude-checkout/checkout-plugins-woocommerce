@@ -90,7 +90,7 @@ class Latitude_Checkout_Purchase_Data_Factory
         $order_lines = [];
         foreach ($order->get_items() as $key => $item) :
             $product = $item->get_product();
-        $unit_price = $this->get_item_unit_price($product, $item);
+        $unit_price = $this->get_float_value(wc_get_price_including_tax($product));
         $order_line = array(
                 'name' => $item->get_name(),
                 'productUrl' => $product->get_permalink(),
@@ -125,20 +125,7 @@ class Latitude_Checkout_Purchase_Data_Factory
         $shipping_class = $product->get_shipping_class();
         return isset($shipping_class);
     }
-
-    /**
-     * Compute order item unit price amount
-     *
-     */
-    private function get_item_unit_price($product, $order_item)
-    {
-        $unit_price = $this->get_float_value(wc_get_price_including_tax($product));
-        if (empty($unit_price)) {
-            return $this->get_float_value($order_item->get_total() + $order_item->get_total_tax());
-        }
-        return $unit_price;
-    }
-
+ 
     /**
      * Compute total shipping amount
      *
@@ -177,7 +164,7 @@ class Latitude_Checkout_Purchase_Data_Factory
      */
     private function get_float_value($number)
     {
-        return floatval(number_format((!empty($number) ? $number : 0), 2, '.', ''));
+        return floatval(number_format((!empty($number) ? $number : 0), 2, '.', '0'));
     }
 
 

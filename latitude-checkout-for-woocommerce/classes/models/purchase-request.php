@@ -132,7 +132,11 @@ class Latitude_Checkout_Purchase_Data_Factory
      */
     private function get_item_unit_price($order_item)
     {
-        return $this->get_float_value($order_item->get_total() + $order_item->get_total_tax());
+        $unit_price = $this->get_float_value(wc_get_price_including_tax($product));
+        if (empty($unit_price)) {
+            return $this->get_float_value($order_item->get_total() + $order_item->get_total_tax());
+        }
+        return $unit_price;
     }
 
     /**

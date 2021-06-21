@@ -164,7 +164,7 @@ class Latitude_Checkout_Purchase_Data_Factory
      */
     private function get_float_value($number)
     {
-        return floatval(number_format((!empty($number) ? $number : 0), 2, '.', '0'));
+        return floatval(number_format((!empty($number) ? $number : 0), 2, '.', ''));
     }
 
 

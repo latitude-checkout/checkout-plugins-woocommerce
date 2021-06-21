@@ -92,12 +92,12 @@ class Latitude_Checkout_Purchase_Data_Factory
             $product = $item->get_product();
         $unit_price = $this->get_float_value(wc_get_price_including_tax($product));
         $order_line = array(
-                'name' => $item->get_name(),
+                'name' => $item->get_name(), 
                 'productUrl' => $product->get_permalink(),
                 'sku' => $product->get_sku(),
                 'quantity' => $item->get_quantity(),
                 'unitPrice' => $unit_price,
-                'amount' => $unit_price * $item->get_quantity(),
+                'amount' => $unit_price * $item->get_quantity(), 
                 'requiresShipping' => $this->is_shipping_required($product),
                 'isGiftCard' => $this->is_gift_card($item),
             );

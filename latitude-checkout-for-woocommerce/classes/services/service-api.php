@@ -37,7 +37,7 @@ class Latitude_Checkout_Service_API
     protected function get_api_url()
     {
         $is_test_mode = $this->gateway->is_test_mode();
-        return Latitude_Checkout_Environment_Settings::get_service_url(is_test_mode);
+        return Latitude_Checkout_Environment_Settings::get_service_url($is_test_mode);
     }
 
     protected function get_request_headers()

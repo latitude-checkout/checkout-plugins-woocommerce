@@ -45,7 +45,7 @@ class Latitude_Checkout_Service_API_Purchase extends Latitude_Checkout_Service_A
     {
         $purchase_request_factory = new Latitude_Checkout_Purchase_Data_Factory();
         $payload = $purchase_request_factory->get_payload($order_id);
-        $this->gateway::log_debug(__('request payload: ' . json_encode($payload)));
+        $this->gateway::log_info(__('request payload: ' . json_encode($payload)));
         return $this->get_post_request_args($payload);
     }
 
@@ -56,7 +56,7 @@ class Latitude_Checkout_Service_API_Purchase extends Latitude_Checkout_Service_A
     private function get_purchase_url()
     {
         $url = __($this->get_api_url() . '/purchase');
-        $this->gateway::log_debug(__('sending purchase_request to: ' . $url));
+        $this->gateway::log_info(__('sending purchase_request to: ' . $url));
         return $url;
     }
 

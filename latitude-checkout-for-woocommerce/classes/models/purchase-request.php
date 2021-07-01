@@ -131,10 +131,12 @@ class Latitude_Checkout_Purchase_Data_Factory
      */
     private function get_unit_price($order_item)
     {
-        if ($order_item->get_quantity() > 0) {
-            return $this->get_float_value($this->get_order_item_price($order_item) / $order_item->get_quantity());
+        $order_qty = $order_item->get_quantity();
+        $order_unit_price = $this->get_order_item_price($order_item);
+        if ($order_qty > 0) {
+            return $this->get_float_value($order_unit_price / $order_qty);
         }
-        return $this->get_order_item_price($order_item);
+        return $order_unit_price;
     }
 
     /**

@@ -90,14 +90,13 @@ class Latitude_Checkout_Purchase_Data_Factory
         $order_lines = [];
         foreach ($order->get_items() as $key => $item) :
             $product = $item->get_product();
-        $unit_price = $this->get_float_value(wc_get_price_including_tax($product));
         $order_line = array(
-                'name' => $item->get_name(), 
+                'name' => $item->get_name(),
                 'productUrl' => $product->get_permalink(),
                 'sku' => $product->get_sku(),
                 'quantity' => $item->get_quantity(),
-                'unitPrice' => $unit_price,
-                'amount' => $unit_price * $item->get_quantity(), 
+                'unitPrice' => $this->get_unit_price($item),
+                'amount' => $this->get_order_item_price($item),
                 'requiresShipping' => $this->is_shipping_required($product),
                 'isGiftCard' => $this->is_gift_card($item),
             );
@@ -126,6 +125,27 @@ class Latitude_Checkout_Purchase_Data_Factory
         return isset($shipping_class);
     }
  
+    /**
+     * Compute unit price
+     *
+     */
+    private function get_unit_price($order_item)
+    {
+        if ($order_item->get_quantity() > 0) {
+            return $this->get_float_value($this->get_order_item_price($order_item) / $order_item->get_quantity());
+        }
+        return $this->get_order_item_price($order_item);
+    }
+
+    /**
+     * Compute order item price
+     *
+     */
+    private function get_order_item_price($order_item)
+    {
+        return $this->get_float_value($order_item->get_total() + $order_item->get_total_tax());
+    }
+
     /**
      * Compute total shipping amount
      *

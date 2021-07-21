@@ -86,8 +86,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         public function __construct()
         {
             $this->include_path = WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes';
-            $this->id = 'latitudecheckout'; 
-            $this->title = Latitude_Checkout_Environment_Settings::get_gateway_title(); 
+            $this->id = 'latitudecheckout';
+            $this->title = Latitude_Checkout_Environment_Settings::get_gateway_title();
             $this->method_title = $this->title;
             $this->method_name =$this->title;
             $this->method_description = sprintf(__('Use %s as payment method for WooCommerce orders.', 'woo_latitudecheckout'), $this->title);
@@ -225,9 +225,9 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             $obj = json_decode($widgetData, true);
             $product = wc_get_product();
             $category = get_the_terms($product->id, 'product_cat');
-            wp_enqueue_script( 
+            wp_enqueue_script(
                 'latitude_widget_js',
-                plugin_dir_url(__DIR__). 'assets/js/woocommerce.js', 
+                plugin_dir_url(__DIR__). 'assets/js/woocommerce.js',
                 ['jquery']
             );
             wp_localize_script(
@@ -237,8 +237,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                     'page' => 'product',
                     'container' => 'latitude-banner-container',
                     'widgetSettings' => $obj,
-                    'merchantId' => $this->get_merchant_id(), 
-                    'currency' => Latitude_Checkout_Environment_Settings::get_base_currency(), 
+                    'merchantId' => $this->get_merchant_id(),
+                    'currency' => Latitude_Checkout_Environment_Settings::get_base_currency(),
                     'id' => $product->id,
                     'name' => $product->name,
                     'category' => $category[0]->name,
@@ -262,8 +262,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             }
   
             $icon_url = Latitude_Checkout_Environment_Settings::get_icon_url();
-            $icon_alt_text = Latitude_Checkout_Environment_Settings::get_gateway_title(); 
-            ob_start(); ?><img src="<?php echo $icon_url; ?>" alt="<?php echo $icon_alt_text; ?>" class="checkout-logo__latitude" /><?php return ob_get_clean(); 
+            $icon_alt_text = Latitude_Checkout_Environment_Settings::get_gateway_title();
+            ob_start(); ?><img src="<?php echo $icon_url; ?>" alt="<?php echo $icon_alt_text; ?>" class="checkout-logo__latitude" /><?php return ob_get_clean();
         }
 
         /**
@@ -318,9 +318,9 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
 
            
             
-            wp_enqueue_script( 
+            wp_enqueue_script(
                 'latitude_paymentfield_banner_js',
-                plugin_dir_url(__DIR__). 'assets/js/woocommerce.js', 
+                plugin_dir_url(__DIR__). 'assets/js/woocommerce.js',
                 ['jquery']
             );
 
@@ -332,11 +332,11 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                     'page' => 'checkout',
                     'container' => [
                         'footer' => 'latitude-payment--footer',
-                        'main' => 'latitude-payment--main', 
+                        'main' => 'latitude-payment--main',
                     ],
                     'merchantId' => $this->get_merchant_id(),
                     'currency' => Latitude_Checkout_Environment_Settings::get_base_currency(),
-                    'assetUrl' => $this->get_content_src(), 
+                    'assetUrl' => $this->get_content_src(),
                     'widgetSettings' => '',
                     'checkout' => [
                             'shippingAmount' => $order_data['shippingAmount'],
@@ -352,7 +352,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          *
          */
         private function get_session_order_data()
-        { 
+        {
             $cart = WC()->cart;
             $total_tax = max(0, $cart->get_total_tax());
             $total_shipping = max(0, $cart->shipping_total + $cart->shipping_tax_total);
@@ -360,7 +360,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                 "total" =>  floatval($cart->total),
                 "shippingAmount" => floatval(number_format($total_shipping, 2, '.', '')),
                 "taxAmount" => floatval(number_format($total_tax, 2, '.', '')),
-            ); 
+            );
         }
 
 
@@ -369,8 +369,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          *
          */
         protected function get_content_src()
-        { 
-            $env = Latitude_Checkout_Environment_Settings::get_content_url($this->is_test_mode()); 
+        {
+            $env = Latitude_Checkout_Environment_Settings::get_content_url($this->is_test_mode());
             $url = __(
                 $env . '/assets/content.js?platform=woocommerce&merchantId=' .  $this->get_merchant_id()
             );

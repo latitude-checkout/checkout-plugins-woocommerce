@@ -114,6 +114,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             add_filter('woocommerce_gateway_icon', [$this, 'filter_gateway_icon'], 10, 2);
             add_filter('woocommerce_order_button_text', [$this, 'filter_place_order_button_text'], 10, 1);
             add_filter('woocommerce_endpoint_order-pay_title', [$this, 'filter_order_pay_title'], 10, 2);
+
+            $this->supports = array("refunds");
         }
 
         /**
@@ -405,6 +407,33 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             $response = $this->api_service->purchase_request($order_id);
             $this->log_info(__("purchase_request result: "  . json_encode($response)));
             return $response;
+        }
+
+        /**
+         * Default process refund
+         */
+        public function process_refund($order_id, $amount = null, $reason = '')
+        {
+            $order = wc_get_order($order_id);
+
+            $req = [
+                "OrderID" => $order_id,
+                "Amount" => $amount,
+                "Reason" => $reason,
+            ];
+
+            $this->log_info(__("Initiating refund {$order_id}"));
+            $this->log_info(json_encode($req));
+
+            if ($order->get_payment_method() != $this->id) {
+                return false;
+            }
+
+            return new WP_Error(
+                "latitude-checkout-refund-failed", 
+                __("Failed to process refund. Please try again."), 
+                null
+            );
         }
          
         /**

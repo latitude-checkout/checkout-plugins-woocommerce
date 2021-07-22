@@ -57,6 +57,19 @@ class Latitude_Checkout_Service_API
         );
     }
 
+    protected function post($endpoint, $payload) {
+        $payload_with_headers = $this->get_post_request_args($payload);
+        $response = wp_remote_post($this->get_api_url() . $endpoint, $payload_with_headers);
+
+        $response =  $this->process_response($response);
+
+        $this->gateway::log_info($url . " (REQUEST): ". json_encode($payload));
+        $this->gateway::log_info($url . " (RESPONSE STATUS CODE): ". $response["response_code"]);
+        $this->gateway::log_info($url . " (RESPONSE BODY): ". json_encode($response));
+
+        return $response;
+    }
+
     protected function process_response($response)
     {
         $this->gateway::log_debug(__('process_response: ' . json_encode($response)));
@@ -64,21 +77,26 @@ class Latitude_Checkout_Service_API
             $error_string = implode($response->get_error_messages(), ' ');
             return array(
                 'result' => 'failure',
+                'response_code' => "error",
                 'error' => $error_string,
                 'override_notice' => ''
             );
         }
+
+        //TODO: refactor error status code handling
 
         $rsp_code = wp_remote_retrieve_response_code($response);
         if (($rsp_code >= 200) && ($rsp_code <= 299)) {
             $rsp_body = json_decode($response['body'], true);
             return array(
                 'result' => 'success',
+                'response_code' => $rsp_code,
                 'response' => $rsp_body
             ) ;
         }
   
         $this->gateway::log_error(json_encode($response));
+
         $result_string = $response['response']['message'];
         if (empty($result_string)) {
             $result_string = 'Bad Request';
@@ -91,6 +109,7 @@ class Latitude_Checkout_Service_API
  
         return array(
             'result' => 'failure',
+            'response_code' => $rsp_code,
             'error' => $result_string,
             'override_notice' => $notice_message
         );

@@ -27,6 +27,10 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         const TEST_MODE = 'test_mode';
         const ADVANCED_CONFIG = 'advanced_config';
 
+        const ERROR = 'error';
+        const MESSAGE = 'message';
+        const BODY = 'body';
+
         /**
          * Protected static variable
          *
@@ -414,26 +418,58 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function process_refund($order_id, $amount = null, $reason = '')
         {
+            $this->log_info(__("Initiating refund {$order_id}"));
+
             $order = wc_get_order($order_id);
 
-            $req = [
-                "OrderID" => $order_id,
-                "Amount" => $amount,
-                "Reason" => $reason,
-            ];
+            try {
+                if ($order->get_payment_method() != $this->id) {
+                    return false;
+                }
 
-            $this->log_info(__("Initiating refund {$order_id}"));
-            $this->log_info(json_encode($req));
+                $refund_response = $this->api_service->refund_request($order_id, $amount, $reason);
+    
+                if ($refund_response[self::ERROR]) {
+                    throw new Exception(__($refund_response[self::MESSAGE]));
+                }
 
-            if ($order->get_payment_method() != $this->id) {
-                return false;
+                $refund_response_body = $refund_response[self::BODY];
+
+                $order->add_order_note("Information from Gateway: ". $this->to_pretty_json($refund_response_body));
+                $order->add_order_note("Refund Approved for ". $amount. " ". $order->get_currency());
+
+                return $this->handle_refund_success($refund_response_body);
+            } catch (\Exception $ex) {
+                $order->add_order_note("Refund Failed. ". $message);
+                return $this->handle_refund_error($ex->getMessage());
             }
 
+            return false;
+        }
+
+        private function to_pretty_json($value) {
+            return implode(', ', array_map(
+                function ($v, $k) { return sprintf("\n %s: %s", $k, $v); },
+                $value,
+                array_keys($value)
+            ));
+        }
+
+        private function handle_refund_error($message)
+        {
+            $this->log_info(__METHOD__. " ". $message);
+            
             return new WP_Error(
-                "latitude-checkout-refund-failed", 
-                __("Failed to process refund. Please try again."), 
-                null
+                "latitude-checkout-refund-failed",
+                __("Could not process refund. ". $message),
+                null,
             );
+        }
+
+        private function handle_refund_success($body)
+        {
+            $this->log_info(__METHOD__. " ". json_encode($body));			
+            return true;
         }
          
         /**

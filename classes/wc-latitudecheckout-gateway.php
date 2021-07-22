@@ -201,7 +201,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         }
 
         /**
-         * Returns true if the Test Mode Enabled from our user settings, otherwise returns false.
+         * Returns true if the Debug Mode Enabled from our user settings, otherwise returns false.
          */
         public function is_debug_mode()
         {

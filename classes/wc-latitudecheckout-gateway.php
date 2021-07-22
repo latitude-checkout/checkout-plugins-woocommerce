@@ -25,6 +25,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         const MERCHANT_SECRET = 'merchant_secret';
         const ENABLED = 'enabled';
         const TEST_MODE = 'test_mode';
+        const DEBUG_MODE = 'debug_mode';
         const ADVANCED_CONFIG = 'advanced_config';
 
         const ERROR = 'error';
@@ -196,7 +197,15 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function is_test_mode()
         {
-            return $test_mode = ('yes' === $this->get_option(self::TEST_MODE));
+            return $this->get_option(self::TEST_MODE) === 'yes';
+        }
+
+        /**
+         * Returns true if the Test Mode Enabled from our user settings, otherwise returns false.
+         */
+        public function is_debug_mode()
+        {
+            return $this->is_test_mode() || $this->get_option(self::DEBUG_MODE) === 'yes';
         }
   
         public function get_payment_gateway_id()

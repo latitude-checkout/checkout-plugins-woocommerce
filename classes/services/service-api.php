@@ -63,9 +63,11 @@ class Latitude_Checkout_Service_API
 
         $response =  $this->process_response($response);
 
-        $this->gateway::log_info($url . " (REQUEST): ". json_encode($payload));
-        $this->gateway::log_info($url . " (RESPONSE STATUS CODE): ". $response["response_code"]);
-        $this->gateway::log_info($url . " (RESPONSE BODY): ". json_encode($response));
+        if ($this->gateway->is_debug_mode()) {
+            $this->gateway::log_info($url . " (REQUEST): ". json_encode($payload));
+            $this->gateway::log_info($url . " (RESPONSE STATUS CODE): ". $response["response_code"]);
+            $this->gateway::log_info($url . " (RESPONSE BODY): ". json_encode($response));
+        }
 
         return $response;
     }

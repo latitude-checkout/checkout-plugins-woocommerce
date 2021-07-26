@@ -456,9 +456,12 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             return false;
         }
 
-        private function to_pretty_json($value) {
+        private function to_pretty_json($value)
+        {
             return implode(', ', array_map(
-                function ($v, $k) { return sprintf("\n %s: %s", $k, $v); },
+                function ($v, $k) {
+                    return sprintf("\n %s: %s", $k, $v);
+                },
                 $value,
                 array_keys($value)
             ));
@@ -471,13 +474,13 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             return new WP_Error(
                 "latitude-checkout-refund-failed",
                 __("Could not process refund. ". $message),
-                null,
+                null
             );
         }
 
         private function handle_refund_success($body)
         {
-            $this->log_info(__METHOD__. " ". json_encode($body));			
+            $this->log_info(__METHOD__. " ". json_encode($body));
             return true;
         }
          

@@ -2,7 +2,7 @@
 Contributors: latitudefinancial
 Tags: woocommerce, latitude
 Requires at least: 4.0
-Tested up to: 5.7.2
+Tested up to: 5.8
 Requires PHP: 5.6
 WC requires at least: 3.4.0
 WC tested up to: 5.2.2

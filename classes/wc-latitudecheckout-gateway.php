@@ -278,7 +278,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
   
             $icon_url = Latitude_Checkout_Environment_Settings::get_icon_url();
             $icon_alt_text = Latitude_Checkout_Environment_Settings::get_gateway_title();
-            ob_start(); ?><img src="<?php echo $icon_url; ?>" alt="<?php echo $icon_alt_text; ?>" class="checkout-logo__latitude" /><?php return ob_get_clean();
+            ob_start(); ?><img src="<?php echo esc_url($icon_url); ?>" alt="<?php echo esc_html($icon_alt_text); ?>" class="checkout-logo__latitude" /><?php return ob_get_clean();
         }
 
         /**
@@ -585,27 +585,27 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                 'Latitude Interest Free Payment Details',
                 'woo_latitudecheckout'
             ); ?></h3>
-                    <?php
-                    echo '<p><strong>' .
+                    <?php echo '<p><strong>' .
                         __('Gateway Reference') .
                         ': </strong><br>' .
                         $gatewayRef .
-                        '<br></p>';
-            echo '<p><strong>' .
-                        __('Transaction Reference') .
-                        ': </strong><br>' .
-                        $transactionRef .
-                        '<br></p>';
-            echo '<p><strong>' .
-                        __('Promotion Reference') .
-                        ': </strong><br>' .
-                        $promotionRef .
-                        '<br></p>';
-            echo '<p><strong>' .
-                        __('Transaction Type') .
-                        ': </strong><br>' .
-                        $order->get_meta(Latitude_Checkout_Constants::TRANSACTION_TYPE) .
-                        '<br></p>'; ?>
+                        '<br></p>'.
+                        '<p><strong>'.
+                                __('Transaction Reference') .
+                                ': </strong><br>' .
+                                $transactionRef .
+                                '<br></p>'.
+                        '<p><strong>' .
+                                __('Promotion Reference') .
+                                ': </strong><br>' .
+                                $promotionRef .
+                                '<br></p>'.
+                        '<p><strong>'.
+                                __('Transaction Type') .
+                                ': </strong><br>' .
+                                $order->get_meta(Latitude_Checkout_Constants::TRANSACTION_TYPE) .
+                                '<br></p>' 
+                    ?>
                 </div></p>
             <?php
         }

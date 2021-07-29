@@ -27,4 +27,11 @@ class Latitude_Checkout_API
         $response = $request->request($merchantReference, $transactionReference, $gatewayReference);
         return $response;
     }
+
+    public function refund_request($order_id, $amount, $reason)
+    {
+        $request = new Latitude_Checkout_Service_API_Refund();
+        $response = $request->request($order_id, $amount, $reason);
+        return $response;
+    }
 }

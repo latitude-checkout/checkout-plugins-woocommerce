@@ -25,7 +25,12 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         const MERCHANT_SECRET = 'merchant_secret';
         const ENABLED = 'enabled';
         const TEST_MODE = 'test_mode';
+        const DEBUG_MODE = 'debug_mode';
         const ADVANCED_CONFIG = 'advanced_config';
+
+        const ERROR = 'error';
+        const MESSAGE = 'message';
+        const BODY = 'body';
 
         /**
          * Protected static variable
@@ -86,8 +91,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         public function __construct()
         {
             $this->include_path = WC_LATITUDE_GATEWAY__PLUGIN_DIR . 'includes';
-            $this->id = 'latitudecheckout'; 
-            $this->title = Latitude_Checkout_Environment_Settings::get_gateway_title(); 
+            $this->id = 'latitudecheckout';
+            $this->title = Latitude_Checkout_Environment_Settings::get_gateway_title();
             $this->method_title = $this->title;
             $this->method_name =$this->title;
             $this->method_description = sprintf(__('Use %s as payment method for WooCommerce orders.', 'woo_latitudecheckout'), $this->title);
@@ -114,6 +119,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             add_filter('woocommerce_gateway_icon', [$this, 'filter_gateway_icon'], 10, 2);
             add_filter('woocommerce_order_button_text', [$this, 'filter_place_order_button_text'], 10, 1);
             add_filter('woocommerce_endpoint_order-pay_title', [$this, 'filter_order_pay_title'], 10, 2);
+
+            $this->supports = array("refunds");
         }
 
         /**
@@ -190,7 +197,15 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         public function is_test_mode()
         {
-            return $test_mode = ('yes' === $this->get_option(self::TEST_MODE));
+            return $this->get_option(self::TEST_MODE) === 'yes';
+        }
+
+        /**
+         * Returns true if the Debug Mode Enabled from our user settings, otherwise returns false.
+         */
+        public function is_debug_mode()
+        {
+            return $this->is_test_mode() || $this->get_option(self::DEBUG_MODE) === 'yes';
         }
   
         public function get_payment_gateway_id()
@@ -225,9 +240,9 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             $obj = json_decode($widgetData, true);
             $product = wc_get_product();
             $category = get_the_terms($product->id, 'product_cat');
-            wp_enqueue_script( 
+            wp_enqueue_script(
                 'latitude_widget_js',
-                plugin_dir_url(__DIR__). 'assets/js/woocommerce.js', 
+                plugin_dir_url(__DIR__). 'assets/js/woocommerce.js',
                 ['jquery']
             );
             wp_localize_script(
@@ -237,8 +252,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                     'page' => 'product',
                     'container' => 'latitude-banner-container',
                     'widgetSettings' => $obj,
-                    'merchantId' => $this->get_merchant_id(), 
-                    'currency' => Latitude_Checkout_Environment_Settings::get_base_currency(), 
+                    'merchantId' => $this->get_merchant_id(),
+                    'currency' => Latitude_Checkout_Environment_Settings::get_base_currency(),
                     'id' => $product->id,
                     'name' => $product->name,
                     'category' => $category[0]->name,
@@ -262,8 +277,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             }
   
             $icon_url = Latitude_Checkout_Environment_Settings::get_icon_url();
-            $icon_alt_text = Latitude_Checkout_Environment_Settings::get_gateway_title(); 
-            ob_start(); ?><img src="<?php echo $icon_url; ?>" alt="<?php echo $icon_alt_text; ?>" class="checkout-logo__latitude" /><?php return ob_get_clean(); 
+            $icon_alt_text = Latitude_Checkout_Environment_Settings::get_gateway_title();
+            ob_start(); ?><img src="<?php echo $icon_url; ?>" alt="<?php echo $icon_alt_text; ?>" class="checkout-logo__latitude" /><?php return ob_get_clean();
         }
 
         /**
@@ -318,9 +333,9 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
 
            
             
-            wp_enqueue_script( 
+            wp_enqueue_script(
                 'latitude_paymentfield_banner_js',
-                plugin_dir_url(__DIR__). 'assets/js/woocommerce.js', 
+                plugin_dir_url(__DIR__). 'assets/js/woocommerce.js',
                 ['jquery']
             );
 
@@ -332,11 +347,11 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                     'page' => 'checkout',
                     'container' => [
                         'footer' => 'latitude-payment--footer',
-                        'main' => 'latitude-payment--main', 
+                        'main' => 'latitude-payment--main',
                     ],
                     'merchantId' => $this->get_merchant_id(),
                     'currency' => Latitude_Checkout_Environment_Settings::get_base_currency(),
-                    'assetUrl' => $this->get_content_src(), 
+                    'assetUrl' => $this->get_content_src(),
                     'widgetSettings' => '',
                     'checkout' => [
                             'shippingAmount' => $order_data['shippingAmount'],
@@ -352,7 +367,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          *
          */
         private function get_session_order_data()
-        { 
+        {
             $cart = WC()->cart;
             $total_tax = max(0, $cart->get_total_tax());
             $total_shipping = max(0, $cart->shipping_total + $cart->shipping_tax_total);
@@ -360,7 +375,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                 "total" =>  floatval($cart->total),
                 "shippingAmount" => floatval(number_format($total_shipping, 2, '.', '')),
                 "taxAmount" => floatval(number_format($total_tax, 2, '.', '')),
-            ); 
+            );
         }
 
 
@@ -369,8 +384,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          *
          */
         protected function get_content_src()
-        { 
-            $env = Latitude_Checkout_Environment_Settings::get_content_url($this->is_test_mode()); 
+        {
+            $env = Latitude_Checkout_Environment_Settings::get_content_url($this->is_test_mode());
             $url = __(
                 $env . '/assets/content.js?platform=woocommerce&merchantId=' .  $this->get_merchant_id()
             );
@@ -405,6 +420,68 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             $response = $this->api_service->purchase_request($order_id);
             $this->log_info(__("purchase_request result: "  . json_encode($response)));
             return $response;
+        }
+
+        /**
+         * Default process refund
+         */
+        public function process_refund($order_id, $amount = null, $reason = '')
+        {
+            $this->log_info(__("Initiating refund {$order_id}"));
+
+            $order = wc_get_order($order_id);
+
+            try {
+                if ($order->get_payment_method() != $this->id) {
+                    return false;
+                }
+
+                $refund_response = $this->api_service->refund_request($order_id, $amount, $reason);
+    
+                if ($refund_response[self::ERROR]) {
+                    throw new Exception(__($refund_response[self::MESSAGE]));
+                }
+
+                $refund_response_body = $refund_response[self::BODY];
+
+                $order->add_order_note("Information from Gateway: ". $this->to_pretty_json($refund_response_body));
+                $order->add_order_note("Refund Approved for ". $amount. " ". $order->get_currency());
+
+                return $this->handle_refund_success($refund_response_body);
+            } catch (\Exception $ex) {
+                $order->add_order_note("Refund Failed. ". $message);
+                return $this->handle_refund_error($ex->getMessage());
+            }
+
+            return false;
+        }
+
+        private function to_pretty_json($value)
+        {
+            return implode(', ', array_map(
+                function ($v, $k) {
+                    return sprintf("\n %s: %s", $k, $v);
+                },
+                $value,
+                array_keys($value)
+            ));
+        }
+
+        private function handle_refund_error($message)
+        {
+            $this->log_info(__METHOD__. " ". $message);
+            
+            return new WP_Error(
+                "latitude-checkout-refund-failed",
+                __("Could not process refund. ". $message),
+                null
+            );
+        }
+
+        private function handle_refund_success($body)
+        {
+            $this->log_info(__METHOD__. " ". json_encode($body));
+            return true;
         }
          
         /**

@@ -6,7 +6,7 @@ Tested up to: 5.7.0
 Requires PHP: 5.6
 WC requires at least: 3.4.0
 WC tested up to: 5.2.2
-Stable tag: trunk
+Stable tag: 1.0.5.1
 License: GNU Public License
 License URI: https://www.gnu.org/licenses/
 

@@ -47,7 +47,7 @@ class Latitude_Checkout_Refund_Data_Factory
         }
 
         $amount = $this->to_price($refund_amount);
-        if($amount < 1) {
+        if($amount < 0.1) {
             return $this->handle_error("invalid refund amount ". $amount);
         }
 

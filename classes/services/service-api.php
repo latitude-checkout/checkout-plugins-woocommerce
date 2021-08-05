@@ -18,6 +18,8 @@ class Latitude_Checkout_Service_API
      */
     protected $gateway;
 
+    const REQUEST_TIMEOUT = 30;
+
     public function __construct()
     {
         $this->gateway = WC_Latitude_Checkout_Gateway::get_instance();
@@ -52,12 +54,14 @@ class Latitude_Checkout_Service_API
     protected function get_post_request_args($payload)
     {
         return array(
-            'headers' => $this->get_request_headers(),
-            'body' => json_encode($payload)
+            'timeout'   => self::REQUEST_TIMEOUT,
+            'headers'   => $this->get_request_headers(),
+            'body'      => json_encode($payload),
         );
     }
 
-    protected function post($endpoint, $payload) {
+    protected function post($endpoint, $payload)
+    {
         $payload_with_headers = $this->get_post_request_args($payload);
         $response = wp_remote_post($this->get_api_url() . $endpoint, $payload_with_headers);
 

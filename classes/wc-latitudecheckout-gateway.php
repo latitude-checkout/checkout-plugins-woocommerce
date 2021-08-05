@@ -449,8 +449,9 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
 
                 return $this->handle_refund_success($refund_response_body);
             } catch (\Exception $ex) {
-                $order->add_order_note("Refund Failed. ". $message);
-                return $this->handle_refund_error($ex->getMessage());
+                $errorMessage = $ex->getMessage();
+                $order->add_order_note("Refund Failed. ". $errorMessage);
+                return $this->handle_refund_error($errorMessage);
             }
 
             return false;

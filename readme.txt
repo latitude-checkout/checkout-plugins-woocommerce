@@ -6,7 +6,7 @@ Tested up to: 5.8
 Requires PHP: 5.6
 WC requires at least: 3.4.0
 WC tested up to: 5.2.2
-Stable tag: 1.0.5.1
+Stable tag: 1.0.6
 License: GNU Public License
 License URI: https://www.gnu.org/licenses/
 
@@ -32,3 +32,6 @@ This section outlines the steps to install the Latitude Interest Free plugin.
 
 = 1.0.5 =
 * Refunds for instant settlement
+
+= 1.0.6 =
+* Increase request timeout and other fixes

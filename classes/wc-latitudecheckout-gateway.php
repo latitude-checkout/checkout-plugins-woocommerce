@@ -464,6 +464,8 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                 $order->add_order_note("Information from Gateway: ". $this->to_pretty_json($capture_response_body));
                 $order->add_order_note("Capture Approved for {$order->get_total()} {$order->get_currency()}");
 
+                $order->payment_complete();
+
                 return $this->handle_capture_success($capture_response_body);
             } catch (\Exception $ex) {
                 $errorMessage = $ex->getMessage();

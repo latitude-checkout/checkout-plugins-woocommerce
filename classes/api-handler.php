@@ -34,4 +34,11 @@ class Latitude_Checkout_API
         $response = $request->request($order_id, $amount, $reason);
         return $response;
     }
+
+    public function capture_request($order_id, $reason)
+    {
+        $request = new Latitude_Checkout_Service_API_Capture();
+        $response = $request->request($order_id, $reason);
+        return $response;
+    }
 }

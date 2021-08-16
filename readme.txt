@@ -35,3 +35,6 @@ This section outlines the steps to install the Latitude Interest Free plugin.
 
 = 1.0.6 =
 * Increase request timeout and other fixes
+
+= 1.0.7 =
+* Capture, Void and Refunds for deffered settlements

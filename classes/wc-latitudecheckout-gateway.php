@@ -73,7 +73,6 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          */
         protected $merchant_id;
         protected $merchant_secret;
-        protected $capture_button_added = false;
 
         /**
          * Private variables.

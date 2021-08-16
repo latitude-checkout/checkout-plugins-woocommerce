@@ -111,22 +111,30 @@ class Latitude_Checkout_Service_API_Verify_Purchase extends Latitude_Checkout_Se
         // for completed
         $transactionType = $rsp_body[Latitude_Checkout_Constants::TRANSACTION_TYPE];
         $promotionReference = $rsp_body[Latitude_Checkout_Constants::PROMOTION_REFERENCE];
+
         if ($transactionType == Latitude_Checkout_Constants::TRANSACTION_TYPE_SALE) {
             $status_string = $this->get_payment_status_string('Payment approved', $transactionReference, $gatewayReference);
             $this->gateway::log_info("WooCommerce Order #{$merchantReference} transaction is \"completed\".  {$status_string}");
             $order->add_order_note($status_string);
             $order->payment_complete();
+        } else if($transactionType == Latitude_Checkout_Constants::TRANSACTION_TYPE_AUTH) {
+            $status_string = $this->get_payment_status_string('Payment authorised', $transactionReference, $gatewayReference);
+            $this->gateway::log_info("WooCommerce Order #{$merchantReference} transaction is \"authorised\".  {$status_string}");
+            $order->add_order_note($status_string);
+            $order->update_status(Latitude_Checkout_Constants::WC_STATUS_ON_HOLD);
         } else {
             $payment_status = __("Payment transaction type: {$transactionType}");
             $status_string = $this->get_payment_status_string($payment_status, $transactionReference, $gatewayReference);
             $this->gateway::log_info("WooCommerce Order #{$merchantReference} has {$status_string}");
             $order->add_order_note($status_string);
         }
+
         $order->update_meta_data(Latitude_Checkout_Constants::GATEWAY_REFERENCE, $gatewayReference);
         $order->update_meta_data(Latitude_Checkout_Constants::TRANSACTION_REFERENCE, $transactionReference);
         $order->update_meta_data(Latitude_Checkout_Constants::PROMOTION_REFERENCE, $promotionReference);
         $order->update_meta_data(Latitude_Checkout_Constants::TRANSACTION_TYPE, $transactionType);
         $order->save();
+        
         wc_empty_cart();
         return $this->return_verify_purchase_response(true, $order->get_checkout_order_received_url());
     }

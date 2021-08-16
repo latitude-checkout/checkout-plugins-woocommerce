@@ -25,7 +25,7 @@ class Latitude_Checkout_Environment_Settings
     const api_settings = array(
         "test" => array(
             "content_url" => "https://develop.checkout.test.merchant-services-np.lfscnp.com",
-            "checkout_service_url" => "https://api.test.latitudefinancial.com/v1/applybuy-checkout-service"
+            "checkout_service_url" => "https://api.dev.latitudefinancial.com/v1/applybuy-checkout-service"
         ),
         "prod" => array(
             "content_url" => "https://checkout.latitudefinancial.com",

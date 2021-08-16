@@ -39,16 +39,16 @@ class Latitude_Checkout_Refund_Data_Factory
         $gatewayReference = "";
         
         if (is_null($order)) {
-            return $this->handle_error("could not get order for id ". $order_id);
+            return $this->handle_error("Could not get order for id ". $order_id);
         }
 
         if(!$order->meta_exists(Latitude_Checkout_Constants::GATEWAY_REFERENCE)) {
-            return $this->handle_error("could not get gateway reference for order ". $order_id);
+            return $this->handle_error("Could not get gateway reference for order ". $order_id);
         }
 
         $amount = $this->to_price($refund_amount);
         if($amount < 0.1) {
-            return $this->handle_error("invalid refund amount ". $amount);
+            return $this->handle_error("Invalid refund amount ". $amount);
         }
 
         return [

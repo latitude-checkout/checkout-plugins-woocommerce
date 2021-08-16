@@ -39,24 +39,24 @@ class Latitude_Checkout_Capture_Data_Factory
         $gatewayReference = "";
         
         if (is_null($order)) {
-            return $this->handle_error("could not get order for id {$order_id}");
+            return $this->handle_error("Could not get order for id {$order_id}");
         }
 
         if(!$order->meta_exists(Latitude_Checkout_Constants::GATEWAY_REFERENCE)) {
-            return $this->handle_error("could not get gateway reference for order {$order_id}");
+            return $this->handle_error("Could not get gateway reference for order {$order_id}");
         }
 
-        if(!$order->meta_exists(Latitude_Checkout_Constants::TRANSACTION_TYPE)) {
-            return $this->handle_error("could not capture order {$order_id} without autorization");
+        if($order->get_meta(Latitude_Checkout_Constants::TRANSACTION_TYPE) != Latitude_Checkout_Constants::TRANSACTION_TYPE_AUTH) {
+            return $this->handle_error("Could not capture order {$order_id} without autorization");
         }
 
         if(!$order->has_status(Latitude_Checkout_Constants::WC_STATUS_ON_HOLD)) {
-            return $this->handle_error("order {$order_id} is not with on-hold status");
+            return $this->handle_error("Order {$order_id} is not with on-hold status");
         }
 
         $order_amount = $this->to_price($order->get_total());
         if($order_amount < 0.1) {
-            return $this->handle_error("invalid capture amount {$amount}");
+            return $this->handle_error("Invalid capture amount {$amount}");
         }
 
         return [

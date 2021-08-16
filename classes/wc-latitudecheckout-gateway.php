@@ -129,7 +129,6 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                 add_filter('woocommerce_order_button_text', [$this, 'filter_place_order_button_text'], 10, 1);
                 add_filter('woocommerce_endpoint_order-pay_title', [$this, 'filter_order_pay_title'], 10, 2);
             }
-
         }
 
         /**
@@ -418,7 +417,22 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
          * Hooked onto the "capture_payment" filter, adds capture option in order actions
          *
          */
-        public function add_capture_payment_button($actions) {
+        public function add_capture_payment_button($actions)
+        {
+            global $theorder;
+
+            if (!is_object($theorder)) {
+                return $actions;
+            }
+
+            if ($theorder->get_payment_method() != $this->id) {
+                return $actions;
+            }
+
+            if (!$theorder->has_status(Latitude_Checkout_Constants::WC_STATUS_ON_HOLD)) {
+                return $actions;
+            }
+
             $actions["{$this->id}_capture_payment"] = __('Capture via '. $this->method_title, $this->id);
             return $actions;
         }
@@ -439,9 +453,9 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             return $response;
         }
 
-         /**
-         * Process capture
-         */
+        /**
+        * Process capture
+        */
         public function process_capture($order)
         {
             $order_id = $order->get_id();
@@ -484,7 +498,6 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             $this->log_info(__METHOD__. " ". $message);
 
             $order->add_order_note("Capture failed. ". $message);
-            $order->set_status(Latitude_Checkout_Constants::WC_STATUS_ON_HOLD);
             $order->save();
         }
 

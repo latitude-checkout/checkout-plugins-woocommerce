@@ -21,7 +21,5 @@ class Latitude_Checkout_Constants
     const TRANSACTION_TYPE_SALE = 'sale';
 
     const WC_STATUS_PENDING = 'pending';
-    const WC_STATUS_FAILED = 'failed';
-
-    const WC_GIFT_CARD_ITEM_TYPES = ['coupon'];
+    const WC_STATUS_FAILED = 'failed'; 
 }

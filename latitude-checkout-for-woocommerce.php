@@ -34,7 +34,7 @@ if (!defined('ABSPATH')) {
  * Required minimums and constants
  */
 define('WC_LATITUDE_GATEWAY__MINIMUM_WP_VERSION', '4.0');
-define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '1.0.6'); 
+define('WC_LATITUDE_GATEWAY__PLUGIN_VERSION', '1.0.7'); 
 define('WC_LATITUDE_GATEWAY__PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 if (!class_exists('WC_Latitude_Checkout_Plugin')) {

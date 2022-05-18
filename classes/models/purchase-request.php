@@ -112,8 +112,7 @@ class Latitude_Checkout_Purchase_Data_Factory
      */
     private function is_gift_card($item)
     {
-        $gift_card_types = array("coupon"); 
-        return in_array($item->get_type(), $gift_card_types); 
+        return in_array(Latitude_Checkout_Constants::WC_GIFT_CARD_ITEM_TYPES, $item->get_type());
     }
 
     /**

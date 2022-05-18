@@ -74,8 +74,6 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         protected $merchant_id;
         protected $merchant_secret;
 
-     
-
         /**
          * Private variables.
          *
@@ -102,25 +100,39 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             $this->init_settings();
             $this->api_service = new Latitude_Checkout_API();
 
-
-            /*
-            * Actions
-            */
-            add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
-            add_action("woocommerce_update_options_payment_gateways_{$this->id}", [$this, 'process_admin_options'], 10, 0);
-            add_action("woocommerce_receipt_{$this->id}", [$this, 'receipt_page'], 10, 1);
-            add_action('woocommerce_admin_order_data_after_order_details', [$this,'display_order_data_in_admin',]);
-            add_action('woocommerce_before_checkout_form', [$this, 'add_checkout_custom_style'], 10, 2);
-            add_action('woocommerce_single_product_summary', [$this, 'get_widget_data'], 10, 2);
-            add_action('woocommerce_after_checkout_validation', [ $this, 'validate_checkout_fields'], 10, 2);
-            /*
-            * Filters
-            */
-            add_filter('woocommerce_gateway_icon', [$this, 'filter_gateway_icon'], 10, 2);
-            add_filter('woocommerce_order_button_text', [$this, 'filter_place_order_button_text'], 10, 1);
-            add_filter('woocommerce_endpoint_order-pay_title', [$this, 'filter_order_pay_title'], 10, 2);
-
             $this->supports = array("refunds");
+
+            // check whether gateway actions are already added
+            if (!has_action("woocommerce_update_options_payment_gateways_{$this->id}")) {
+                /*
+                * Actions
+                */
+                add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
+                add_action("woocommerce_update_options_payment_gateways_{$this->id}", [$this, 'process_admin_options'], 10, 0);
+                add_action("woocommerce_receipt_{$this->id}", [$this, 'receipt_page'], 10, 1);
+                add_action('woocommerce_admin_order_data_after_order_details', [$this,'display_order_data_in_admin',]);
+                add_action('woocommerce_before_checkout_form', [$this, 'add_checkout_custom_style'], 10, 2);
+                add_action('woocommerce_single_product_summary', [$this, 'get_widget_data'], 10, 2);
+                add_action('woocommerce_after_checkout_validation', [ $this, 'validate_checkout_fields'], 10, 2);
+
+                /*
+                * Order management actions
+                */
+                add_action('woocommerce_order_actions', array($this, 'add_order_mgmt_actions'));
+                
+                // Capture an order.
+                add_action("woocommerce_order_action_{$this->id}_process_capture", array( $this, 'process_capture' ), 10, 1);
+
+                // Void order.
+                add_action("woocommerce_order_action_{$this->id}_process_void", array( $this, 'process_void' ), 10, 1);
+
+                /*
+                * Filters
+                */
+                add_filter('woocommerce_gateway_icon', [$this, 'filter_gateway_icon'], 10, 2);
+                add_filter('woocommerce_order_button_text', [$this, 'filter_place_order_button_text'], 10, 1);
+                add_filter('woocommerce_endpoint_order-pay_title', [$this, 'filter_order_pay_title'], 10, 2);
+            }
         }
 
         /**
@@ -331,8 +343,6 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             <div id="latitude-payment--footer"></div> 
             <?php
 
-           
-            
             wp_enqueue_script(
                 'latitude_paymentfield_banner_js',
                 plugin_dir_url(__DIR__). 'assets/js/woocommerce.js',
@@ -407,6 +417,33 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
         }
 
         /**
+         *
+         * Hooked onto the "capture_payment" filter, adds capture option in order actions
+         *
+         */
+        public function add_order_mgmt_actions($actions)
+        {
+            global $theorder;
+
+            if (!is_object($theorder)) {
+                return $actions;
+            }
+
+            if ($theorder->get_payment_method() != $this->id) {
+                return $actions;
+            }
+
+            if (!$theorder->has_status(Latitude_Checkout_Constants::WC_STATUS_ON_HOLD)) {
+                return $actions;
+            }
+
+            $actions["{$this->id}_process_capture"] = __('Capture via '. $this->method_title, $this->id);
+            $actions["{$this->id}_process_void"] = __('Void / Cancel via '. $this->method_title, $this->id);
+            
+            return $actions;
+        }
+
+        /**
          * Default process payment
          *
          */
@@ -420,6 +457,103 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
             $response = $this->api_service->purchase_request($order_id);
             $this->log_info(__("purchase_request result: "  . json_encode($response)));
             return $response;
+        }
+
+        /**
+        * Process capture
+        */
+        public function process_capture($order)
+        {
+            $order_id = $order->get_id();
+
+            $this->log_info(__("Initiating capture {$order_id}"));
+
+            try {
+                if ($order->get_payment_method() != $this->id) {
+                    return false;
+                }
+
+                $capture_response = $this->api_service->capture_request($order_id, $reason);
+    
+                if ($capture_response[self::ERROR]) {
+                    throw new Exception(__($capture_response[self::MESSAGE]));
+                }
+
+                $capture_response_body = $capture_response[self::BODY];
+
+                $order->add_order_note("Information from Gateway: ". $this->to_pretty_json($capture_response_body));
+                $order->add_order_note("Capture Approved for {$order->get_total()} {$order->get_currency()}");
+
+                $order->payment_complete();
+
+                return $this->handle_capture_success($capture_response_body);
+            } catch (\Exception $ex) {
+                $errorMessage = $ex->getMessage();
+                return $this->handle_capture_error($order, $errorMessage);
+            }
+        }
+
+        private function handle_capture_success($body)
+        {
+            $this->log_info(__METHOD__. " ". json_encode($body));
+            return true;
+        }
+
+        private function handle_capture_error($order, $message)
+        {
+            $this->log_info(__METHOD__. " ". $message);
+
+            $order->add_order_note("Capture failed. ". $message);
+            $order->save();
+        }
+
+
+        /**
+        * Process void
+        */
+        public function process_void($order)
+        {
+            $order_id = $order->get_id();
+
+            $this->log_info(__("Initiating void {$order_id}"));
+
+            try {
+                if ($order->get_payment_method() != $this->id) {
+                    return false;
+                }
+
+                $void_response = $this->api_service->void_request($order_id, $reason);
+    
+                if ($void_response[self::ERROR]) {
+                    throw new Exception(__($void_response[self::MESSAGE]));
+                }
+
+                $void_response_body = $void_response[self::BODY];
+
+                $order->add_order_note("Information from Gateway: ". $this->to_pretty_json($void_response_body));
+                $order->add_order_note("Void Completed for {$order->get_total()} {$order->get_currency()}");
+
+                $order->update_status(Latitude_Checkout_Constants::WC_STATUS_CANCELLED);
+
+                return $this->handle_void_success($void_response_body);
+            } catch (\Exception $ex) {
+                $errorMessage = $ex->getMessage();
+                return $this->handle_void_error($order, $errorMessage);
+            }
+        }
+
+        private function handle_void_success($body)
+        {
+            $this->log_info(__METHOD__. " ". json_encode($body));
+            return true;
+        }
+
+        private function handle_void_error($order, $message)
+        {
+            $this->log_info(__METHOD__. " ". $message);
+
+            $order->add_order_note("Void failed. ". $message);
+            $order->save();
         }
 
         /**
@@ -445,7 +579,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                 $refund_response_body = $refund_response[self::BODY];
 
                 $order->add_order_note("Information from Gateway: ". $this->to_pretty_json($refund_response_body));
-                $order->add_order_note("Refund Approved for ". $amount. " ". $order->get_currency());
+                $order->add_order_note("Refund Approved for {$amount} {$order->get_currency()}");
 
                 return $this->handle_refund_success($refund_response_body);
             } catch (\Exception $ex) {
@@ -605,7 +739,7 @@ if (!class_exists('WC_Latitude_Checkout_Gateway')) {
                                 __('Transaction Type') .
                                 ': </strong><br>' .
                                 $order->get_meta(Latitude_Checkout_Constants::TRANSACTION_TYPE) .
-                                '<br></p>' 
+                                '<br></p>'
                     ?>
                 </div></p>
             <?php

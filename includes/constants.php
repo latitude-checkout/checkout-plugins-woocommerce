@@ -19,7 +19,13 @@ class Latitude_Checkout_Constants
     const RESULT_FAILED = 'failed';
 
     const TRANSACTION_TYPE_SALE = 'sale';
+    const TRANSACTION_TYPE_AUTH = 'authorization';
 
+    const WC_STATUS_ON_HOLD = 'on-hold';
     const WC_STATUS_PENDING = 'pending';
-    const WC_STATUS_FAILED = 'failed'; 
+    const WC_STATUS_PROCESSING = 'processing';
+    const WC_STATUS_FAILED = 'failed';
+    const WC_STATUS_CANCELLED = "cancelled";
+
+    const WC_GIFT_CARD_ITEM_TYPES = ['coupon'];
 }

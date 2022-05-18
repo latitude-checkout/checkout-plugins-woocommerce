@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Latitude Checkout Refund Request Data Factory Class
+ * Latitude Checkout Capture Request Data Factory Class
  */
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly.
 }
 
-class Latitude_Checkout_Refund_Data_Factory
+class Latitude_Checkout_Capture_Data_Factory
 {
     /**
      * Protected variables.
@@ -16,7 +16,7 @@ class Latitude_Checkout_Refund_Data_Factory
      */
     protected $gateway;
 
-    const TRANSACTION_TYPE_REFUND = "refund";
+    const TRANSACTION_TYPE_CAPTURE = "capture";
 
     const ERROR = 'error';
     const MESSAGE = 'message';
@@ -31,9 +31,9 @@ class Latitude_Checkout_Refund_Data_Factory
     }
 
     /**
-     * Builds refund request payload
+     * Builds capture request payload
      */
-    public function get_payload($order_id, $refund_amount, $refund_desc)
+    public function get_payload($order_id, $desc)
     {
         $order = $this->gateway->get_valid_order($order_id);
         $gatewayReference = "";
@@ -42,17 +42,21 @@ class Latitude_Checkout_Refund_Data_Factory
             return $this->handle_error("Could not get order for id {$order_id}");
         }
 
-        if (!$order->has_status(Latitude_Checkout_Constants::WC_STATUS_PROCESSING)) {
-            return $this->handle_error("Order id {$order_id} must be with processing status");
-        }
-
         if(!$order->meta_exists(Latitude_Checkout_Constants::GATEWAY_REFERENCE)) {
             return $this->handle_error("Could not get gateway reference for order {$order_id}");
         }
 
-        $amount = $this->to_price($refund_amount);
-        if($amount < 0.1) {
-            return $this->handle_error("Invalid refund amount ". $amount);
+        if($order->get_meta(Latitude_Checkout_Constants::TRANSACTION_TYPE) != Latitude_Checkout_Constants::TRANSACTION_TYPE_AUTH) {
+            return $this->handle_error("Could not capture order {$order_id} without autorization");
+        }
+
+        if(!$order->has_status(Latitude_Checkout_Constants::WC_STATUS_ON_HOLD)) {
+            return $this->handle_error("Order {$order_id} is not with on-hold status");
+        }
+
+        $order_amount = $this->to_price($order->get_total());
+        if($order_amount < 0.1) {
+            return $this->handle_error("Invalid capture amount {$amount}");
         }
 
         return [
@@ -60,10 +64,10 @@ class Latitude_Checkout_Refund_Data_Factory
             'isTest' => $this->gateway->is_test_mode(),
             "gatewayReference" => (string)$order->get_meta(Latitude_Checkout_Constants::GATEWAY_REFERENCE),
             "merchantReference" => (string)$order_id,
-            'amount' => $amount,
+            'amount' => $order_amount,
             'currency' => $order->get_currency(),
-            "type" => self::TRANSACTION_TYPE_REFUND,
-            "description" => $refund_desc,
+            "type" => self::TRANSACTION_TYPE_CAPTURE,
+            "description" => $desc,
             'platformType' => Latitude_Checkout_Constants::PLATFORM_NAME,
             'platformVersion' => WC()->version,
             'pluginVersion' => $this->gateway->get_plugin_version(),

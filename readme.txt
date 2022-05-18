@@ -6,7 +6,7 @@ Tested up to: 5.8
 Requires PHP: 5.6
 WC requires at least: 3.4.0
 WC tested up to: 5.2.2
-Stable tag: 1.0.7
+Stable tag: 1.0.8
 License: GNU Public License
 License URI: https://www.gnu.org/licenses/
 
@@ -38,3 +38,6 @@ This section outlines the steps to install the Latitude Interest Free plugin.
 
 = 1.0.7 =
 * Void, Capture and Refunds for deferred payment flow
+
+= 1.0.8 =
+* Hotfix - Fatal error for gift cards

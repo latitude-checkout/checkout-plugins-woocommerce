@@ -27,5 +27,5 @@ class Latitude_Checkout_Constants
     const WC_STATUS_FAILED = 'failed';
     const WC_STATUS_CANCELLED = "cancelled";
 
-    const WC_GIFT_CARD_ITEM_TYPES = ['coupon'];
+    const WC_GIFT_CARD_ITEM_TYPES = array("coupon");
 }
